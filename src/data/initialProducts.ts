@@ -1,0 +1,510 @@
+import { Product } from '../types';
+
+export const INITIAL_PRODUCTS: Product[] = [
+  {
+    id: 'prod-1',
+    titleAr: 'مكنسة روبوتية ذكية Roborock S8 Pro Ultra مع محطة تنظيف ذاتي',
+    titleEn: 'Roborock S8 Pro Ultra Robot Vacuum & Mop',
+    description: 'أقوى مكنسة روبوتية لشفط الأتربة ومسح السجاد والأرضيات مع غسيل وتجفيف الممسحة تلقائيًا',
+    longDescription: 'تعتبر Roborock S8 Pro Ultra الحل النهائي لمنزل نظيف دون أي جهد يدوي. تتميز بنظام شفط عالي القوة قدره 6000 Pa، وتقنية Sonic Mopping للتنظيف بالاهتزاز الصوتي الفائق، إضافة إلى محطة RockDock Ultra الشاملة التي تقوم بتفريغ الغبار، غسل الممسحة، ملء خزان المياه وتجفيف الممسحة بالهواء الساخن منعاً للروائح.',
+    category: 'smart-home',
+    subcategory: 'المكانس الروبوتية',
+    brand: 'Roborock',
+    image: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    tiktokUrl: 'https://www.tiktok.com/@yousrasmile/video/123456789',
+    pinterestUrl: 'https://www.pinterest.com/pin/123456789/',
+    amazonUrl: 'https://www.amazon.sa/dp/B0BYRMBGVP?tag=yousrasmile-21',
+    aliexpressUrl: 'https://s.click.aliexpress.com/e/_Dk12345',
+    originalPrice: 4899,
+    discountPrice: 3699,
+    discountPercent: 24,
+    currency: 'رس',
+    rating: 4.9,
+    reviewCount: 342,
+    features: [
+      'قوة شفط فائقة 6000 Pascal لتنظيف الأتربة من عمق السجاد',
+      'فرشاة مزدوجة DuoRoller تمنع تشابك الشعر والألياف',
+      'محطة تنظيف ذاتية تجفف وتغسل الممسحة بالهواء الساخن',
+      'رسم خرائط ثلاثية الأبعاد ثلاثية الأبعاد وتجنب العوائق بالذكاء الاصطناعي',
+      'التحكم الكامل عبر تطبيق الهاتف والربط مع أليكسا وجوجل هوم'
+    ],
+    specs: {
+      'قوة الشفط': '6000 Pa',
+      'سعة الخزان': '350 مل مياه / 350 مل غبار',
+      'عمر البطارية': '180 دقيقة عمل مستمر',
+      'نظام الملاحة': 'PreciSense LiDAR + Reactive 3D',
+      'الضمان': 'سنتان شاملان'
+    },
+    keywords: ['مكنسة روبوتية', 'تنظيف ذكي', 'Roborock', 'مسح السجاد', 'سمارت هوم'],
+    isFeatured: true,
+    isTopSelling: true,
+    isLatest: true,
+    viewsCount: 14500,
+    createdAt: '2026-07-15'
+  },
+  {
+    id: 'prod-2',
+    titleAr: 'قلاية هوائية ذكية Cosori Dual Blaze بسعة 6.4 لتر وسخان مزدوج',
+    titleEn: 'Cosori Dual Blaze Smart Air Fryer 6.4L',
+    description: 'قلاية هوائية بدون تقليب بفضل التقنية الحرارية المزدوجة ومراقبة الطهي عن بُعد عبر الهاتف',
+    longDescription: 'تأتي Cosori Dual Blaze بتقنية 360ThermoIQ الفريدة التي تعتمد على عنصري تسخين علوي وسفلي، مما يلغي الحاجة لتقليب الطعام أثناء الطهي. تحتوي على 12 برنامج طهي مسبق الضبط وشاشة لمس أنيقة، مع إمكانية إرسال التنبيهات إلى هاتفكم عند اكتمال الوجبة.',
+    category: 'smart-kitchen',
+    subcategory: 'القلايات الهوائية',
+    brand: 'Cosori',
+    image: 'https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    tiktokUrl: 'https://www.tiktok.com/@yousrasmile/video/987654321',
+    amazonUrl: 'https://www.amazon.sa/dp/B09BFPV4LZ?tag=yousrasmile-21',
+    aliexpressUrl: 'https://s.click.aliexpress.com/e/_Dk67890',
+    originalPrice: 899,
+    discountPrice: 599,
+    discountPercent: 33,
+    currency: 'رس',
+    rating: 4.8,
+    reviewCount: 890,
+    features: [
+      'سخان علوي وسفلي مزدوج لطهي متساوي دون تقليب',
+      'سعة كبيرة 6.4 لتر تكفي للعائلة حتى 6 أشخاص',
+      'تطبيق VeSync الذكي للتحكم بالصوت والوصفات',
+      'توفير حتى 85% من دهون الطهي التقليدي',
+      'سلة آمنة لغسالة الأطباق ومقاومة للالتصاق'
+    ],
+    specs: {
+      'السعة': '6.4 لتر',
+      'القوة الكهربائية': '1750 واط',
+      'نطاق الحرارة': '80°C - 205°C',
+      'الاتصال': 'Wi-Fi / VeSync App',
+      'الوزن': '6.3 كجم'
+    },
+    keywords: ['قلاية هوائية', 'مطابخ ذكية', 'Cosori', 'طهي صحي', 'قلاية بدون زيت'],
+    isFeatured: true,
+    isTopSelling: true,
+    isLatest: false,
+    viewsCount: 22100,
+    createdAt: '2026-06-20'
+  },
+  {
+    id: 'prod-3',
+    titleAr: 'ماكينة قهوة اسبريسو أتوماتيكية Breville Barista Touch Impress',
+    titleEn: 'Breville Barista Touch Impress Espresso Machine',
+    description: 'تجربة المقهى الفاخر في منزلك بشاشة لمس توجيهية وتقنية الكبس والتغليغ الآلي',
+    longDescription: 'تساعدك ماكينة باريستا تاتش إمبريس على تحضير أشهى أكواب الإسبريسو والكابتشينو كالمحترفين خلال ثوانٍ. توفر الشاشة الذكية إرشادات فورية لدرجة الطحن والكبس الذاتي بنغمة مثالية 10 كجم مع إرغاء الحليب التلقائي بفقاعات الميكروفوم اللذيذة.',
+    category: 'smart-kitchen',
+    subcategory: 'ماكينات القهوة',
+    brand: 'Breville',
+    image: 'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    amazonUrl: 'https://www.amazon.sa/dp/B0B5F4K1R2?tag=yousrasmile-21',
+    originalPrice: 6200,
+    discountPrice: 4999,
+    discountPercent: 19,
+    currency: 'رس',
+    rating: 4.9,
+    reviewCount: 412,
+    features: [
+      'نظام Impress Puck للكبس الآلي الدقيق دون تناثر القهوة',
+      'شاشة لمس تفاعلية تتيح تخصيص وتخزين 8 مشروبات',
+      'مطحنة مخروطية دقيقة مدمجة بنظام طحن ذكي',
+      'تبخير الحليب التلقائي بزاوية مثالية ولزوجة كبس كريمية',
+      'تسخين سريع ThermoJet خلال 3 ثوانٍ فقط'
+    ],
+    specs: {
+      'الضغط': '15 بار بنظام استخلاص طليعي',
+      'خزان المياه': '2 لتر فلتر مزدوج',
+      'نظام التسخين': 'ThermoJet',
+      'الشاشة': 'شاشة ملونة تعمل باللمس',
+      'المادة': 'فولاذ مقاوم للصدأ المقاوم للصدمات'
+    },
+    keywords: ['ماكينة قهوة', 'اسبريسو', 'Breville', 'قهوة مختصة', 'باريستا'],
+    isFeatured: true,
+    isTopSelling: false,
+    isLatest: true,
+    viewsCount: 18900,
+    createdAt: '2026-07-01'
+  },
+  {
+    id: 'prod-4',
+    titleAr: 'طقم أريكة مودرن لغرفة المعيشة بتصميم اسكندنافي فاخر والقماش المخملي',
+    titleEn: 'Modern Scandinavian Living Room Sofa Set',
+    description: 'أثاث منزلي عصري يجمع بين الراحة المطلقة والأناقة المعمارية مع أرجل خشبية صلبة',
+    longDescription: 'أضيفي لمسة من الفخامة الدافئة لبيتك مع طقم الأريكة الاسكندنافي ذو التصميم الانسيابي الحصري. مصنوع من قماش المايكروفايبر المقاوم للبقع والمحشو بإسفنج عالي الكثافة يدعم الظهر لفترات الجلوس الطويلة.',
+    category: 'furniture-decor',
+    subcategory: 'أثاث غرفة المعيشة',
+    brand: 'Nordic Modern',
+    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80'
+    ],
+    pinterestUrl: 'https://www.pinterest.com/pin/555041469/',
+    amazonUrl: 'https://www.amazon.sa/dp/B07R8SOFA?tag=yousrasmile-21',
+    aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkSOFA',
+    originalPrice: 4500,
+    discountPrice: 3290,
+    discountPercent: 27,
+    currency: 'رس',
+    rating: 4.7,
+    reviewCount: 156,
+    features: [
+      'قماش مايكروفايبر ناعم ومقاوم لانسكاب السوائل والبقع',
+      'هيكل خشب الزان الطبيعي المعالج ضد الرطوبة',
+      'وسائد جلوس مزدوجة مرنة ومريحة للعمود الفقري',
+      'سهل التنظيف ومتاح بعدة ألوان محايدة راقية'
+    ],
+    specs: {
+      'الأبعاد': '220 × 90 × 85 سم',
+      'سعة المقاعد': '3 إلى 4 أشخاص',
+      'نوع الهيكل': 'خشب زان طبيعي صلب',
+      'الضمان': '3 سنوات على الهيكل'
+    },
+    keywords: ['أثاث', 'أريكة', 'ديكور مودرن', 'غرفة معيشة', 'تصميم اسكندنافي'],
+    isFeatured: false,
+    isTopSelling: true,
+    isLatest: true,
+    viewsCount: 9800,
+    createdAt: '2026-07-10'
+  },
+  {
+    id: 'prod-5',
+    titleAr: 'سماعات رأس لاسلكية Sony WH-1000XM5 بعزل ضوضاء ثوري',
+    titleEn: 'Sony WH-1000XM5 Wireless Noise-Canceling Headphones',
+    description: 'أفضل سماعة عزل ضوضاء في العالم مع صوت نقي مكبر وميكروفونات متعددة للمكالمات',
+    longDescription: 'تأخذك سماعات Sony WH-1000XM5 إلى عالم خالي من المشتتات بفضل معالجي ضوضاء مستقلين و8 ميكروفونات التقاط ذكية. تصميم نحيف ومريح يزن 250 جرام فقط مع بطارية تدوم حتى 30 ساعة وشحن سريع.',
+    category: 'smart-gadgets',
+    subcategory: 'سماعات الرأس',
+    brand: 'Sony',
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    tiktokUrl: 'https://www.tiktok.com/@yousrasmile/video/11223344',
+    amazonUrl: 'https://www.amazon.sa/dp/B09XS7JWHH?tag=yousrasmile-21',
+    originalPrice: 1699,
+    discountPrice: 1299,
+    discountPercent: 24,
+    currency: 'رس',
+    rating: 4.9,
+    reviewCount: 1240,
+    features: [
+      'أفضل تقنية إلغاء ضوضاء نشط (ANC) بمعالج V1 المتطور',
+      'عمر بطارية يصل إلى 30 ساعة مع شحن سريع 3 دقائق لـ 3 ساعات استخدام',
+      'اتصال متعدد الأجهزة يتيح التنقل بين الكمبيوتر والتابلت تلقائياً',
+      'إيقاف مؤقت ذكي للموسيقى عند البدء بالتحدث (Speak-to-Chat)',
+      'وسائد جلدية فائقة النعومة وتصميم مريح طوال اليوم'
+    ],
+    specs: {
+      'عمر البطارية': '30 ساعة مع تشغيل ANC',
+      'الوزن': '250 جرام',
+      'البلوتوث': 'Bluetooth 5.2 مع دعم LDAC',
+      'الميكروفونات': '8 ميكروفونات لعزل الصوت أثناء المكالمات'
+    },
+    keywords: ['سماعات سونيك', 'عزل ضوضاء', 'Sony', 'سماعة رأس', 'بلوتوث'],
+    isFeatured: true,
+    isTopSelling: true,
+    isLatest: false,
+    viewsCount: 31000,
+    createdAt: '2026-05-14'
+  },
+  {
+    id: 'prod-6',
+    titleAr: 'أداة تصفيف الشعر المتكاملة Dyson Airwrap Multi-Styler',
+    titleEn: 'Dyson Airwrap Multi-Styler Complete Long',
+    description: 'تصفيف وتنسيق وتنعيم الشعر بالهواء بدون حرارة مفرطة تحافظ على صحة ولمعان الشعر',
+    longDescription: 'تستخدم دايسون إيرأب تقنية تدفق الهواء Coanda لعمل تجعيدات وتموجات طبيعية وتنعيم الشعر وتجفيفه دون إتلاف بصيلات الشعر بالحرارة المرتفعة. تتضمن المجموعة 6 ملحقات متطورة تناسب مختلف أنواع الشعر.',
+    category: 'women-corner',
+    subcategory: 'أدوات تصفيف الشعر',
+    brand: 'Dyson',
+    image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    tiktokUrl: 'https://www.tiktok.com/@yousrasmile/video/99887766',
+    pinterestUrl: 'https://www.pinterest.com/pin/522337360/',
+    amazonUrl: 'https://www.amazon.sa/dp/B0B3C9V9K2?tag=yousrasmile-21',
+    aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkDYSON',
+    originalPrice: 2699,
+    discountPrice: 2249,
+    discountPercent: 17,
+    currency: 'رس',
+    rating: 4.9,
+    reviewCount: 978,
+    features: [
+      'تأثير كواندا الجاذب للشعر لعمل فير وتموجات مذهلة وتنعيم فورية',
+      'التحكم الحراري الذكي يضمن عدم تجاوز الحرارة 150 درجة مئوية',
+      '6 رؤوس وملحقات مغناطيسية للتجفيف والتنعيم والتكثيف',
+      'تأتي مع حقيبة تخزين فاخرة مبطنة بالشمواه',
+      'لمعان فائق وشعر ناعم ومفعم بالحيوية'
+    ],
+    specs: {
+      'القوة': '1300 واط',
+      'تدفق الهواء': '13.5 لتر/ثانية',
+      'إعدادات الحرارة': '3 مستويات حرارة + هواء بارد ثابت',
+      'طول السلك': '2.68 متر يدور 360 درجة'
+    },
+    keywords: ['دايسون', 'تصفيف شعر', 'Dyson Airwrap', 'عناية بالشعر', 'استشوار'],
+    isFeatured: true,
+    isTopSelling: true,
+    isLatest: true,
+    viewsCount: 42000,
+    createdAt: '2026-07-18'
+  },
+  {
+    id: 'prod-7',
+    titleAr: 'زجاجة المياه الذكية LARQ Bottle PureVis للتنقية الذاتية بالأشعة الفوق بنفسجية',
+    titleEn: 'LARQ Bottle PureVis Self-Cleaning Smart Water Bottle',
+    description: 'مطارة مياه ذكية تنظف نفسها والمياه بنسبة 99.99% بضغطة زر وتدوم لأسابيع',
+    longDescription: 'تعتمد مطارة LARQ على ضوء UV-C المتقدم للقضاء على البكتيريا والفيروسات والروائح الكريهة من الماء والسطح الداخلي للزجاجة كل ساعتين تلقائياً. مصنعة من الفولاذ المقاوم للصدمات ومزودة بعزل حراري يحفظ البرودة 24 ساعة.',
+    category: 'health-fitness',
+    subcategory: 'زجاجات المياه الذكية',
+    brand: 'LARQ',
+    image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=800&q=80'
+    ],
+    amazonUrl: 'https://www.amazon.sa/dp/B07N8Z7855?tag=yousrasmile-21',
+    aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkLARQ',
+    originalPrice: 480,
+    discountPrice: 350,
+    discountPercent: 27,
+    currency: 'رس',
+    rating: 4.8,
+    reviewCount: 310,
+    features: [
+      'تعقيم وتطهير ذاتي بضوء UV-C LED فائق التطور',
+      'تفعيل تلقائي للتنظيف الذاتي كل ساعتين',
+      'حفظ برودة الماء لمدة 24 ساعة والحرارة لمدة 12 ساعة',
+      'بطارية قابلة للشحن عبر USB تكفي شهر كامل للاستخدام',
+      'تصميم أنيق خالي من مادة BPA الضارة'
+    ],
+    specs: {
+      'السعة': '710 مل (25 أونصة)',
+      'التقنية': 'UV-C LED PureVis',
+      'المادة': 'فولاذ عالي الجودة 18/8',
+      'البطارية': 'تكتفي لشحن واصل شهر كامل'
+    },
+    keywords: ['LARQ', 'مطارة ذكية', 'تعقيم مياه', 'رياضة', 'صحة'],
+    isFeatured: false,
+    isTopSelling: false,
+    isLatest: true,
+    viewsCount: 6500,
+    createdAt: '2026-07-22'
+  },
+  {
+    id: 'prod-8',
+    titleAr: 'قفل الباب الذكي Eufy Security Smart Lock C220 المزود بالبصمة والكاميرا',
+    titleEn: 'Eufy Security Smart Lock C220 with Fingerprint & Wi-Fi',
+    description: 'فتح سريع بالبصمة خلال 0.3 ثانية، دخول بدون مفتاح وتنبيهات الأمان على هاتفك مباشرة',
+    longDescription: 'يوفر قفل Eufy C220 حماية متكاملة لمنزلك مع 8 طرق مختلفة للفتح: قارئ البصمة البيومتري، التطبيق، الرمز السري، المفتاح الميكانيكي، والمساعد الصوتي. مقاوم للعوامل الجوية وتعمل بطاريته لـ 8 أشهر متواصلة.',
+    category: 'smart-home',
+    subcategory: 'أقفال الأبواب الذكية',
+    brand: 'Eufy',
+    image: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    amazonUrl: 'https://www.amazon.sa/dp/B0CDGFZ48D?tag=yousrasmile-21',
+    originalPrice: 850,
+    discountPrice: 599,
+    discountPercent: 30,
+    currency: 'رس',
+    rating: 4.8,
+    reviewCount: 520,
+    features: [
+      'التعرف السريع على البصمة خلال 0.3 ثانية بدقة 99.8%',
+      'ربط مائل مباشر عبر الواي فاي بدون محول إضافي Bridge',
+      'تشفير بنكي لحماية البيانات والرموز السريّة',
+      'إغلاق تلقائي عند غلق الباب وتنبيه محاولة الاختراق',
+      'مقاومة ممتازة للماء والمطر بمعيار IP65'
+    ],
+    specs: {
+      'طرق الفتح': 'بصمة، كلمة سر، تطبيق، مفتاح، صوت',
+      'عمر البطارية': '8 أشهر مع استخدام يومي مكثف',
+      'الاتصال': 'Wi-Fi 2.4GHz + Bluetooth',
+      'معيار المقاومة': 'IP65 Weatherproof'
+    },
+    keywords: ['قفل ذكي', 'Eufy', 'بصمة', 'أمان المنزل', 'أقفال أبواب'],
+    isFeatured: true,
+    isTopSelling: false,
+    isLatest: true,
+    viewsCount: 11200,
+    createdAt: '2026-07-25'
+  },
+  {
+    id: 'prod-9',
+    titleAr: 'ساعة ذكية لمتابعة الصحة والصدمات Apple Watch Series 9 GPS',
+    titleEn: 'Apple Watch Series 9 GPS 45mm Aluminum Case',
+    description: 'شاشة فائقة السطوع مع إيماءة الضغط المزدوج Double Tap ومستشعرات دقيقة لنبضات القلب والاكسجين',
+    longDescription: 'تأتي ساعة آبل سيرياس 9 بمعالج S9 SiP القوي الذي يوفر تجربة سلسة للغاية وإمكانية التحكم بالساعة بيدك دون لمس الشاشة عبر إيماءة الاصبعين. تتبع النوم، تخطيط القلب ECG، قياس نسبة الأكسجين والتنبيه عند السقوط.',
+    category: 'smart-gadgets',
+    subcategory: 'الساعات الذكية',
+    brand: 'Apple',
+    image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=800&q=80'
+    ],
+    amazonUrl: 'https://www.amazon.sa/dp/B0CHX8C3S4?tag=yousrasmile-21',
+    originalPrice: 1999,
+    discountPrice: 1649,
+    discountPercent: 18,
+    currency: 'رس',
+    rating: 4.9,
+    reviewCount: 2100,
+    features: [
+      'إيماءة النقر المزدوج السحرية لإجابة المكالمات وإيقاف المؤقت',
+      'شاشة Retina بسطوع يصل حتى 2000 شمعة وضوح كلي بالشمس',
+      'مراقبة نبضات القلب والتخطيط الكهربائي وسرعة التفاعل',
+      'تتبع الأنشطة الرياضية والسياحة والسباحة حتى عمق 50 متراً'
+    ],
+    specs: {
+      'المقاس': '45 ملم هيكل ألومنيوم',
+      'المعالج': 'Apple S9 SiP',
+      'عمر البطارية': '18 ساعة استخدام عادية (36 ساعة وضع التوفير)',
+      'مقاومة الماء': '50 متر (WR50)'
+    },
+    keywords: ['ساعة آبل', 'ساعة ذكية', 'رياضة', 'Apple Watch', 'تتبع صحي'],
+    isFeatured: false,
+    isTopSelling: true,
+    isLatest: false,
+    viewsCount: 29800,
+    createdAt: '2026-04-12'
+  },
+  {
+    id: 'prod-10',
+    titleAr: 'جهاز تنظيف السجاد والبقع المائي Bissell SpotClean Pro',
+    titleEn: 'Bissell SpotClean Pro Portable Carpet Cleaner',
+    description: 'أداة شفط وإزالة البقع المستعصية من السجاد والكنب والمراتب بسرعة وقوة ضغط فائقة',
+    longDescription: 'بيسيل سبوت كلين برو هي الحل المثالي لربات البيوت لإزالة بقع العصير، القهوة، وأثر أقدام الأطفال من السجاد والمفروشات وسياراتكم. تجمع بين قوة الشفط القوية والمحلول المنظف والفرش الشديدة الفعالية.',
+    category: 'smart-home',
+    subcategory: 'أجهزة إزالة البقع',
+    brand: 'Bissell',
+    image: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    amazonUrl: 'https://www.amazon.sa/dp/B00EPBH968?tag=yousrasmile-21',
+    aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkBISSELL',
+    originalPrice: 1150,
+    discountPrice: 799,
+    discountPercent: 30,
+    currency: 'رس',
+    rating: 4.8,
+    reviewCount: 1650,
+    features: [
+      'قوة شفط 750 واط لإزالة أعتى البقع الجافة والرطبة',
+      'خزان مزدوج مفرغ يفصل بين الماء النظيف والمياه المتسخة',
+      'خرطوم مرن بطول 1.5 متر للتنظيف بالزوايا والمناطق الصعبة',
+      'ملحق ملائم لغسيل مراتب السيارات والأدراج والكنب'
+    ],
+    specs: {
+      'القوة': '750 واط',
+      'سعة خزان الماء النظيف': '2.8 لتر',
+      'سعة خزان المتسخ': '2.2 لتر',
+      'طول السلك': '6.7 متر'
+    },
+    keywords: ['بيسيل', 'تنظيف السجاد', 'إزالة البقع', 'Bissell SpotClean', 'تنظيف الكنب'],
+    isFeatured: true,
+    isTopSelling: true,
+    isLatest: false,
+    viewsCount: 38000,
+    createdAt: '2026-03-10'
+  },
+  {
+    id: 'prod-11',
+    titleAr: 'منظم مكياج ومستحضرات تجميل أكريليك شفاف بمرآة LED دوارة 360 درجة',
+    titleEn: 'Acrylic Makeup Organizer with 360 Rotating Mirror LED',
+    description: 'صندوق تنظيم منظم ومضيء لإكسسوارات العناية، العطور والمكياج مع إضاءة خافته',
+    longDescription: 'اجعلي تسريحتك أو طاولة مكياجك مرتبة وأنيقة للغاية مع هذا المنظم الكريستالي الفاخر. يدور 360 درجة للوصول السريع لجميع الكريمات وأحمر الشفاه والعطور، مع مرآة مكياج مزودة بـ 3 درجات إضاءة LED.',
+    category: 'women-corner',
+    subcategory: 'منظمات المكياج',
+    brand: 'GlamOrganize',
+    image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=800&q=80'
+    ],
+    amazonUrl: 'https://www.amazon.sa/dp/B088R9MKP?tag=yousrasmile-21',
+    aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkMAKEUP',
+    originalPrice: 240,
+    discountPrice: 149,
+    discountPercent: 38,
+    currency: 'رس',
+    rating: 4.7,
+    reviewCount: 420,
+    features: [
+      'دوران انسيابي هادئ 360 درجة لاستغلال المساحة بذكاء',
+      'مرآة LED قابلة لإعادة الشحن بثلاث درجات إضاءة (دافئة/بيضاء/طبيعية)',
+      'أرفف قابلة للتعديل تناسب زجاجات العطور الكبيرة والفرش',
+      'مادة الأكريليك السميكة المقاومة للكسر والماء'
+    ],
+    specs: {
+      'الأبعاد': '35 × 28 × 28 سم',
+      'الإضاءة': 'LED اللمس مع بطارية 1200mAh',
+      'المادة': 'أكريليك عالي النقاء',
+      'اللون': 'شفاف فاخر مع لمسات ذهبية'
+    },
+    keywords: ['منظم مكياج', 'أكريليك', 'عناية بالبشرة', 'مرآة LED', 'ترتيب تسريحة'],
+    isFeatured: false,
+    isTopSelling: true,
+    isLatest: true,
+    viewsCount: 12500,
+    createdAt: '2026-07-28'
+  },
+  {
+    id: 'prod-12',
+    titleAr: 'جهاز المساج والاسترخاء العميق لتدليك العضلات Theragun Pro 5th Gen',
+    titleEn: 'Theragun Pro 5th Gen Percussive Massage Gun',
+    description: 'أقوى مساج مسدسي لتخفيف التوتر والآلام العضلية بتقنية النبضات الذكية والشاشة التوجيهية',
+    longDescription: 'يستخدم مساج Theragun Pro الترددات والاهتزازات العميقة بحركة 16 ملم للوصول إلى أنسجة العضلات العميقة لتسريع الاستشفاء الرياضي وزيادة المرونة وتخفيف آلام الظهر والرقبة.',
+    category: 'health-fitness',
+    subcategory: 'أجهزة المساج',
+    brand: 'Therabody',
+    image: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    amazonUrl: 'https://www.amazon.sa/dp/B0BHZMBK49?tag=yousrasmile-21',
+    originalPrice: 2499,
+    discountPrice: 1999,
+    discountPercent: 20,
+    currency: 'رس',
+    rating: 4.9,
+    reviewCount: 380,
+    features: [
+      'محرك QuietForce المقاوم للصمت بدون ضوضاء مزعجة',
+      'شاشة OLED تعرض سرعة الاهتزاز وقوة الضغط المطبقة',
+      '6 رؤوس تدليك مخصصة لمختلف عضلات الجسم',
+      'ذراع متحركة بـ 4 زوايا لتصل للظهر بجهد أقل'
+    ],
+    specs: {
+      'عمق الاهتزاز': '16 ملم في الأنسجة العميقة',
+      'عمر البطارية': '150 دقيقة عمل مستمر',
+      'الضمان': 'سنتان من الشركة المصنعة'
+    },
+    keywords: ['مسدس مساج', 'Theragun', 'استرخاء عضلات', 'لياقة', 'صحة'],
+    isFeatured: true,
+    isTopSelling: false,
+    isLatest: true,
+    viewsCount: 14200,
+    createdAt: '2026-07-05'
+  }
+];

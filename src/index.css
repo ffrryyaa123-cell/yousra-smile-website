@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    font-family: 'Geist', 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    scroll-behavior: smooth;
+    background-color: #111113;
+    color: #FDFCFB;
+  }
+  
+  html.dark {
+    background-color: #111113;
+    color: #FDFCFB;
+  }
+}
+
+/* Custom smooth scrollbar in Dark Luxury & Gold */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #111113;
+}
+::-webkit-scrollbar-thumb {
+  background: #D4AF37;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #F3E5AB;
+}
+
+/* Editorial Typography Helpers */
+.font-serif-editorial {
+  font-family: 'Newsreader', serif;
+  font-style: italic;
+}
+
+.font-mono-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #FDFCFB 0%, #D4AF37 60%, #B48811 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gold-pill {
+  padding: 4px 12px;
+  border: 1px solid #D4AF37;
+  border-radius: 99px;
+  color: #D4AF37;
+  font-size: 0.7rem;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em;
+}
+
+.grid-border-container {
+  border: 1px solid rgba(253, 252, 251, 0.1);
+}
+
+.grid-border-item {
+  border-color: rgba(253, 252, 251, 0.1);
+}
+
+/* Animation utilities */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+
+

@@ -1,0 +1,6 @@
+{
+  "name": "Yousra Smile",
+  "description": "منصة يسرى سمايل الاحترافية للتسويق بالعمولة للمنتجات الذكية والديكور والعناية بالمطبخ والمرأة",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

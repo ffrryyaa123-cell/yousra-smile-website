@@ -1,0 +1,250 @@
+import React, { useState, useMemo } from 'react';
+import { useApp } from '../context/AppContext';
+import { ProductCard } from '../components/ProductCard';
+import { ProductFilters } from '../components/ProductFilters';
+import { CATEGORIES } from '../data/categories';
+import { FilterState } from '../types';
+import { Grid, List, SlidersHorizontal, Search, PackageX } from 'lucide-react';
+
+export const ProductsPage: React.FC = () => {
+  const { 
+    products, 
+    selectedCategory, 
+    selectedSubcategory, 
+    searchQuery, 
+    setSearchQuery,
+    setSelectedCategory 
+  } = useApp();
+
+  const [layout, setLayout] = useState<'grid' | 'list'>('grid');
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  const [filters, setFilters] = useState<FilterState>({
+    searchQuery: searchQuery || '',
+    category: selectedCategory || 'all',
+    subcategory: selectedSubcategory || 'all',
+    brand: 'all',
+    minPrice: 0,
+    maxPrice: 10000,
+    minDiscount: 0,
+    sortBy: 'latest'
+  });
+
+  // Keep synced with global context category selection if changed from Header
+  React.useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      category: selectedCategory,
+      subcategory: selectedSubcategory,
+      searchQuery: searchQuery
+    }));
+  }, [selectedCategory, selectedSubcategory, searchQuery]);
+
+  const handleFilterChange = (newFilters: Partial<FilterState>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      searchQuery: '',
+      category: 'all',
+      subcategory: 'all',
+      brand: 'all',
+      minPrice: 0,
+      maxPrice: 10000,
+      minDiscount: 0,
+      sortBy: 'latest'
+    });
+    setSearchQuery('');
+    setSelectedCategory('all');
+  };
+
+  // Filter & Sort Logic
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      // Search
+      if (filters.searchQuery) {
+        const query = filters.searchQuery.toLowerCase();
+        const titleArMatch = product.titleAr.toLowerCase().includes(query);
+        const titleEnMatch = product.titleEn.toLowerCase().includes(query);
+        const descMatch = product.description.toLowerCase().includes(query);
+        const brandMatch = product.brand.toLowerCase().includes(query);
+        const keywordMatch = product.keywords && product.keywords.some(k => k.toLowerCase().includes(query));
+        if (!titleArMatch && !titleEnMatch && !descMatch && !brandMatch && !keywordMatch) return false;
+      }
+
+      // Category
+      if (filters.category !== 'all' && product.category !== filters.category) {
+        return false;
+      }
+
+      // Subcategory
+      if (filters.subcategory !== 'all' && product.subcategory !== filters.subcategory) {
+        return false;
+      }
+
+      // Brand
+      if (filters.brand !== 'all' && product.brand !== filters.brand) {
+        return false;
+      }
+
+      // Minimum Discount
+      if (filters.minDiscount > 0 && product.discountPercent < filters.minDiscount) {
+        return false;
+      }
+
+      // Max Price
+      if (product.discountPrice > filters.maxPrice) {
+        return false;
+      }
+
+      return true;
+    }).sort((a, b) => {
+      if (filters.sortBy === 'latest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (filters.sortBy === 'rating') return b.rating - a.rating;
+      if (filters.sortBy === 'best-selling') return (b.isTopSelling ? 1 : 0) - (a.isTopSelling ? 1 : 0);
+      if (filters.sortBy === 'highest-discount') return b.discountPercent - a.discountPercent;
+      if (filters.sortBy === 'price-low') return a.discountPrice - b.discountPrice;
+      if (filters.sortBy === 'price-high') return b.discountPrice - a.discountPrice;
+      return 0;
+    });
+  }, [products, filters]);
+
+  const categoryTitle = CATEGORIES.find(c => c.id === filters.category)?.nameAr || 'جميع المنتجات';
+
+  return (
+    <div className="space-y-6 pb-16">
+      
+      {/* Header Banner */}
+      <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <span className="text-xs font-bold text-purple-400 bg-purple-950/80 px-3 py-1 rounded-lg">
+            دليل التسويق بالعمولة
+          </span>
+          <h1 className="text-2xl sm:text-3xl font-black font-['Tajawal'] mt-2">
+            {categoryTitle}
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            تم العثور على {filteredProducts.length} منتج متاح بخصومات وروابط مباشرة
+          </p>
+        </div>
+
+        {/* Layout Switch & Mobile Filter Button */}
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <button
+            onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
+            className="lg:hidden px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs flex items-center gap-2"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            التصفية والفلترة
+          </button>
+
+          <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl">
+            <button
+              onClick={() => setLayout('grid')}
+              className={`p-2 rounded-lg transition-colors ${
+                layout === 'grid' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
+              title="عرض الشبكة"
+            >
+              <Grid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setLayout('list')}
+              className={`p-2 rounded-lg transition-colors ${
+                layout === 'list' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
+              }`}
+              title="عرض القائمة"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Catalog Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        
+        {/* Sidebar Filters (Desktop) */}
+        <div className="hidden lg:block space-y-6">
+          <ProductFilters 
+            filters={filters} 
+            onFilterChange={handleFilterChange}
+            onReset={handleResetFilters}
+          />
+        </div>
+
+        {/* Products Grid & Sorting Controls */}
+        <div className="lg:col-span-3 space-y-6">
+          
+          {/* Top Control Bar */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">الترتيب حسب:</span>
+              <select
+                value={filters.sortBy}
+                onChange={(e) => handleFilterChange({ sortBy: e.target.value as any })}
+                className="w-full sm:w-auto bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-purple-500 font-semibold"
+              >
+                <option value="latest">الأحدث نزوَلاً</option>
+                <option value="rating">الأعلى تقييمًا (★ 5.0)</option>
+                <option value="best-selling">الأكثر مبيعًا وطلباً</option>
+                <option value="highest-discount">الأعلى نسبة خصم</option>
+                <option value="price-low">السعر: من الأرخص للأغلى</option>
+                <option value="price-high">السعر: من الأغلى للأرخص</option>
+              </select>
+            </div>
+
+            <div className="text-xs text-slate-400">
+              يعرض <strong className="text-purple-600 dark:text-purple-400">{filteredProducts.length}</strong> من إجمالي {products.length} منتجات
+            </div>
+          </div>
+
+          {/* Filter Drawer for Mobile */}
+          {mobileFilterOpen && (
+            <div className="lg:hidden">
+              <ProductFilters 
+                filters={filters} 
+                onFilterChange={handleFilterChange}
+                onReset={handleResetFilters}
+              />
+            </div>
+          )}
+
+          {/* Products List Rendering */}
+          {filteredProducts.length > 0 ? (
+            <div className={
+              layout === 'grid' 
+                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
+                : 'space-y-4'
+            }>
+              {filteredProducts.map(prod => (
+                <ProductCard key={prod.id} product={prod} layout={layout} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-4">
+              <PackageX className="w-16 h-16 text-slate-400 mx-auto" />
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 font-['Tajawal']">
+                لم نجد أي منتجات تطابق معايير البحث الحالية!
+              </h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                جرّبي تغيير كلمات البحث أو إعادة ضبط خيارات تصفية الأسعار والأقسام لنتائج أفضل.
+              </p>
+              <button
+                onClick={handleResetFilters}
+                className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition-colors"
+              >
+                إعادة ضبط جميع الفلاتر
+              </button>
+            </div>
+          )}
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+};
