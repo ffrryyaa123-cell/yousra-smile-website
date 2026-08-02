@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Product, PageView, VideoReview, PriceAlert } from '../types';
+import { Product, PageView, VideoReview, PriceAlert, CartItem } from '../types';
 import { INITIAL_PRODUCTS } from '../data/initialProducts';
 import { SAMPLE_VIDEOS } from '../data/sampleVideos';
 import { translations, Language } from '../utils/i18n';
@@ -8,6 +8,16 @@ import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../u
 interface AppContextType {
   products: Product[];
   favorites: string[];
+  cart: CartItem[];
+  cartModalOpen: boolean;
+  openCartModal: () => void;
+  closeCartModal: () => void;
+  addToCart: (productId: string, quantity?: number) => void;
+  removeFromCart: (productId: string) => void;
+  updateCartQuantity: (productId: string, quantity: number) => void;
+  clearCart: () => void;
+  isInCart: (productId: string) => boolean;
+  cartTotalCount: number;
   compareList: string[];
   priceAlerts: PriceAlert[];
   alertModalProduct: Product | null;
@@ -70,6 +80,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_PRODUCTS_KEY = 'yousrasmile_products_v1';
 const LOCAL_STORAGE_FAVS_KEY = 'yousrasmile_favorites_v1';
+const LOCAL_STORAGE_CART_KEY = 'yousrasmile_cart_v1';
 const LOCAL_STORAGE_COMPARE_KEY = 'yousrasmile_compare_v1';
 const LOCAL_STORAGE_DARK_KEY = 'yousrasmile_darkmode_v1';
 const LOCAL_STORAGE_LANG_KEY = 'yousrasmile_language_v1';
@@ -83,7 +94,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = localStorage.getItem(LOCAL_STORAGE_PRODUCTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((p: Product) => ({
+            ...p,
+            amazonUrl: p.amazonUrl ? p.amazonUrl.replace('amazon.sa', 'amazon.com') : p.amazonUrl
+          }));
+        }
       }
     } catch (e) {
       console.error('Error loading products from localStorage:', e);
@@ -114,6 +130,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return ['prod-1', 'prod-6'];
     }
   });
+
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_CART_KEY);
+      return saved ? JSON.parse(saved) : [
+        { productId: 'prod-1', quantity: 1, addedAt: new Date().toISOString() }
+      ];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [cartModalOpen, setCartModalOpen] = useState<boolean>(false);
 
   const [compareList, setCompareList] = useState<string[]>(() => {
     try {
@@ -176,7 +205,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {
       console.error('Error loading currency:', e);
     }
-    return 'SAR';
+    return 'USD';
   });
 
   const setCurrency = useCallback((code: CurrencyCode) => {
@@ -190,7 +219,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  const currencyConfig = CURRENCIES[currency] || CURRENCIES.SAR;
+  const currencyConfig = CURRENCIES[currency] || CURRENCIES.USD;
 
   const formatPriceObject = useCallback((priceInSar: number) => {
     return formatPriceValue(priceInSar, currency, language);
@@ -227,6 +256,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Failed to save favorites:', e);
     }
   }, [favorites]);
+
+  // Sync cart
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_CART_KEY, JSON.stringify(cart));
+    } catch (e) {
+      console.error('Failed to save cart:', e);
+    }
+  }, [cart]);
 
   // Sync compare
   useEffect(() => {
@@ -300,6 +338,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         : [...prev, productId]
     );
   };
+
+  const openCartModal = () => setCartModalOpen(true);
+  const closeCartModal = () => setCartModalOpen(false);
+
+  const addToCart = (productId: string, quantity: number = 1) => {
+    setCart(prev => {
+      const existingIndex = prev.findIndex(item => item.productId === productId);
+      if (existingIndex > -1) {
+        const updated = [...prev];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: updated[existingIndex].quantity + quantity
+        };
+        return updated;
+      }
+      return [...prev, { productId, quantity, addedAt: new Date().toISOString() }];
+    });
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart(prev => prev.filter(item => item.productId !== productId));
+  };
+
+  const updateCartQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+    setCart(prev => prev.map(item => item.productId === productId ? { ...item, quantity } : item));
+  };
+
+  const clearCart = () => setCart([]);
+
+  const isInCart = (productId: string) => cart.some(item => item.productId === productId);
+
+  const cartTotalCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   const toggleCompare = (productId: string) => {
     setCompareList(prev => {
@@ -424,6 +498,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         products,
         favorites,
+        cart,
+        cartModalOpen,
+        openCartModal,
+        closeCartModal,
+        addToCart,
+        removeFromCart,
+        updateCartQuantity,
+        clearCart,
+        isInCart,
+        cartTotalCount,
         compareList,
         priceAlerts,
         alertModalProduct,

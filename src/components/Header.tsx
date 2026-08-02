@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { 
   Search, 
   Heart, 
+  ShoppingBag,
   Scale, 
   Sun, 
   Moon, 
@@ -30,6 +31,8 @@ export const Header: React.FC = () => {
     activePage, 
     setPage, 
     favorites, 
+    cartTotalCount,
+    openCartModal,
     compareList, 
     darkMode, 
     toggleDarkMode,
@@ -65,48 +68,40 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 w-full shadow-2xl bg-[#111113]/90 backdrop-blur-xl border-b border-[#FDFCFB]/10">
       {/* Editorial Header Bar */}
-      <div className="bg-[#18181B]/95 text-xs py-2 px-4 border-b border-[#FDFCFB]/10">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
-          <div className="flex items-center gap-3">
-            <span className="font-mono-meta text-[#D4AF37]">
-              YOUSRA SMILE — EST. 2026
+      <div className="bg-gradient-to-r from-[#12081f] via-[#1a0c2e] to-[#12081f] text-[11px] sm:text-xs py-1 sm:py-1.5 px-2.5 sm:px-6 border-b border-[#D4AF37]/20">
+        <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <span className="font-['Tajawal'] font-bold text-[#D4AF37] text-[11px] sm:text-xs tracking-wider flex items-center gap-1 shrink-0">
+              <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
+              <span>{language === 'ar' ? 'ابتسامة يسرى — دليلك الذكي' : 'YOUSRA SMILE'}</span>
             </span>
-            <span className="hidden md:inline text-[#FDFCFB]/50 text-[11px] border-r ltr:border-l ltr:border-r-0 border-[#FDFCFB]/10 px-3">
+            <span className="hidden lg:inline text-slate-400 text-[11px] border-r ltr:border-l ltr:border-r-0 border-slate-800 px-3 font-['Tajawal'] truncate">
               {t.affiliateDisclaimer}
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 font-mono-meta text-[11px] text-[#FDFCFB]/70">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Social Channels Pills (Shown on Tablet & Desktop) */}
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-['Tajawal'] font-bold">
               <a 
                 href="https://youtube.com" 
                 target="_blank" 
                 rel="noreferrer"
-                className="hover:text-red-400 transition-colors flex items-center gap-1"
-                title="YouTube Channel"
+                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
+                title="قناة يوتيوب"
               >
-                <Youtube className="w-3.5 h-3.5 text-red-500" />
-                <span>YOUTUBE</span>
+                <Youtube className="w-3 h-3 text-red-500" />
+                <span>{language === 'ar' ? 'يوتيوب' : 'YouTube'}</span>
               </a>
               <a 
                 href="https://tiktok.com" 
                 target="_blank" 
                 rel="noreferrer"
-                className="hover:text-pink-400 transition-colors flex items-center gap-1"
-                title="TikTok Account"
+                className="bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 border border-pink-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
+                title="حساب تيك توك"
               >
-                <Video className="w-3.5 h-3.5 text-pink-400" />
-                <span>TIKTOK</span>
-              </a>
-              <a 
-                href="https://pinterest.com" 
-                target="_blank" 
-                rel="noreferrer"
-                className="hover:text-amber-400 transition-colors flex items-center gap-1"
-                title="Pinterest Boards"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <span>PINTEREST</span>
+                <Video className="w-3 h-3 text-pink-400" />
+                <span>{language === 'ar' ? 'تيك توك' : 'TikTok'}</span>
               </a>
             </div>
 
@@ -115,7 +110,7 @@ export const Header: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setCurrencyDropdownOpen(!currencyDropdownOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#111113] hover:bg-[#222] text-[#D4AF37] border border-[#D4AF37]/40 text-[10px] font-mono-meta transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-950/80 hover:bg-purple-900/80 text-[#D4AF37] border border-[#D4AF37]/50 text-[11px] font-['Tajawal'] font-bold transition-all cursor-pointer shadow-xs"
                 title={language === 'ar' ? 'اختر العملة' : 'Select Currency'}
                 id="currency-switcher-top"
               >
@@ -126,11 +121,11 @@ export const Header: React.FC = () => {
 
               {currencyDropdownOpen && (
                 <div 
-                  className="absolute left-0 sm:left-auto right-0 mt-1.5 w-48 bg-slate-900 border border-[#D4AF37]/30 rounded-xl shadow-2xl py-1.5 z-50 text-white animate-in fade-in zoom-in-95"
+                  className="absolute left-0 sm:left-auto right-0 mt-1.5 w-52 bg-slate-900 border border-[#D4AF37]/40 rounded-xl shadow-2xl py-1.5 z-50 text-white animate-in fade-in zoom-in-95 font-['Tajawal']"
                   onClick={() => setCurrencyDropdownOpen(false)}
                 >
-                  <div className="px-3 py-1 text-[10px] text-[#D4AF37] font-bold border-b border-slate-800 flex items-center gap-1">
-                    <Coins className="w-3 h-3" />
+                  <div className="px-3 py-1.5 text-xs text-[#D4AF37] font-bold border-b border-slate-800 flex items-center gap-1.5">
+                    <Coins className="w-3.5 h-3.5" />
                     <span>{language === 'ar' ? 'اختر عملة العرض' : 'Select Currency'}</span>
                   </div>
                   {Object.values(CURRENCIES).map((c) => (
@@ -142,14 +137,14 @@ export const Header: React.FC = () => {
                         setCurrencyDropdownOpen(false);
                       }}
                       className={`w-full text-right px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-800 transition-colors cursor-pointer ${
-                        currency === c.code ? 'bg-purple-950/60 text-amber-300 font-bold' : 'text-slate-300'
+                        currency === c.code ? 'bg-purple-900/60 text-amber-300 font-bold' : 'text-slate-300'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <span>{c.flag}</span>
                         <span>{language === 'ar' ? c.labelAr : c.labelEn}</span>
                       </div>
-                      <span className="font-bold text-[10px] text-amber-400 font-['Tajawal']">
+                      <span className="font-bold text-[11px] text-amber-400">
                         {language === 'ar' ? c.symbolAr : c.symbolEn}
                       </span>
                     </button>
@@ -161,11 +156,11 @@ export const Header: React.FC = () => {
             {/* Language Switcher Pill */}
             <button
               onClick={toggleLanguage}
-              className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#111113] hover:bg-[#222] text-[#D4AF37] border border-[#D4AF37]/40 text-[10px] font-mono-meta transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-950/80 hover:bg-purple-900/80 text-[#D4AF37] border border-[#D4AF37]/50 text-[11px] font-['Tajawal'] font-bold transition-all cursor-pointer shadow-xs"
               title={language === 'ar' ? 'Switch to English' : 'التحويل إلى العربية'}
               id="language-switcher-top"
             >
-              <Globe className="w-3 h-3 text-[#D4AF37]" />
+              <Globe className="w-3.5 h-3.5 text-[#D4AF37]" />
               <span>{t.switchLanguage}</span>
             </button>
           </div>
@@ -174,7 +169,7 @@ export const Header: React.FC = () => {
 
       {/* Main Navbar */}
       <div className="bg-[#111113]/90 text-[#FDFCFB]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-15 sm:h-16 flex items-center justify-between gap-3">
           
           {/* Logo & Personal Brand Identity */}
           <div 
@@ -193,11 +188,11 @@ export const Header: React.FC = () => {
               </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-serif-editorial text-white group-hover:text-[#D4AF37] transition-colors">
-                Yousra Smile
+              <span className="text-xl sm:text-2xl font-serif-editorial text-white group-hover:text-[#D4AF37] transition-colors font-['Tajawal']">
+                {language === 'ar' ? 'ابتسامة يسرى' : 'Yousra Smile'}
               </span>
               <span className="font-mono-meta text-[10px] text-[#D4AF37]">
-                {language === 'en' ? 'CURATED HOME TECH & REVIEWS' : 'أجهزة وخدمات المنزل العصري الذكية'}
+                {language === 'en' ? 'YOUSRA SMILE — HOME TECH' : 'ابتسامة يسرى — أجهزة ومراجعات المنزل الذكي'}
               </span>
             </div>
           </div>
@@ -254,6 +249,21 @@ export const Header: React.FC = () => {
               {favorites.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
                   {favorites.length}
+                </span>
+              )}
+            </button>
+
+            {/* Shopping Cart Button */}
+            <button
+              onClick={openCartModal}
+              className={`relative p-2.5 rounded-xl transition-colors text-slate-300 hover:bg-slate-800 border border-[#D4AF37]/30 bg-[#D4AF37]/10 hover:border-[#D4AF37]`}
+              title={language === 'ar' ? 'سلة التسوق' : 'Shopping Cart'}
+              id="cart-nav-btn"
+            >
+              <ShoppingBag className="w-5 h-5 text-[#D4AF37]" />
+              {cartTotalCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#D4AF37] text-black text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center shadow">
+                  {cartTotalCount}
                 </span>
               )}
             </button>

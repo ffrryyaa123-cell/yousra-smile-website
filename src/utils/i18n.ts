@@ -8,9 +8,9 @@ export const translations = {
     tagline: 'مراجعات وفيديوهات تسويق بالعمولة للمنزل العصري',
     affiliateBadge: 'روابط تسويق بالعمولة معتمدة',
     affiliateDisclaimer: 'دليلك الموثوق لأفضل أجهزة المنزل الذكي، المطبخ، والعناية الشخصية مع مراجعات يسرى!',
-    followMe: 'تابعيني على:',
+    followMe: 'تابعنا على:',
     commissionDisclosure: 'إفصاح العمولات',
-    searchPlaceholder: 'ابحثي عن منتج، علامة تجارية، أفكار فيديو...',
+    searchPlaceholder: 'ابحث عن منتج، علامة تجارية، أفكار فيديو...',
     home: 'الرئيسية',
     categories: 'الأقسام',
     allCategories: 'جميع الأقسام والمنتجات',
@@ -29,14 +29,14 @@ export const translations = {
     
     // Hero & Features
     heroTitle: 'أحدث منتجات ومراجعات يسرى سمايل',
-    heroSubtitle: 'فيديوهات مراجعة حقيقية، عروض حصرية، وصور منتجات تسويقية مختارة بعناية للمنزل والأناقة',
+    heroSubtitle: 'فيديوهات مراجعة حقيقية، عروض حصرية، وصور منتجات تسويقية مختارة بعناية للمنزل والعناية الشخصية للجميع',
     watchVideoReviews: 'مشاهدة فيديوهات المراجعة',
     browseDeals: 'تصفح أفضل العروض',
     featuredProducts: 'منتجات مختارة مع مراجعة بالفيديو',
     topSelling: 'الأكثر مبيعاً ورواجاً',
     latestAdded: 'أحدث المنتجات المضافة',
     videoReelsTitle: 'فيديوهات التسويق والمراجعات السريعة',
-    videoReelsSubtitle: 'استكشفي تجارب حقيقية وفيديوهات تيك توك ويوتيوب للمنتجات قبل الشراء',
+    videoReelsSubtitle: 'استكشف تجارب حقيقية وفيديوهات تيك توك ويوتيوب للمنتجات قبل الشراء',
     viewAllVideos: 'عرض كل الفيديوهات',
     photosGalleryTitle: 'معرض صور التسويق والتفاصيل',
     
@@ -66,7 +66,7 @@ export const translations = {
     addCompare: 'مقارنة',
     removeCompare: 'إزالة من المقارنة',
     discount: 'خصم',
-    savePrice: 'وفري',
+    savePrice: 'توفير',
     currency: 'رس',
     rating: 'تقييم',
     views: 'مشاهدة',
@@ -75,8 +75,8 @@ export const translations = {
     
     // Video Modal & Reel Player
     videoPlayerTitle: 'مراجعة الفيديو الحصرية',
-    buyNowAmazon: 'اطلبي الآن عبر Amazon',
-    buyNowAliExpress: 'اطلبي الآن عبر AliExpress',
+    buyNowAmazon: 'شراء الآن عبر Amazon',
+    buyNowAliExpress: 'شراء الآن عبر AliExpress',
     viewProductDetails: 'عرض تفاصيل المنتج الكاملة',
     videoPlatformYouTube: 'YouTube',
     videoPlatformTikTok: 'TikTok Shorts',
@@ -84,15 +84,15 @@ export const translations = {
     
     // Compare
     compareTitle: 'مقارنة المنتجات المختارة',
-    compareSubtitle: 'قارني بين المواصفات والأسعار والميزات لتحددي الخيار الأنسب لكِ',
+    compareSubtitle: 'قارن بين المواصفات والأسعار والميزات لتحدد الخيار الأنسب لك',
     clearCompareList: 'تفريغ القائمة',
-    noCompareItems: 'لم تكتمل إضافة منتجات للمقارنة بعد. قومي بالضغط على زر المقارنة في أي منتج.',
+    noCompareItems: 'لم تكتمل إضافة منتجات للمقارنة بعد. قم بالضغط على زر المقارنة في أي منتج.',
     specifications: 'المواصفات الفنية',
     features: 'أبرز المميزات',
 
     // Admin Panel
     adminTitle: 'لوحة إدارة المنتجات والفيديوهات التسويقية',
-    adminSubtitle: 'أضيفي وعدّلي المنتجات، روابط التسويق بالعمولة، فيديوهات المراجعات وصور العرض',
+    adminSubtitle: 'أضف وعدّل المنتجات، روابط التسويق بالعمولة، فيديوهات المراجعات وصور العرض بكل سهولة',
     addNewProduct: 'إضافة منتج جديد',
     editProduct: 'تعديل المنتج',
     productTitleAr: 'اسم المنتج بالعربية',
@@ -113,15 +113,15 @@ export const translations = {
     featuresList: 'المميزات الرئيسية (ميزة في كل سطر)',
     saveProduct: 'حفظ المنتج',
     cancel: 'إلغاء',
-    deleteConfirm: 'هل أنتِ متأكدة من حذف هذا المنتج؟',
+    deleteConfirm: 'هل أنت متأكد من حذف هذا المنتج؟',
     resetToDefaultCatalog: 'إعادة ضبط القائمة للافتراضي',
 
     // Footer & Legals
-    footerTagline: 'منصة مراجعات يسرى سمايل المتخصصة في التسويق بالعمولة للمستلزمات المنزلية الذكية والأجهزة والأناقة',
+    footerTagline: 'منصة مراجعات يسرى سمايل المتخصصة في التسويق بالعمولة للمستلزمات المنزلية الذكية والأجهزة والعناية الشخصية للجميع',
     quickLinks: 'روابط سريعة',
     legalInfo: 'معلومات قانونية وإفصاحات',
     copyrights: 'جميع الحقوق محفوظة © 2026 يسرى سمايل Yousra Smile',
-    affiliateDisclosureNotice: 'ملاحظة: هذا الموقع يحتوي على روابط تسويق بالعمولة. عند الشراء عبر هذه الروابط قد نحصل على عمولة بسيطة دون أي تكلفة إضافية عليكِ.'
+    affiliateDisclosureNotice: 'ملاحظة: هذا الموقع يحتوي على روابط تسويق بالعمولة. عند الشراء عبر هذه الروابط قد نحصل على عمولة بسيطة دون أي تكلفة إضافية عليك.'
   },
   en: {
     // Header & Nav

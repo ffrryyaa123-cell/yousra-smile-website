@@ -78,11 +78,11 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
                     <h4 className="text-sm font-bold text-white line-clamp-1">{linkedProduct.titleAr}</h4>
                     <div className="flex items-baseline gap-2 mt-0.5">
                       <span className="text-base font-black text-emerald-400 font-['Tajawal']">
-                        أفضل سعر: {linkedProduct.discountPrice} {linkedProduct.currency}
+                        أفضل سعر: {formatPrice(linkedProduct.discountPrice)}
                       </span>
                       {linkedProduct.originalPrice > linkedProduct.discountPrice && (
                         <span className="text-xs text-slate-500 line-through">
-                          {linkedProduct.originalPrice} {linkedProduct.currency}
+                          {formatPrice(linkedProduct.originalPrice)}
                         </span>
                       )}
                     </div>

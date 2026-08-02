@@ -80,7 +80,7 @@ export const AdminPage: React.FC = () => {
     if (passcode === 'yousra2026' || passcode === '1234' || passcode === '') {
       setIsUnlocked(true);
     } else {
-      alert('كلمة المرور غير صحيحة! جرّبي: yousra2026');
+      alert('كلمة المرور غير صحيحة! جرب: yousra2026');
     }
   };
 
@@ -99,7 +99,7 @@ export const AdminPage: React.FC = () => {
       youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
       tiktokUrl: '',
       pinterestUrl: '',
-      amazonUrl: 'https://www.amazon.sa/dp/EXAMPLE?tag=yousrasmile-21',
+      amazonUrl: 'https://www.amazon.com/dp/EXAMPLE?tag=yousrasmile-20',
       aliexpressUrl: 'https://s.click.aliexpress.com/e/EXAMPLE',
       originalPrice: 1200,
       discountPrice: 899,
@@ -311,6 +311,46 @@ export const AdminPage: React.FC = () => {
         <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
           <span className="text-xs text-slate-400 block font-bold">نقرات الأفلييت المحاكاة</span>
           <span className="text-2xl font-black text-blue-500 font-['Tajawal']">1,480+</span>
+        </div>
+      </div>
+
+      {/* Guide Box for Adding Products & Videos */}
+      <div className="bg-gradient-to-br from-amber-500/10 via-purple-900/20 to-slate-900 border border-amber-500/30 rounded-3xl p-6 space-y-4 text-slate-100 shadow-md">
+        <div className="flex items-center gap-2.5 text-amber-400 font-bold text-base">
+          <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
+          <h2 className="font-['Tajawal'] text-lg">دليل استخدام المنصة وإضافة المنتجات والفيديوهات (لكل مسوّق)</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs leading-relaxed text-slate-200">
+          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
+              <ShoppingBag className="w-4 h-4 text-amber-400" />
+              <span>1. كيف أضيف منتجاً جديداً؟</span>
+            </div>
+            <p>
+              اضغط على زر <strong className="text-purple-300">"إضافة منتج جديد"</strong> بالأعلى. أدخل اسم المنتج، رابط الصورة، السعر، ورابط الأفلييت الخاص بك في Amazon أو AliExpress. سيظهر المنتج فوراً في المتجر مع أزرار الشراء المباشرة.
+            </p>
+          </div>
+
+          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
+              <PlaySquare className="w-4 h-4 text-red-400" />
+              <span>2. كيف أضيف فيديو مراجعة؟</span>
+            </div>
+            <p>
+              يمكنك إضافة رابط فيديو يوتيوب أو تيك توك أو بنترست عند إضافة/تعديل أي منتج، أو اضغط على <strong className="text-purple-300">"استيراد فيديو مراجعة جديد"</strong> بالأسفل لإظهاره في قسم الفيديوهات.
+            </p>
+          </div>
+
+          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
+              <Share2 className="w-4 h-4 text-emerald-400" />
+              <span>3. هل يمكن لأي شخص استخدامه للتسويق؟</span>
+            </div>
+            <p>
+              <strong className="text-emerald-300">نعم، بالكامل!</strong> المنصة مصممة لتكون عامة وجاهزة لأي شخص يعمل في التسويق بالعمولة. يمكنك وضع روابطك الخاصة، تعديل الكتالوج، وتخصيص المتجر كما تحب.
+            </p>
+          </div>
         </div>
       </div>
 

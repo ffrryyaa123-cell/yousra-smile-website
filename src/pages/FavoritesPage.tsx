@@ -1,39 +1,70 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { ProductCard } from '../components/ProductCard';
-import { Heart, Trash2, ArrowLeft, Bell, Mail, CheckCircle2, TrendingDown, ExternalLink } from 'lucide-react';
+import { Heart, Trash2, ArrowLeft, Bell, Mail, ShoppingBag, ShoppingCart, ArrowRight } from 'lucide-react';
 
 export const FavoritesPage: React.FC = () => {
-  const { products, favorites, toggleFavorite, setPage, priceAlerts, removePriceAlert, openProductDetail, language, formatPrice } = useApp();
+  const { 
+    products, 
+    favorites, 
+    toggleFavorite, 
+    setPage, 
+    priceAlerts, 
+    removePriceAlert, 
+    openProductDetail, 
+    addToCart,
+    openCartModal,
+    language, 
+    formatPrice 
+  } = useApp();
 
   const favProducts = products.filter(p => favorites.includes(p.id));
+
+  const addAllFavsToCart = () => {
+    favProducts.forEach(p => addToCart(p.id));
+    openCartModal();
+  };
 
   return (
     <div className="space-y-10 pb-16">
       
       {/* Header */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
+      <div className="bg-[#111113] text-[#FDFCFB] rounded-3xl p-6 sm:p-8 border border-[#D4AF37]/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
         <div>
           <div className="flex items-center gap-2 text-red-500 text-xs font-bold mb-1">
             <Heart className="w-4 h-4 fill-red-500" />
-            قائمة المفضلة الشخصية
+            <span>{language === 'ar' ? 'قائمة المفضلات الشخصية للمتسوق' : 'Shopper Personal Favorites'}</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-            المنتجات المحفوظة في المفضلة ({favProducts.length})
+          <h1 className="text-2xl sm:text-3xl font-black font-heading text-white">
+            {language === 'ar' 
+              ? `المنتجات المحفوظة في المفضلة (${favProducts.length})` 
+              : `Saved Favorite Products (${favProducts.length})`}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            جميع المنتجات التي قمتِ بحفظها لمشاهدتها أو شرائها لاحقاً عبر روابط الأفلييت.
+          <p className="text-xs text-slate-400 mt-1">
+            {language === 'ar'
+              ? 'جميع المنتجات التي قمتِ بحفظها لمشاهدتها أو إضافتها للسلة وشراؤها لاحقاً.'
+              : 'All saved items for later review, cart addition, and shopping.'}
           </p>
         </div>
 
         {favProducts.length > 0 && (
-          <button
-            onClick={() => favorites.forEach(id => toggleFavorite(id))}
-            className="px-4 py-2 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 hover:bg-red-100 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Trash2 className="w-4 h-4" />
-            مسح جميع المفضلة
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={addAllFavsToCart}
+              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-md"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span>{language === 'ar' ? 'إضافة كافة المفضلات للسلة' : 'Add All to Shopping Cart'}</span>
+            </button>
+
+            <button
+              onClick={() => favorites.forEach(id => toggleFavorite(id))}
+              className="px-4 py-2.5 rounded-xl bg-red-950/40 text-red-400 border border-red-800/40 hover:bg-red-900/60 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>{language === 'ar' ? 'مسح المفضلة' : 'Clear Favorites'}</span>
+            </button>
+          </div>
         )}
       </div>
 

@@ -6,6 +6,7 @@ import {
   X, 
   Star, 
   ShoppingBag, 
+  ShoppingCart,
   ExternalLink, 
   Heart, 
   Scale, 
@@ -58,7 +59,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
     openPriceAlertModal,
     isSubscribedToAlert,
     logAffiliateClick,
-    formatPrice
+    formatPrice,
+    addToCart,
+    isInCart,
+    openCartModal,
+    language,
+    t
   } = useApp();
 
   if (!product) return null;
@@ -71,6 +77,33 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
   const isFav = favorites.includes(product.id);
   const isCompared = compareList.includes(product.id);
+
+  // User Star Rating System
+  const LOCAL_RATINGS_KEY = 'yousrasmile_product_ratings_v1';
+  const [userRatings, setUserRatings] = useState<Record<string, number>>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_RATINGS_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [hoverStar, setHoverStar] = useState<number>(0);
+  const [ratingSubmittedMsg, setRatingSubmittedMsg] = useState(false);
+
+  const currentUserRating = userRatings[product.id] || 0;
+
+  const handleRateProduct = (rating: number) => {
+    const updated = { ...userRatings, [product.id]: rating };
+    setUserRatings(updated);
+    try {
+      localStorage.setItem(LOCAL_RATINGS_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Error saving rating:', e);
+    }
+    setRatingSubmittedMsg(true);
+    setTimeout(() => setRatingSubmittedMsg(false), 3500);
+  };
 
   const productUrl = window.location.href;
   const shareTitle = product.titleAr || product.titleEn;
@@ -242,7 +275,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 {product.discountPercent > 0 && (
-                  <span className="absolute top-4 right-4 bg-red-600 text-white font-extrabold text-sm px-3 py-1 rounded-xl shadow-md z-10">
+                  <span className="absolute top-4 right-4 bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-base px-4 py-2 rounded-2xl shadow-xl border border-red-400/40 tracking-wider z-10 flex items-center gap-1.5">
                     خصم {product.discountPercent}%
                   </span>
                 )}
@@ -324,36 +357,90 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 <p className="text-xs text-slate-400 mb-3">{product.titleEn}</p>
 
                 {/* Rating & Views */}
-                <div className="flex items-center gap-4 text-xs mb-4">
+                <div className="flex items-center gap-4 text-xs mb-3">
                   <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 text-amber-600 px-2.5 py-1 rounded-lg font-bold">
                     <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                     <span>{product.rating}</span>
-                    <span className="text-slate-400 font-normal">({product.reviewCount} تقييم)</span>
+                    <span className="text-slate-400 font-normal">({product.reviewCount + (currentUserRating > 0 ? 1 : 0)} تقييم)</span>
                   </div>
                   <span className="text-slate-400">👁 {product.viewsCount} مشاهدة</span>
                 </div>
 
+                {/* Interactive User Star Rating Picker */}
+                <div className="bg-[#18181B] border border-[#D4AF37]/30 p-3.5 rounded-2xl mb-4 space-y-2 shadow-inner">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      <span>{language === 'ar' ? 'تقييمك للمنتج (Star Rating):' : 'Rate this Product:'}</span>
+                    </span>
+                    {currentUserRating > 0 && (
+                      <span className="text-[11px] text-emerald-400 font-extrabold bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-500/40">
+                        {language === 'ar' ? `تقييمك: ${currentUserRating} من 5 نجوم ★` : `Your Rating: ${currentUserRating}/5 ★`}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 pt-1">
+                    {[1, 2, 3, 4, 5].map((star) => {
+                      const active = (hoverStar || currentUserRating) >= star;
+                      return (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => handleRateProduct(star)}
+                          onMouseEnter={() => setHoverStar(star)}
+                          onMouseLeave={() => setHoverStar(0)}
+                          className="p-1 rounded-lg hover:bg-slate-800 transition-all transform hover:scale-115 cursor-pointer"
+                          title={`تقييم ${star} نجوم`}
+                        >
+                          <Star 
+                            className={`w-6 h-6 transition-colors ${
+                              active 
+                                ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]' 
+                                : 'text-slate-600 fill-slate-800/80'
+                            }`} 
+                          />
+                        </button>
+                      );
+                    })}
+                    <span className="text-[11px] text-slate-400 mr-2 ltr:ml-2">
+                      {hoverStar > 0 
+                        ? (language === 'ar' ? `${hoverStar} من 5 نجوم` : `${hoverStar}/5 Stars`) 
+                        : (currentUserRating > 0 
+                          ? (language === 'ar' ? 'انقري لتعديل تقييمك' : 'Click to change rating') 
+                          : (language === 'ar' ? 'اضغطي النجوم للتقييم' : 'Click stars to rate'))}
+                    </span>
+                  </div>
+
+                  {ratingSubmittedMsg && (
+                    <div className="text-[11px] text-emerald-400 font-bold flex items-center gap-1.5 animate-fadeIn pt-1 border-t border-slate-800">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <span>{language === 'ar' ? 'شكراً لكِ! تم حفظ تقييمك للمنتج بنجاح.' : 'Thank you! Your product rating has been saved successfully.'}</span>
+                    </div>
+                  )}
+                </div>
+
                 {/* Price Display */}
-                <div className="bg-purple-50/70 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/60 p-4 rounded-2xl mb-4">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 block mb-1">السعر الحالي عبر روابط التسويق بالعمولة:</span>
+                <div className="bg-slate-900 border border-amber-500/30 p-4 rounded-2xl mb-4 shadow-md">
+                  <span className="text-xs font-semibold text-slate-300 block mb-1">السعر الحالي عبر روابط التسويق بالعمولة:</span>
                   <div className="flex items-baseline gap-3 flex-wrap">
-                    <span className="text-3xl font-black text-purple-700 dark:text-purple-300 font-['Tajawal']">
+                    <span className="text-3xl font-black text-amber-300 font-['Cairo'] tracking-tight">
                       {formatPrice(product.discountPrice)}
                     </span>
                     {product.originalPrice > product.discountPrice && (
-                      <span className="text-sm text-slate-400 line-through">
+                      <span className="text-sm text-slate-400 font-medium line-through">
                         {formatPrice(product.originalPrice)}
                       </span>
                     )}
                     {product.discountPercent > 0 && (
-                      <span className="text-xs font-bold text-red-600 dark:text-red-400">
+                      <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/30">
                         وفرت {formatPrice(product.originalPrice - product.discountPrice)}!
                       </span>
                     )}
                   </div>
                 </div>
 
-                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
+                <p className="text-sm sm:text-base text-slate-100 leading-relaxed mb-4 font-normal">
                   {product.description}
                 </p>
 
@@ -426,6 +513,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     </div>
                   </button>
                 </div>
+
+                {/* Shopper Cart Button in Modal */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    addToCart(product.id);
+                    openCartModal();
+                  }}
+                  className="w-full py-3 px-4 rounded-2xl bg-[#D4AF37]/10 hover:bg-[#D4AF37]/20 border border-[#D4AF37]/40 text-[#D4AF37] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                >
+                  <ShoppingCart className="w-4 h-4 text-[#D4AF37]" />
+                  <span>
+                    {isInCart(product.id)
+                      ? (language === 'ar' ? 'المنتج موجود بالسلة — عرض سلة المشتريات' : 'Item in Cart — Open Cart')
+                      : (language === 'ar' ? 'إضافة إلى سلة المشتريات للمتسوق' : 'Add to Shopper Cart')}
+                  </span>
+                </button>
 
                 <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
                   <div className="flex items-center gap-1">
@@ -578,21 +682,21 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
             {/* Tab 3: Specs Table */}
             {activeTab === 'specs' && (
-              <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
-                <table className="w-full text-right text-xs text-slate-700 dark:text-slate-300">
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    <tr className="bg-slate-50 dark:bg-slate-800/50">
-                      <td className="p-3 font-bold text-slate-900 dark:text-white w-1/3">العلامة التجارية</td>
-                      <td className="p-3 font-semibold">{product.brand}</td>
+              <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900">
+                <table className="w-full text-right text-xs sm:text-sm text-slate-100">
+                  <tbody className="divide-y divide-slate-800">
+                    <tr className="bg-slate-800/80">
+                      <td className="p-3.5 font-bold text-amber-300 w-1/3">العلامة التجارية</td>
+                      <td className="p-3.5 font-semibold text-white">{product.brand}</td>
                     </tr>
                     <tr>
-                      <td className="p-3 font-bold text-slate-900 dark:text-white">القسم</td>
-                      <td className="p-3">{product.category} ({product.subcategory})</td>
+                      <td className="p-3.5 font-bold text-amber-300">القسم</td>
+                      <td className="p-3.5 text-slate-200">{product.category} ({product.subcategory})</td>
                     </tr>
                     {product.specs && Object.entries(product.specs).map(([key, value], idx) => (
-                      <tr key={idx} className={idx % 2 === 0 ? 'bg-slate-50 dark:bg-slate-800/50' : ''}>
-                        <td className="p-3 font-bold text-slate-900 dark:text-white">{key}</td>
-                        <td className="p-3">{value}</td>
+                      <tr key={idx} className={idx % 2 === 0 ? 'bg-slate-800/50' : 'bg-slate-900'}>
+                        <td className="p-3.5 font-bold text-slate-200">{key}</td>
+                        <td className="p-3.5 font-medium text-white">{value}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -1,4 +1,5 @@
 import React from 'react';
+import smartHomeBanner from '../assets/images/smart_home_banner_1785693287624.jpg';
 import { useApp } from '../context/AppContext';
 import { HeroBanner } from '../components/HeroBanner';
 import { ProductCard } from '../components/ProductCard';
@@ -15,9 +16,20 @@ import {
   TrendingUp,
   Tag,
   ThumbsUp,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Target,
+  Eye,
+  HeartHandshake,
+  ShoppingBag,
+  Video,
+  Layers,
+  Globe,
+  ArrowRight,
+  ExternalLink,
+  ChevronLeft
 } from 'lucide-react';
 import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
+import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.jpg';
 
 export const HomePage: React.FC = () => {
   const { 
@@ -36,29 +48,88 @@ export const HomePage: React.FC = () => {
   const topSellingProducts = products.filter(p => p.isTopSelling).slice(0, 6);
 
   return (
-    <div className="space-y-16 pb-20 text-[#FDFCFB]">
+    <div className="space-y-4 sm:space-y-6 pb-10 text-[#FDFCFB]">
       
-      {/* Design Variation: Editorial Magazine Header Hero */}
-      <section className="text-center pt-6 pb-2 max-w-5xl mx-auto space-y-6">
-        <div className="font-mono-meta text-[#D4AF37] tracking-widest text-xs uppercase">
-          [ {language === 'en' ? 'THE FUTURE OF HOME TECHNOLOGY' : 'تكنولوجيا المنزل الذكي — مراجعات موثوقة'} ]
+      {/* Top Prominent Brand Hero Card with Smart Home Banner Image */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#1d0a33] via-[#0f071a] to-[#0a0412] border border-[#D4AF37]/45 rounded-2xl p-3.5 sm:p-5 shadow-2xl">
+        <div className="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        {/* Top Smart Home Visual Banner Image */}
+        <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-xl overflow-hidden mb-3 border border-[#D4AF37]/40 shadow-xl group">
+          <img 
+            src={smartHomeBanner} 
+            alt="Smart Home & Modern Appliances" 
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0f071a] via-[#0f071a]/40 to-transparent"></div>
+          
+          <div className="absolute bottom-3 right-3 ltr:left-3 ltr:right-auto bg-slate-950/80 backdrop-blur-md border border-amber-400/40 px-3 py-1 rounded-lg text-amber-300 text-[11px] font-bold font-['Tajawal'] flex items-center gap-1.5 shadow-lg">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>{language === 'en' ? 'Smart Home & Modern Appliances Guide' : 'دليل الأجهزة المنزلية الحديثة والذكية'}</span>
+          </div>
         </div>
-        <h1 className="font-serif-editorial text-5xl sm:text-7xl md:text-9xl text-white font-normal leading-none tracking-tight">
-          Yousra Smile
-        </h1>
-        <p className="text-sm sm:text-base md:text-lg text-[#FDFCFB]/70 max-w-2xl mx-auto font-light leading-relaxed">
-          {language === 'en' 
-            ? 'Curated smart devices, modern home essentials, and honest affiliate reviews. Transform your daily lifestyle with verified recommendations.'
-            : 'مراجعات الأجهزة الذكية والمنزل العصري بلمسة من الفخامة والصدق. ننتقي لك الأفضل لنغير نمط حياتك اليومي.'}
-        </p>
+
+        <div className="relative z-10 max-w-4xl mx-auto space-y-2.5 text-center">
+          
+          <div className="inline-flex items-center gap-1.5 bg-amber-500/10 text-[#D4AF37] border border-amber-500/30 px-3 py-0.5 rounded-full text-[11px] font-bold font-['Tajawal'] tracking-wider">
+            <Sparkles className="w-3 h-3 text-amber-400" />
+            <span>{language === 'en' ? 'THE FUTURE OF HOME TECHNOLOGY' : 'تكنولوجيا المنزل الذكي — مراجعات موثوقة'}</span>
+          </div>
+
+          {/* Brand Header: Logo + Title */}
+          <div className="flex flex-col md:flex-row items-center justify-center gap-3 sm:gap-5 py-0.5">
+            {/* Enlarged Crisp Logo Avatar (First child = Right side in RTL) */}
+            <div className="relative group shrink-0">
+              <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 via-purple-500 to-amber-500 blur-md opacity-85 group-hover:opacity-100 transition duration-500"></div>
+              <div className="relative w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden border-3 border-[#D4AF37] shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-slate-950 transition-transform duration-500 hover:scale-105">
+                <img 
+                  src={logoImg} 
+                  alt={language === 'ar' ? 'ابتسامة يسرى Logo' : 'Yousra Smile Logo'} 
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="absolute bottom-0.5 right-0.5 bg-amber-400 text-slate-950 p-1.5 rounded-full shadow-lg border-2 border-slate-950 font-bold" title="Verified Creator">
+                <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+              </span>
+            </div>
+
+            {/* Prominent Golden Title Text */}
+            <div className="text-center md:text-right rtl:md:text-right ltr:md:text-left space-y-1">
+              <h1 className={`text-4xl sm:text-6xl md:text-[68px] font-black leading-tight tracking-tight bg-gradient-to-r from-amber-200 via-amber-400 to-amber-300 bg-clip-text text-transparent drop-shadow-lg ${
+                language === 'ar' ? "font-['Tajawal']" : "font-serif-editorial"
+              }`}>
+                {language === 'ar' ? 'ابتسامة يسرى' : 'Yousra Smile'}
+              </h1>
+            </div>
+          </div>
+
+          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mx-auto font-normal leading-normal font-['Tajawal']">
+            {language === 'en' 
+              ? 'Smart devices, modern home essentials, and honest affiliate recommendations. We select the best for you to transform your daily lifestyle.'
+              : 'الأجهزة الذكية والمنزل العصري بلمسة من الفخامة والصدق. ننتقي لك الأفضل لنغير نمط حياتك اليومي.'}
+          </p>
+        </div>
       </section>
+
+      {/* Daily Deals Notice Line above Product Cards */}
+      <div className="bg-gradient-to-r from-amber-500/15 via-purple-950/80 to-amber-500/15 border border-amber-500/40 rounded-xl p-2.5 sm:p-3 text-center text-xs font-bold text-amber-200 font-['Tajawal'] flex items-center justify-center gap-2 shadow-lg backdrop-blur-md">
+        <span className="text-amber-400 text-sm">🔥</span>
+        <span>
+          {language === 'en' 
+            ? 'Top deals are updated daily from Amazon & AliExpress; prices may change based on availability.' 
+            : 'يتم تحديث أفضل العروض يوميًا من Amazon وAliExpress، وقد تتغير الأسعار حسب التوفر.'}
+        </span>
+      </div>
 
       {/* Hero Banner Section */}
       <HeroBanner />
 
       {/* Design Variation: Editorial Product Strip */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between border-b border-[#FDFCFB]/10 pb-4">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between border-b border-[#FDFCFB]/10 pb-2">
           <div className="font-mono-meta text-xs text-[#D4AF37]">
             // {language === 'en' ? 'EDITORIAL SELECTIONS' : 'اختيارات التحرير الفاخرة'}
           </div>
@@ -70,20 +141,20 @@ export const HomePage: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#FDFCFB]/10 border border-[#FDFCFB]/10 rounded-2xl overflow-hidden shadow-2xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#FDFCFB]/10 border border-[#FDFCFB]/10 rounded-2xl overflow-hidden shadow-xl">
           {editorialStripProducts.map((prod, idx) => {
             const title = language === 'en' ? (prod.titleEn || prod.titleAr) : prod.titleAr;
             return (
               <div 
                 key={prod.id}
                 onClick={() => openProductDetail(prod)}
-                className="group bg-[#111113] hover:bg-[#1A1A1C] p-6 transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                className="group bg-[#111113] hover:bg-[#1A1A1C] p-3.5 transition-all duration-300 cursor-pointer flex flex-col justify-between"
               >
                 <div>
-                  <div className="font-mono-meta text-[11px] text-[#D4AF37] mb-3">
+                  <div className="font-mono-meta text-[11px] text-[#D4AF37] mb-1.5">
                     {prod.brand.toUpperCase()} / [0{idx + 1}]
                   </div>
-                  <div className="w-full aspect-square bg-[#1A1A1C] rounded-xl overflow-hidden mb-5 border border-[#FDFCFB]/5">
+                  <div className="w-full aspect-square bg-[#1A1A1C] rounded-xl overflow-hidden mb-3 border border-[#FDFCFB]/5">
                     <img 
                       src={prod.image} 
                       alt={title}
@@ -91,11 +162,11 @@ export const HomePage: React.FC = () => {
                       className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                     />
                   </div>
-                  <h3 className="font-serif-editorial text-xl text-white group-hover:text-[#D4AF37] transition-colors mb-2 line-clamp-2 leading-snug">
+                  <h3 className="font-serif-editorial text-lg text-white group-hover:text-[#D4AF37] transition-colors mb-1 line-clamp-2 leading-snug">
                     {title}
                   </h3>
                 </div>
-                <div className="font-mono-meta text-xs text-[#FDFCFB]/60 pt-4 border-t border-[#FDFCFB]/10 flex justify-between items-center">
+                <div className="font-mono-meta text-xs text-[#FDFCFB]/60 pt-2 border-t border-[#FDFCFB]/10 flex justify-between items-center">
                   <span>Price: {formatPrice(prod.discountPrice)}</span>
                   <span className="text-[#D4AF37]">→</span>
                 </div>
@@ -106,42 +177,42 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Design Variation: High-Contrast Stats Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-3 border-t border-b border-[#FDFCFB]/10 my-8 py-2">
-        <div className="p-8 border-b md:border-b-0 md:border-l border-[#FDFCFB]/10 text-center md:text-right space-y-2">
-          <span className="font-serif-editorial text-5xl sm:text-6xl text-white block">124k</span>
+      <section className="grid grid-cols-1 md:grid-cols-3 border-t border-b border-[#FDFCFB]/10 my-4 py-1">
+        <div className="p-4 border-b md:border-b-0 md:border-l border-[#FDFCFB]/10 text-center md:text-right space-y-1">
+          <span className="font-serif-editorial text-4xl sm:text-5xl text-white block">124k</span>
           <span className="font-mono-meta text-xs text-[#D4AF37]">YouTube Community</span>
         </div>
-        <div className="p-8 border-b md:border-b-0 md:border-l border-[#FDFCFB]/10 text-center md:text-right space-y-2">
-          <span className="font-serif-editorial text-5xl sm:text-6xl text-white block">450k</span>
+        <div className="p-4 border-b md:border-b-0 md:border-l border-[#FDFCFB]/10 text-center md:text-right space-y-1">
+          <span className="font-serif-editorial text-4xl sm:text-5xl text-white block">450k</span>
           <span className="font-mono-meta text-xs text-[#D4AF37]">TikTok Reach</span>
         </div>
-        <div className="p-8 text-center md:text-right space-y-2">
-          <span className="font-serif-editorial text-5xl sm:text-6xl text-[#D4AF37] block">0%</span>
+        <div className="p-4 text-center md:text-right space-y-1">
+          <span className="font-serif-editorial text-4xl sm:text-5xl text-[#D4AF37] block">0%</span>
           <span className="font-mono-meta text-xs text-[#FDFCFB]/70">Fake Reviews Guarantee</span>
         </div>
       </section>
 
       {/* Category Grid Section */}
-      <section className="space-y-6">
+      <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-black text-white font-['Tajawal'] tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-white font-['Tajawal'] tracking-tight">
               {t.categories}
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              {language === 'en' ? 'Explore top rated products in smart home, kitchen, and personal care' : 'اختر القسم لاستكشاف منتجات المنزل الذكي والديكور والعناية بالمطبخ والمرأة'}
+            <p className="text-xs text-slate-400 mt-0.5">
+              {language === 'en' ? 'Explore top rated products in smart home, kitchen, and personal care' : 'اختر القسم لاستكشاف منتجات المنزل الذكي والديكور والعناية بالمطبخ والعناية الشخصية للجميع'}
             </p>
           </div>
           <button
             onClick={() => { setSelectedCategory('all'); setPage('products'); }}
-            className="text-xs sm:text-sm font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+            className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
           >
             {t.allCategories} ({CATEGORIES.length})
-            <ArrowLeft className="w-4 h-4 rtl:rotate-0 ltr:rotate-180" />
+            <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-0 ltr:rotate-180" />
           </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           {CATEGORIES.map(cat => {
             const count = products.filter(p => p.category === cat.id).length;
             const catName = language === 'en' ? cat.nameEn : cat.nameAr;
@@ -149,9 +220,9 @@ export const HomePage: React.FC = () => {
               <div
                 key={cat.id}
                 onClick={() => { setSelectedCategory(cat.id); setPage('products'); }}
-                className="group relative bg-slate-900/90 rounded-3xl p-4 border border-slate-800 hover:border-amber-400/60 shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer flex flex-col items-center text-center overflow-hidden"
+                className="group relative bg-slate-900/90 rounded-2xl p-2.5 border border-slate-800 hover:border-amber-400/60 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col items-center text-center overflow-hidden"
               >
-                <div className="w-full h-24 rounded-2xl overflow-hidden mb-3 bg-slate-800 relative border border-slate-700/40">
+                <div className="w-full h-20 rounded-xl overflow-hidden mb-2 bg-slate-800 relative border border-slate-700/40">
                   <img 
                     src={cat.image} 
                     alt={catName}
@@ -159,15 +230,15 @@ export const HomePage: React.FC = () => {
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
-                  <span className="absolute bottom-2 right-2 text-[10px] font-bold text-amber-300 bg-slate-950/80 px-2 py-0.5 rounded-md border border-slate-800 backdrop-blur-xs">
+                  <span className="absolute bottom-1 right-1 text-[9px] font-bold text-amber-300 bg-slate-950/80 px-1.5 py-0.5 rounded border border-slate-800 backdrop-blur-xs">
                     {count} {t.productsCount}
                   </span>
                 </div>
 
-                <h3 className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors font-['Tajawal']">
+                <h3 className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors font-['Tajawal']">
                   {catName}
                 </h3>
-                <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
+                <p className="text-[10px] text-slate-400 line-clamp-1">
                   {cat.subcategories.slice(0, 2).join(' • ')}
                 </p>
               </div>
@@ -177,20 +248,20 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Featured Deals Horizontal Section */}
-      <section className="bg-gradient-to-r from-purple-950 via-slate-900 to-slate-950 rounded-3xl p-6 sm:p-8 text-white space-y-6 shadow-2xl border border-purple-800/60 relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-red-600 rounded-2xl text-white shadow-lg animate-pulse">
-              <Flame className="w-6 h-6" />
+      <section className="bg-gradient-to-r from-purple-950 via-slate-900 to-slate-950 rounded-2xl p-4 sm:p-5 text-white space-y-4 shadow-xl border border-purple-800/60 relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-red-600 rounded-xl text-white shadow animate-pulse">
+              <Flame className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-bold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-full shadow">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[10px] font-bold bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full shadow">
                   {language === 'en' ? 'Discounts up to 40%' : 'خصومات تصل لـ 40%'}
                 </span>
-                <span className="text-xs text-slate-300">{language === 'en' ? 'Updated Today' : 'محدثة اليوم'}</span>
+                <span className="text-[11px] text-slate-300">{language === 'en' ? 'Updated Today' : 'محدثة اليوم'}</span>
               </div>
-              <h2 className="text-2xl font-black font-['Tajawal'] text-white">
+              <h2 className="text-xl font-black font-['Tajawal'] text-white">
                 {t.deals}
               </h2>
             </div>
@@ -198,14 +269,14 @@ export const HomePage: React.FC = () => {
 
           <button
             onClick={() => setPage('deals')}
-            className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 shadow-md transition-all shrink-0"
+            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1 shadow transition-all shrink-0"
           >
             {t.deals}
-            <ArrowLeft className="w-4 h-4 rtl:rotate-0 ltr:rotate-180" />
+            <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-0 ltr:rotate-180" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 relative z-10">
           {featuredProducts.slice(0, 4).map(prod => (
             <ProductCard key={prod.id} product={prod} />
           ))}
@@ -213,15 +284,15 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Yousra's Video Reviews Section */}
-      <section className="space-y-6">
+      <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-red-950/80 border border-red-800/60 text-red-400 rounded-2xl">
-              <PlaySquare className="w-6 h-6" />
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 bg-red-950/80 border border-red-800/60 text-red-400 rounded-xl">
+              <PlaySquare className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-xs font-bold text-red-400">{language === 'en' ? 'Live Interactive Reviews' : 'مراجعات تفاعلية حية'}</span>
-              <h2 className="text-2xl font-black text-white font-['Tajawal']">
+              <span className="text-[11px] font-bold text-red-400">{language === 'en' ? 'Live Interactive Reviews' : 'مراجعات تفاعلية حية'}</span>
+              <h2 className="text-xl font-black text-white font-['Tajawal']">
                 {t.videoReviews}
               </h2>
             </div>
@@ -229,21 +300,21 @@ export const HomePage: React.FC = () => {
 
           <button
             onClick={() => setPage('videos')}
-            className="text-xs sm:text-sm font-bold text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
+            className="text-xs font-bold text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
           >
             {language === 'en' ? `Watch All Videos (${SAMPLE_VIDEOS.length})` : `مشاهدة جميع الفيديوهات (${SAMPLE_VIDEOS.length})`}
-            <ArrowLeft className="w-4 h-4 rtl:rotate-0 ltr:rotate-180" />
+            <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-0 ltr:rotate-180" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
           {SAMPLE_VIDEOS.slice(0, 3).map(video => (
             <div
               key={video.id}
               onClick={() => openVideoModal(video)}
-              className="group bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden hover:shadow-2xl hover:border-purple-600 transition-all duration-300 cursor-pointer flex flex-col justify-between"
+              className="group bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden hover:shadow-xl hover:border-purple-600 transition-all duration-300 cursor-pointer flex flex-col justify-between"
             >
-              <div className="relative h-48 bg-slate-950 overflow-hidden">
+              <div className="relative h-40 bg-slate-950 overflow-hidden">
                 <img 
                   src={video.productImage} 
                   alt={video.title}
@@ -251,26 +322,26 @@ export const HomePage: React.FC = () => {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
                 />
                 <div className="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/20 transition-colors flex items-center justify-center">
-                  <div className="w-14 h-14 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                    <PlaySquare className="w-7 h-7 fill-white text-white" />
+                  <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                    <PlaySquare className="w-6 h-6 fill-white text-white" />
                   </div>
                 </div>
-                <span className="absolute bottom-3 right-3 bg-slate-950/90 text-white text-[10px] font-bold px-2 py-1 rounded-md border border-slate-700">
+                <span className="absolute bottom-2 right-2 bg-slate-950/90 text-white text-[10px] font-bold px-2 py-0.5 rounded border border-slate-700">
                   {video.duration}
                 </span>
-                <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase">
+                <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
                   {video.platform}
                 </span>
               </div>
 
-              <div className="p-4 space-y-2">
+              <div className="p-3 space-y-1.5">
                 <span className="text-[11px] font-bold text-amber-300">
                   {video.productTitle}
                 </span>
-                <h3 className="text-sm font-bold text-white line-clamp-2 group-hover:text-amber-400 transition-colors font-['Tajawal']">
+                <h3 className="text-xs font-bold text-white line-clamp-2 group-hover:text-amber-400 transition-colors font-['Tajawal']">
                   {video.title}
                 </h3>
-                <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
+                <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1.5 border-t border-slate-800">
                   <span>{video.views}</span>
                   <span>{video.date}</span>
                 </div>
@@ -281,80 +352,241 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Best Sellers Grid */}
-      <section className="space-y-6">
+      <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-950/80 border border-purple-800/60 text-amber-400 rounded-2xl">
-              <TrendingUp className="w-6 h-6" />
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 bg-purple-950/80 border border-purple-800/60 text-amber-400 rounded-xl">
+              <TrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-white font-['Tajawal']">
+              <h2 className="text-xl font-black text-white font-['Tajawal']">
                 {t.topSelling}
               </h2>
-              <p className="text-xs text-slate-400">{t.topSellingSubtitle}</p>
+              <p className="text-[11px] text-slate-400">{t.topSellingSubtitle}</p>
             </div>
           </div>
 
           <button
             onClick={() => setPage('products')}
-            className="text-xs sm:text-sm font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1"
+            className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1"
           >
             {t.viewAllProducts}
-            <ArrowLeft className="w-4 h-4 rtl:rotate-0 ltr:rotate-180" />
+            <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-0 ltr:rotate-180" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {topSellingProducts.map(prod => (
             <ProductCard key={prod.id} product={prod} />
           ))}
         </div>
       </section>
 
-      {/* Why Trust Yousra Smile Affiliate Section */}
-      <section className="bg-slate-900/80 rounded-3xl p-8 border border-slate-800 space-y-6">
+      {/* Mission, Vision & Values Cards Section */}
+      <section className="bg-slate-900/90 rounded-2xl p-4 sm:p-6 border border-[#D4AF37]/30 shadow-lg space-y-5">
         <div className="text-center max-w-2xl mx-auto space-y-2">
-          <div className="inline-flex items-center gap-2 bg-purple-950/80 text-amber-300 border border-purple-800/60 px-3.5 py-1 rounded-full text-xs font-bold">
+          <div className="inline-flex items-center gap-1.5 bg-amber-500/10 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>{language === 'ar' ? 'فلسفة يسرى سمايل' : 'Yousra Smile Philosophy'}</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-white font-['Tajawal'] tracking-tight">
+            {language === 'ar' ? 'رسالتنا، رؤيتنا وقيمنا الراسخة' : 'Our Mission, Vision & Values'}
+          </h2>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            {language === 'ar' 
+              ? 'نهدف إلى إحداث فارق حقيقي في عالم التسوق الإلكتروني من خلال توفير مراجعات ودراسات دقيقة للمنتجات قبل الشراء.' 
+              : 'Empowering smart shoppers with transparent recommendations and honest affiliate device reviews.'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
+          {/* Card 1: Mission */}
+          <div className="bg-[#18181B] p-4 rounded-xl border border-amber-500/20 space-y-2.5 hover:border-amber-400/60 transition-all duration-300 shadow group">
+            <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Target className="w-5 h-5 text-amber-400" />
+            </div>
+            <h3 style={{ color: '#f1eee9' }} className="text-base font-extrabold font-['Tajawal'] flex items-center gap-1.5">
+              <span>🎯</span>
+              <span>{language === 'ar' ? 'رسالتنا' : 'Our Mission'}</span>
+            </h3>
+            <p style={{ color: '#f8f4e9' }} className="text-xs leading-relaxed">
+              {language === 'ar' 
+                ? 'مساعدتك في اختيار أفضل الأجهزة والحلول المنزلية الذكية التي توفر وقتك ومالك وتلبي احتياجات منزلك وديكورك بدقة وسهولة.' 
+                : 'Helping you choose the best smart home appliances that save your time and budget.'}
+            </p>
+          </div>
+
+          {/* Card 2: Vision */}
+          <div className="bg-[#18181B] p-4 rounded-xl border border-purple-500/20 space-y-2.5 hover:border-purple-400/60 transition-all duration-300 shadow group">
+            <div className="w-10 h-10 rounded-lg bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <Eye className="w-5 h-5 text-purple-400" />
+            </div>
+            <h3 style={{ color: '#f1eee9' }} className="text-base font-extrabold font-['Tajawal'] flex items-center gap-1.5">
+              <span>⭐</span>
+              <span>{language === 'ar' ? 'رؤيتنا' : 'Our Vision'}</span>
+            </h3>
+            <p style={{ color: '#f8f4e9' }} className="text-xs leading-relaxed">
+              {language === 'ar' 
+                ? 'تقديم مراجعات حقيقية وتجارب صادقة وشفافة بعيداً عن الإعلانات المضللة، لنكون مرجعك الموثوق الأول للتسوق الذكي.' 
+                : 'Delivering honest, unbiased reviews to become your #1 trusted smart shopping reference.'}
+            </p>
+          </div>
+
+          {/* Card 3: Values */}
+          <div className="bg-[#18181B] p-4 rounded-xl border border-emerald-500/20 space-y-2.5 hover:border-emerald-400/60 transition-all duration-300 shadow group">
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+              <HeartHandshake className="w-5 h-5 text-emerald-400" />
+            </div>
+            <h3 style={{ color: '#f1eee9' }} className="text-base font-extrabold font-['Tajawal'] flex items-center gap-1.5">
+              <span>🤝</span>
+              <span>{language === 'ar' ? 'قيمنا' : 'Our Values'}</span>
+            </h3>
+            <ul style={{ color: '#f8f4e9' }} className="text-xs space-y-1.5">
+              <li className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>{language === 'ar' ? 'الشفافية المطلقة والإفصاح عن روابط الأفلييت.' : 'Total Transparency & Affiliate Disclosure.'}</span>
+              </li>
+              <li className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>{language === 'ar' ? 'المصداقية العالية في التجربة والتقييم.' : 'High Credibility & Authentic Hands-on Testing.'}</span>
+              </li>
+              <li className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>{language === 'ar' ? 'الانتقاء الدقيق لأعلى جودة مقابل السعر.' : 'Curating Quality for Maximum Value.'}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* Verified Numbers & Statistics Section */}
+      <section className="bg-gradient-to-br from-purple-950/80 via-slate-900 to-slate-950 rounded-3xl p-6 sm:p-10 border border-purple-800/60 shadow-2xl space-y-8">
+        <div className="text-center max-w-2xl mx-auto space-y-2">
+          <span className="text-xs font-bold text-amber-400 bg-amber-950/80 px-3 py-1 rounded-full border border-amber-500/40">
+            {language === 'ar' ? 'أرقام تتحدث عن المصداقية' : 'Platform Numbers & Trust Impact'}
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black text-white font-['Tajawal']">
+            {language === 'ar' ? 'يسرى سمايل بالأرقام والتغطية' : 'Yousra Smile Key Milestones'}
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-center">
+          <div className="bg-slate-900/90 border border-purple-800/50 p-5 rounded-2xl space-y-1">
+            <span className="text-3xl sm:text-5xl font-black text-amber-400 block font-heading">+100</span>
+            <span className="text-xs font-bold text-slate-200 block">{language === 'ar' ? 'مراجعة موثوقة' : 'Honest Reviews'}</span>
+            <span className="text-[11px] text-slate-400">{language === 'ar' ? 'تجارب حية وفيديوهات' : 'Hands-on video reviews'}</span>
+          </div>
+
+          <div className="bg-slate-900/90 border border-purple-800/50 p-5 rounded-2xl space-y-1">
+            <span className="text-3xl sm:text-5xl font-black text-purple-400 block font-heading">+500</span>
+            <span className="text-xs font-bold text-slate-200 block">{language === 'ar' ? 'منتج مفحوص ومصنف' : 'Curated Products'}</span>
+            <span className="text-[11px] text-slate-400">{language === 'ar' ? 'أجهزة ذكية ومنزلية' : 'Smart home & kitchen tech'}</span>
+          </div>
+
+          <div className="bg-slate-900/90 border border-purple-800/50 p-5 rounded-2xl space-y-1">
+            <span className="text-3xl sm:text-5xl font-black text-amber-400 block font-heading">Amazon</span>
+            <span className="text-xs font-bold text-slate-200 block">{language === 'ar' ? '& AliExpress' : '& AliExpress'}</span>
+            <span className="text-[11px] text-slate-400">{language === 'ar' ? 'مقارنات وأفضل الأسعار' : 'Verified affiliate links'}</span>
+          </div>
+
+          <div className="bg-slate-900/90 border border-purple-800/50 p-5 rounded-2xl space-y-1">
+            <span className="text-3xl sm:text-5xl font-black text-red-500 block font-heading">Social</span>
+            <span className="text-xs font-bold text-slate-200 block">{language === 'ar' ? 'YouTube & TikTok' : 'YouTube & TikTok'}</span>
+            <span className="text-[11px] text-slate-400">{language === 'ar' ? 'محتوى متجدد يومياً' : 'Daily video releases'}</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Trust Yousra Smile Affiliate Section */}
+      <section className="bg-slate-900/80 rounded-3xl p-6 sm:p-10 border border-slate-800 space-y-8">
+        <div className="text-center max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 bg-purple-950/80 text-amber-300 border border-purple-800/60 px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold">
             <ShieldCheck className="w-4 h-4 text-amber-400" />
             {t.whyTrustTag}
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white font-['Tajawal']">
+          <h2 className="text-3xl sm:text-4xl font-black text-white font-['Tajawal'] tracking-tight">
             {t.whyTrustTitle}
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
             {t.whyTrustSubtitle}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-          <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-purple-950/90 text-purple-400 border border-purple-800/60 flex items-center justify-center font-bold">
-              <Award className="w-6 h-6" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+          <div className="bg-slate-900/90 p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-4 shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-purple-950/90 text-purple-400 border border-purple-800/60 flex items-center justify-center font-bold">
+              <Award className="w-7 h-7" />
             </div>
-            <h3 className="text-base font-bold text-white font-['Tajawal']">{t.trustFeature1Title}</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <h3 className="text-lg sm:text-xl font-extrabold text-white font-['Tajawal']">{t.trustFeature1Title}</h3>
+            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
               {t.trustFeature1Desc}
             </p>
           </div>
 
-          <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-amber-950/90 text-amber-400 border border-amber-800/60 flex items-center justify-center font-bold">
-              <Tag className="w-6 h-6" />
+          <div className="bg-slate-900/90 p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-4 shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-amber-950/90 text-amber-400 border border-amber-800/60 flex items-center justify-center font-bold">
+              <Tag className="w-7 h-7" />
             </div>
-            <h3 className="text-base font-bold text-white font-['Tajawal']">{t.trustFeature2Title}</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <h3 className="text-lg sm:text-xl font-extrabold text-white font-['Tajawal']">{t.trustFeature2Title}</h3>
+            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
               {t.trustFeature2Desc}
             </p>
           </div>
 
-          <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-emerald-950/90 text-emerald-400 border border-emerald-800/60 flex items-center justify-center font-bold">
-              <ShieldCheck className="w-6 h-6" />
+          <div className="bg-slate-900/90 p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-4 shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-950/90 text-emerald-400 border border-emerald-800/60 flex items-center justify-center font-bold">
+              <ShieldCheck className="w-7 h-7" />
             </div>
-            <h3 className="text-base font-bold text-white font-['Tajawal']">{t.trustFeature3Title}</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <h3 className="text-lg sm:text-xl font-extrabold text-white font-['Tajawal']">{t.trustFeature3Title}</h3>
+            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
               {t.trustFeature3Desc}
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom Prominent Call-to-Action (CTA) Banner Button */}
+      <section className="relative overflow-hidden bg-gradient-to-r from-amber-500 via-amber-600 to-purple-800 text-slate-950 rounded-3xl p-8 sm:p-12 shadow-2xl text-center space-y-6 border-2 border-amber-300">
+        <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-xs"></div>
+        <div className="relative z-10 max-w-3xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-2 bg-slate-950 text-amber-300 px-4 py-1.5 rounded-full text-xs font-bold border border-amber-400/50 shadow-md">
+            <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
+            <span>{language === 'ar' ? 'جاهز لاكتشاف أفضل العروض؟' : 'Ready to discover top deals?'}</span>
+          </div>
+
+          <h2 
+            style={{ color: '#2A1800', fontSize: '28px', fontWeight: 'bold' }}
+            className="font-['Cairo'] leading-snug drop-shadow-sm"
+          >
+            {language === 'ar' ? 'تصفح جميع المنتجات الذكية والصفقات الحصرية الآن' : 'Explore All Smart Products & Exclusive Deals Now'}
+          </h2>
+
+          <p 
+            style={{ color: '#2A1800', fontSize: '18px', fontWeight: 'bold' }}
+            className="leading-relaxed max-w-2xl mx-auto font-['Cairo']"
+          >
+            {language === 'ar' 
+              ? 'مجموعة متكاملة من أجهزة المنزل الذكي، أدوات المطبخ العصري، العناية الشخصية والديكور بأسعار استثنائية وروابط شراء موثوقة.' 
+              : 'Discover curated smart home electronics, modern kitchen tools, and personal care tech with verified purchase links.'}
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <button
+              onClick={() => setPage('products')}
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-slate-950 hover:bg-slate-900 text-amber-300 font-black text-base flex items-center justify-center gap-3 shadow-2xl transition-all transform hover:scale-105 cursor-pointer border border-amber-400/50"
+            >
+              <ShoppingBag className="w-5 h-5 text-amber-400" />
+              <span>{language === 'ar' ? 'تصفح جميع المنتجات' : 'Browse All Products'}</span>
+              <ArrowLeft className="w-5 h-5 rtl:rotate-0 ltr:rotate-180 text-amber-400" />
+            </button>
+
+            <button
+              onClick={() => setPage('deals')}
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/90 hover:bg-white text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-xl transition-all transform hover:scale-105 cursor-pointer"
+            >
+              <Flame className="w-5 h-5 text-red-600" />
+              <span>{language === 'ar' ? 'شاهد أحدث المراجعات والصفقات' : 'View Latest Deals & Reviews'}</span>
+            </button>
           </div>
         </div>
       </section>

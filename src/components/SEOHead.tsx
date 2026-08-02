@@ -11,9 +11,9 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
   const { activePage, selectedProduct, language, activeStaticTab } = useApp();
 
   useEffect(() => {
-    let title = 'Yousra Smile | يسرى سمايل - مراجعات الأجهزة الذكية والمنزل العصري';
-    let description = 'موقع يسرى سمايل لمراجعات الأجهزة الذكية، المكانس الروبوتية، أدوات المطبخ العصرية، ومستلزمات المرأة والرياضة مع أفضل كوبونات وخصومات أمازون وعلي إكسبريس.';
-    let keywords = 'يسرى سمايل, Yousra Smile, مراجعات أجهزة, تسويق بالعمولة, أمازون, علي إكسبريس, مكانس روبوتية, قلاية هوائية, أجهزة منزلية ذكية';
+    let title = 'ابتسامة يسرى | Yousra Smile - مراجعات الأجهزة الذكية والمنزل العصري';
+    let description = 'موقع ابتسامة يسرى (Yousra Smile) لمراجعات الأجهزة الذكية، المكانس الروبوتية، أدوات المطبخ العصرية، ومستلزمات المرأة والرياضة مع أفضل كوبونات وخصومات أمازون وعلي إكسبريس.';
+    let keywords = 'ابتسامة يسرى, ابتسامة يسرا, Yousra Smile, مراجعات أجهزة, تسويق بالعمولة, أمازون, علي إكسبريس, مكانس روبوتية, قلاية هوائية, أجهزة منزلية ذكية';
     let ogType = 'website';
     let imageUrl = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=1200&q=80';
     let currentUrl = window.location.href;

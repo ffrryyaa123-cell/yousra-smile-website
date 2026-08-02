@@ -91,12 +91,19 @@ export interface FilterState {
   sortBy: 'latest' | 'rating' | 'best-selling' | 'highest-discount' | 'price-low' | 'price-high';
 }
 
+export interface CartItem {
+  productId: string;
+  quantity: number;
+  addedAt: string;
+}
+
 export type PageView = 
   | 'home' 
   | 'products' 
   | 'videos' 
   | 'deals' 
   | 'favorites' 
+  | 'cart'
   | 'compare' 
   | 'admin' 
   | 'about' 

@@ -7,11 +7,14 @@ import {
   Star, 
   PlaySquare, 
   ShoppingBag, 
+  ShoppingCart,
   ExternalLink,
   Eye,
   CheckCircle2,
   Sparkles,
-  Bell
+  Bell,
+  Check,
+  Share2
 } from 'lucide-react';
 
 interface ProductCardProps {
@@ -30,6 +33,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
     openPriceAlertModal,
     isSubscribedToAlert,
     logAffiliateClick,
+    addToCart,
+    isInCart,
+    openCartModal,
     language,
     formatPrice,
     t
@@ -38,6 +44,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
   const isFav = favorites.includes(product.id);
   const isCompared = compareList.includes(product.id);
   const isAlerted = isSubscribedToAlert(product.id);
+  const inCart = isInCart(product.id);
 
   const displayTitle = language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr;
   const displayDesc = language === 'en' ? (product.descriptionEn || product.description) : product.description;
@@ -93,7 +100,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
           {product.discountPercent > 0 && (
-            <span className="absolute top-3 right-3 bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded-full shadow-md">
+            <span className="absolute top-3 right-3 bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-sm px-3.5 py-1.5 rounded-xl shadow-xl border border-red-400/40 tracking-wide flex items-center gap-1.5 transform hover:scale-105 transition-transform">
               {t.discount} {product.discountPercent}%
             </span>
           )}
@@ -140,11 +147,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           <div className="flex items-center justify-between pt-3 border-t border-slate-800">
             {/* Price section */}
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-black text-amber-400 font-['Tajawal']">
+              <span className="text-xl sm:text-2xl font-black text-amber-300 font-['Cairo'] tracking-tight drop-shadow-sm">
                 {formatPrice(product.discountPrice)}
               </span>
               {product.originalPrice > product.discountPrice && (
-                <span className="text-xs text-slate-500 line-through">
+                <span className="text-xs text-slate-400 font-medium line-through">
                   {formatPrice(product.originalPrice)}
                 </span>
               )}
@@ -179,10 +186,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
   return (
     <div 
       onClick={() => openProductDetail(product)}
-      className="group bg-slate-900 rounded-2xl border border-slate-800/90 hover:border-purple-600/80 shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col overflow-hidden cursor-pointer relative text-slate-100"
+      className="group bg-slate-900 rounded-2xl border border-slate-800/90 hover:border-purple-600/80 shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col overflow-hidden cursor-pointer relative text-slate-100 w-full max-w-sm sm:max-w-none mx-auto"
     >
       {/* Top Image Container */}
-      <div className="relative w-full h-52 bg-slate-800 overflow-hidden border-b border-slate-800">
+      <div className="relative w-full h-44 sm:h-48 bg-slate-800 overflow-hidden border-b border-slate-800">
         <img 
           src={product.image} 
           alt={displayTitle}
@@ -192,56 +199,97 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
         {/* Overlay Badges */}
-        <div className="absolute top-3 right-3 flex flex-col items-end gap-1 z-10">
+        <div className="absolute top-2.5 right-2.5 flex flex-col items-end gap-1 z-10">
           {product.discountPercent > 0 && (
-            <span className="bg-red-600 text-white font-extrabold text-xs px-2.5 py-1 rounded-lg shadow-md">
-              {t.discount} {product.discountPercent}%
+            <span className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-xs px-2.5 py-1 rounded-lg shadow-lg border border-red-400/40 tracking-wide flex items-center gap-1 transform hover:scale-105 transition-transform">
+              <span>{t.discount} {product.discountPercent}%</span>
+            </span>
+          )}
+          {product.originalPrice > product.discountPrice && (
+            <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-1.5 py-0.5 rounded shadow border border-amber-300">
+              {language === 'ar' 
+                ? `توفير ${formatPrice(product.originalPrice - product.discountPrice)}` 
+                : `Save ${formatPrice(product.originalPrice - product.discountPrice)}`}
             </span>
           )}
           {product.isFeatured && (
-            <span className="bg-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-md shadow flex items-center gap-1">
-              <Sparkles className="w-3 h-3 fill-slate-950" />
+            <span className="bg-purple-600 text-white font-black text-[10px] px-1.5 py-0.5 rounded shadow flex items-center gap-1">
+              <Sparkles className="w-3 h-3 fill-white" />
               {t.yousraChoice}
             </span>
           )}
         </div>
 
-        {/* Top Left Floating Actions (Favorite, Compare & Price Alert) */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+        {/* Top Left Floating Actions (Favorite, Cart, Compare, Share & Price Alert) */}
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
           <button
             onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }}
-            className={`p-2 rounded-full shadow-md backdrop-blur-md transition-all ${
+            className={`p-1.5 rounded-full shadow-md backdrop-blur-md transition-all ${
               isFav 
                 ? 'bg-red-500 text-white' 
                 : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-red-400 border border-slate-700/60'
             }`}
-            title={isFav ? "إزالة من المفضلة" : "إضافة للمفضلة"}
+            title={isFav ? (language === 'ar' ? 'إزالة من المفضلة' : 'Remove from Favorites') : (language === 'ar' ? 'إضافة للمفضلة' : 'Add to Favorites')}
           >
-            <Heart className={`w-4 h-4 ${isFav ? 'fill-white' : ''}`} />
+            <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-white' : ''}`} />
+          </button>
+
+          <button
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              addToCart(product.id);
+            }}
+            className={`p-1.5 rounded-full shadow-md backdrop-blur-md transition-all ${
+              inCart 
+                ? 'bg-amber-400 text-slate-950 font-bold border border-amber-300' 
+                : 'bg-slate-900/80 text-amber-300 hover:bg-slate-800 hover:text-amber-400 border border-slate-700/60'
+            }`}
+            title={inCart ? (language === 'ar' ? 'المنتج في السلة' : 'In Cart') : (language === 'ar' ? 'إضافة إلى سلة التسوق' : 'Add to Shopping Cart')}
+          >
+            {inCart ? <Check className="w-3.5 h-3.5" /> : <ShoppingCart className="w-3.5 h-3.5" />}
+          </button>
+
+          <button
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              if (navigator.share) {
+                navigator.share({
+                  title: language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr,
+                  url: window.location.href,
+                }).catch(() => {});
+              } else {
+                navigator.clipboard.writeText(window.location.href);
+                alert(language === 'ar' ? 'تم نسخ رابط المنتج لمشاركته!' : 'Product link copied to clipboard!');
+              }
+            }}
+            className="p-1.5 rounded-full shadow-md backdrop-blur-md bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-amber-300 border border-slate-700/60 transition-all"
+            title={language === 'ar' ? 'مشاركة المنتج' : 'Share Product'}
+          >
+            <Share2 className="w-3.5 h-3.5" />
           </button>
 
           <button
             onClick={(e) => { e.stopPropagation(); toggleCompare(product.id); }}
-            className={`p-2 rounded-full shadow-md backdrop-blur-md transition-all ${
+            className={`p-1.5 rounded-full shadow-md backdrop-blur-md transition-all ${
               isCompared 
                 ? 'bg-purple-600 text-white' 
                 : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-amber-400 border border-slate-700/60'
             }`}
-            title={isCompared ? "إزالة من المقارنة" : "إضافة للمقارنة"}
+            title={isCompared ? (language === 'ar' ? 'إزالة من المقارنة' : 'Remove from Compare') : (language === 'ar' ? 'إضافة للمقارنة' : 'Add to Compare')}
           >
-            <Scale className="w-4 h-4" />
+            <Scale className="w-3.5 h-3.5" />
           </button>
 
           <button
             onClick={(e) => { e.stopPropagation(); openPriceAlertModal(product); }}
-            className={`p-2 rounded-full shadow-md backdrop-blur-md transition-all ${
+            className={`p-1.5 rounded-full shadow-md backdrop-blur-md transition-all ${
               isAlerted 
                 ? 'bg-amber-500 text-slate-950 font-bold' 
                 : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-amber-400 border border-slate-700/60'
             }`}
             title={language === 'en' ? 'Set Price Alert' : 'تنبيه انخفاض السعر'}
           >
-            <Bell className={`w-4 h-4 ${isAlerted ? 'fill-slate-950 animate-pulse' : ''}`} />
+            <Bell className={`w-3.5 h-3.5 ${isAlerted ? 'fill-slate-950 animate-pulse' : ''}`} />
           </button>
         </div>
 
@@ -249,79 +297,95 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
         {(product.youtubeUrl || product.tiktokUrl || product.pinterestUrl) && (
           <button
             onClick={handleWatchVideo}
-            className="absolute bottom-3 right-3 bg-slate-950/85 hover:bg-red-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg backdrop-blur-md flex items-center gap-1 transition-colors shadow-md border border-slate-700/50"
+            className="absolute bottom-2.5 right-2.5 bg-slate-950/85 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-md flex items-center gap-1 transition-colors shadow border border-slate-700/50"
           >
-            <PlaySquare className="w-3.5 h-3.5 text-red-400 hover:text-white" />
+            <PlaySquare className="w-3 h-3 text-red-400 hover:text-white" />
             {t.watchReview}
           </button>
         )}
       </div>
 
       {/* Product Information */}
-      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+      <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
         <div>
-          <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="font-semibold text-amber-300 bg-purple-950/80 border border-purple-800/60 px-2 py-0.5 rounded-md">
+          <div className="flex items-center justify-between text-[11px] mb-1">
+            <span className="font-semibold text-amber-300 bg-purple-950/80 border border-purple-800/60 px-1.5 py-0.5 rounded">
               {product.brand}
             </span>
             <div className="flex items-center gap-1 text-amber-400 font-bold">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
               <span>{product.rating}</span>
               <span className="text-slate-400 font-normal">({product.reviewCount})</span>
             </div>
           </div>
 
-          <h3 className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-2 font-['Tajawal'] leading-snug">
+          <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-2 font-['Tajawal'] leading-tight">
             {displayTitle}
           </h3>
         </div>
 
         {/* Pricing & Affiliate Buy CTA */}
-        <div className="pt-2 border-t border-slate-800 space-y-2.5">
+        <div className="pt-1.5 border-t border-slate-800 space-y-1.5">
           <div className="flex items-baseline justify-between">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-lg font-black text-amber-400 font-['Tajawal']">
+            <div className="flex items-baseline gap-1">
+              <span className="text-lg sm:text-xl font-black text-amber-300 font-['Cairo'] tracking-tight">
                 {formatPrice(product.discountPrice)}
               </span>
             </div>
 
             {product.originalPrice > product.discountPrice && (
-              <span className="text-xs text-slate-500 line-through">
+              <span className="text-xs text-slate-400 font-medium line-through">
                 {formatPrice(product.originalPrice)}
               </span>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-2 gap-1">
             <button
               onClick={handleBuyAmazon}
-              className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs py-2 px-2 rounded-xl flex items-center justify-center gap-1 shadow-xs transition-all hover:shadow-md"
+              className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[11px] py-1.5 px-1.5 rounded-lg flex items-center justify-center gap-0.5 shadow-xs transition-all hover:shadow-md"
               title="رابط التسويق بالعمولة لأمازون"
             >
-              <ShoppingBag className="w-3.5 h-3.5" />
+              <ShoppingBag className="w-3 h-3" />
               {t.buyNowAmazon}
-              <ExternalLink className="w-3 h-3 text-slate-950 opacity-70" />
+              <ExternalLink className="w-2.5 h-2.5 text-slate-950 opacity-70" />
             </button>
 
             {product.aliexpressUrl ? (
               <button
                 onClick={handleBuyAliExpress}
-                className="w-full bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs py-2 px-2 rounded-xl flex items-center justify-center gap-1 shadow-xs transition-all hover:shadow-md"
+                className="w-full bg-red-600 hover:bg-red-500 text-white font-extrabold text-[11px] py-1.5 px-1.5 rounded-lg flex items-center justify-center gap-0.5 shadow-xs transition-all hover:shadow-md"
                 title="رابط التسويق بالعمولة لعلي إكسبريس"
               >
                 {t.buyNowAliExpress}
-                <ExternalLink className="w-3 h-3 text-white opacity-70" />
+                <ExternalLink className="w-2.5 h-2.5 text-white opacity-70" />
               </button>
             ) : (
               <button
                 onClick={() => openProductDetail(product)}
-                className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs py-2 px-2 rounded-xl flex items-center justify-center gap-1 transition-colors border border-slate-700"
+                className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] py-1.5 px-1.5 rounded-lg flex items-center justify-center gap-0.5 transition-colors border border-slate-700"
               >
-                <Eye className="w-3.5 h-3.5" />
+                <Eye className="w-3 h-3" />
                 {t.details}
               </button>
             )}
           </div>
+
+          <button
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              if (!inCart) addToCart(product.id);
+              openCartModal();
+            }}
+            className="w-full bg-slate-800/90 hover:bg-slate-800 text-amber-300 font-bold text-[11px] py-1.5 px-2 rounded-lg border border-amber-500/40 flex items-center justify-center gap-1 transition-colors cursor-pointer"
+          >
+            <ShoppingCart className="w-3 h-3 text-amber-400" />
+            <span>
+              {inCart 
+                ? (language === 'ar' ? 'في السلة — اضغط للعرض' : 'In Cart — View Cart') 
+                : (language === 'ar' ? 'إضافة لسلة التسوق' : 'Add to Shopping Cart')}
+            </span>
+          </button>
         </div>
       </div>
     </div>

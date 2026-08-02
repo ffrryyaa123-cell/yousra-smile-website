@@ -1,70 +1,92 @@
 @import "tailwindcss";
 
 @layer base {
+  * {
+    font-family: 'Cairo', 'Readex Pro', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
   html {
-    font-family: 'Geist', 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Cairo', 'Readex Pro', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     scroll-behavior: smooth;
     background-color: #111113;
-    color: #FDFCFB;
+    color: #FFFFFF;
   }
   
   html.dark {
     background-color: #111113;
-    color: #FDFCFB;
+    color: #FFFFFF;
   }
 }
 
-/* Custom smooth scrollbar in Dark Luxury & Gold */
+/* Custom smooth scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: #111113;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D4AF37;
+  background: #E2B714;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #F3E5AB;
+  background: #F0CA38;
 }
 
-/* Editorial Typography Helpers */
-.font-serif-editorial {
-  font-family: 'Newsreader', serif;
-  font-style: italic;
+/* Contrast Rules: Ensure dark brown/black text on white or light surfaces */
+.bg-white,
+.bg-slate-50,
+.bg-slate-100,
+.bg-slate-200,
+.bg-amber-50,
+.bg-amber-100,
+.bg-amber-200,
+.bg-amber-300,
+.bg-amber-400,
+.bg-amber-500 {
+  color: #d9eff3;
 }
 
-.font-mono-meta {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+.bg-white h1, .bg-white h2, .bg-white h3, .bg-white h4, .bg-white p, .bg-white span, .bg-white label,
+.bg-slate-50 h1, .bg-slate-50 h2, .bg-slate-50 h3, .bg-slate-50 p, .bg-slate-50 span,
+.bg-amber-100 h1, .bg-amber-100 h2, .bg-amber-100 h3, .bg-amber-100 p, .bg-amber-100 span {
+  color: #705b40;
+}
+
+/* Editorial & Meta Typography Helpers */
+.font-arabic-heading {
+  font-family: 'Cairo', 'Readex Pro', 'Tajawal', sans-serif;
+}
+
+.font-price {
+  font-family: 'Plus Jakarta Sans', 'Cairo', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .gold-gradient-text {
-  background: linear-gradient(135deg, #FDFCFB 0%, #D4AF37 60%, #B48811 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFDF85 60%, #D4AF37 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gold-pill {
   padding: 4px 12px;
-  border: 1px solid #D4AF37;
+  border: 1px solid #b18d18;
   border-radius: 99px;
-  color: #D4AF37;
-  font-size: 0.7rem;
-  font-family: 'JetBrains Mono', monospace;
-  letter-spacing: 0.1em;
+  color: #f5f2da;
+  background-color: rgba(133, 115, 55, 0.582);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .grid-border-container {
-  border: 1px solid rgba(253, 252, 251, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .grid-border-item {
-  border-color: rgba(253, 252, 251, 0.1);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Animation utilities */
@@ -76,6 +98,7 @@
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
+
 
 
 

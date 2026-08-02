@@ -177,6 +177,14 @@ export const ProductsPage: React.FC = () => {
         {/* Products Grid & Sorting Controls */}
         <div className="lg:col-span-3 space-y-6">
           
+          {/* Daily Deals Notice Line above Product Cards */}
+          <div className="bg-gradient-to-r from-amber-500/15 via-purple-950/80 to-amber-500/15 border border-amber-500/40 rounded-2xl p-3.5 text-center text-xs sm:text-sm font-bold text-amber-200 font-['Tajawal'] flex items-center justify-center gap-2 shadow-xl backdrop-blur-md">
+            <span className="text-amber-400 text-base">🔥</span>
+            <span>
+              يتم تحديث أفضل العروض يوميًا من Amazon وAliExpress، وقد تتغير الأسعار حسب التوفر.
+            </span>
+          </div>
+
           {/* Top Control Bar */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             

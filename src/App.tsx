@@ -14,6 +14,7 @@ import { ProductDetailModal } from './components/ProductDetailModal';
 import { VideoModal } from './components/VideoModal';
 import { PriceAlertModal } from './components/PriceAlertModal';
 import { ThumbnailEditorModal } from './components/ThumbnailEditorModal';
+import { CartModal } from './components/CartModal';
 import { SEOHead } from './components/SEOHead';
 
 const AppContent: React.FC = () => {
@@ -39,6 +40,7 @@ const AppContent: React.FC = () => {
       case 'deals':
         return <DealsPage />;
       case 'favorites':
+      case 'cart':
         return <FavoritesPage />;
       case 'compare':
         return <ComparePage />;
@@ -61,7 +63,7 @@ const AppContent: React.FC = () => {
       <SEOHead />
       <Header />
       
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-2 sm:px-4 lg:px-6 pt-1 pb-3">
         {renderCurrentPage()}
       </main>
 
@@ -85,6 +87,9 @@ const AppContent: React.FC = () => {
 
       {/* Price Alert Modal */}
       {alertModalProduct && <PriceAlertModal />}
+
+      {/* Cart Modal Drawer */}
+      <CartModal />
 
       {/* Video Thumbnail Editor Modal (YouTube Style) */}
       {editingThumbnailVideo && (

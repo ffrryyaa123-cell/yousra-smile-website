@@ -103,10 +103,10 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'women-corner',
-    nameAr: 'قسم المرأة',
-    nameEn: "Women's Corner",
+    nameAr: 'العناية الشخصية والأناقة',
+    nameEn: "Personal Care & Style",
     icon: 'Sparkles',
-    description: 'أدوات العناية بالبشرة والشعر، أدوات تصفيف، حقائب، عطور ومستحضرات تجميل فاخرة',
+    description: 'أدوات العناية بالبشرة والشعر، أدوات تصفيف، حقائب، عطور ومستحضرات العناية الفاخرة للجميع',
     image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
     subcategories: [
       'الملابس',

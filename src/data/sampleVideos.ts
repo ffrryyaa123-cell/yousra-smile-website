@@ -4,7 +4,7 @@ export const SAMPLE_VIDEOS: VideoReview[] = [
   {
     id: 'vid-1',
     productId: 'prod-1',
-    productTitle: 'Roborock S8 Pro Ultra',
+    productTitle: 'مكنسة Roborock S8 Pro Ultra',
     productImage: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80',
     platform: 'youtube',
     embedId: 'dQw4w9WgXcQ',
@@ -17,7 +17,7 @@ export const SAMPLE_VIDEOS: VideoReview[] = [
   {
     id: 'vid-2',
     productId: 'prod-2',
-    productTitle: 'Cosori Dual Blaze Smart Air Fryer',
+    productTitle: 'قلاية Cosori Dual Blaze الهوائية',
     productImage: 'https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=800&q=80',
     platform: 'tiktok',
     embedId: '987654321',
@@ -30,7 +30,7 @@ export const SAMPLE_VIDEOS: VideoReview[] = [
   {
     id: 'vid-3',
     productId: 'prod-6',
-    productTitle: 'Dyson Airwrap Multi-Styler',
+    productTitle: 'أداة Dyson Airwrap لتصفيف الشعر',
     productImage: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
     platform: 'pinterest',
     embedId: '522337360',
@@ -43,7 +43,7 @@ export const SAMPLE_VIDEOS: VideoReview[] = [
   {
     id: 'vid-4',
     productId: 'prod-3',
-    productTitle: 'Breville Barista Touch Impress',
+    productTitle: 'ماكينة Breville Barista Touch Impress',
     productImage: 'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=800&q=80',
     platform: 'youtube',
     embedId: 'dQw4w9WgXcQ',
@@ -56,7 +56,7 @@ export const SAMPLE_VIDEOS: VideoReview[] = [
   {
     id: 'vid-5',
     productId: 'prod-10',
-    productTitle: 'Bissell SpotClean Pro',
+    productTitle: 'جهاز Bissell SpotClean Pro لتنظيف البقع',
     productImage: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800&q=80',
     platform: 'tiktok',
     embedId: '11223344',

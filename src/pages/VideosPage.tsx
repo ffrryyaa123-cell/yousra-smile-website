@@ -6,7 +6,7 @@ import { VideoImportModal } from '../components/VideoImportModal';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 
 export const VideosPage: React.FC = () => {
-  const { videos, products, openVideoModal, openProductDetail, openThumbnailEditor, logAffiliateClick, language } = useApp();
+  const { videos, products, openVideoModal, openProductDetail, openThumbnailEditor, logAffiliateClick, language, formatPrice } = useApp();
   const [platformFilter, setPlatformFilter] = useState<'all' | 'youtube' | 'tiktok' | 'pinterest'>('all');
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedExportVideo, setSelectedExportVideo] = useState<VideoReview | null>(null);
@@ -17,10 +17,10 @@ export const VideosPage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-4 pb-6">
       
       {/* Page Title Header */}
-      <div className="bg-gradient-to-r from-red-950 via-slate-900 to-purple-950 text-white rounded-3xl p-6 sm:p-10 border border-red-900/40 shadow-xl space-y-4">
+      <div className="bg-gradient-to-r from-red-950 via-slate-900 to-purple-950 text-white rounded-2xl p-4 sm:p-6 border border-red-900/40 shadow-lg space-y-2">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 bg-red-600/30 text-red-300 border border-red-500/30 px-3 py-1 rounded-full text-xs font-bold">
@@ -176,7 +176,7 @@ export const VideosPage: React.FC = () => {
                     <div className="text-xs">
                       <span className="text-slate-400 block text-[10px]">سعر الشراء المباشر:</span>
                       <strong className="text-purple-600 dark:text-purple-400 text-sm font-black font-['Tajawal']">
-                        {linkedProd.discountPrice} {linkedProd.currency}
+                        {formatPrice(linkedProd.discountPrice)}
                       </strong>
                     </div>
 
