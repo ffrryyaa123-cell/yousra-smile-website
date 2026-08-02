@@ -51,7 +51,7 @@
 .bg-white h1, .bg-white h2, .bg-white h3, .bg-white h4, .bg-white p, .bg-white span, .bg-white label,
 .bg-slate-50 h1, .bg-slate-50 h2, .bg-slate-50 h3, .bg-slate-50 p, .bg-slate-50 span,
 .bg-amber-100 h1, .bg-amber-100 h2, .bg-amber-100 h3, .bg-amber-100 p, .bg-amber-100 span {
-  color: #705b40;
+  color: #f3efcc;
 }
 
 /* Editorial & Meta Typography Helpers */
@@ -66,23 +66,23 @@
 }
 
 .gold-gradient-text {
-  background: linear-gradient(135deg, #FFFFFF 0%, #FFDF85 60%, #D4AF37 100%);
+  background: linear-gradient(135deg, #FFFFFF 0%, #f7dc91 60%, #f3e0a2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gold-pill {
   padding: 4px 12px;
-  border: 1px solid #b18d18;
+  border: 1px solid #faf3d5d5;
   border-radius: 99px;
   color: #f5f2da;
-  background-color: rgba(133, 115, 55, 0.582);
+  background-color: rgba(243, 203, 71, 0.582);
   font-size: 0.75rem;
   font-weight: 600;
 }
 
 .grid-border-container {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(247, 131, 131, 0.671);
 }
 
 .grid-border-item {
