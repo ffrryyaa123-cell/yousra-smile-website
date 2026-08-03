@@ -64,16 +64,38 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
     isInCart,
     openCartModal,
     language,
-    t
+    t,
+    addReview,
+    products,
+    openProductDetail,
+    filterByBrand,
+    setPage,
+    setSelectedCategory
   } = useApp();
 
   if (!product) return null;
 
   const [activeImage, setActiveImage] = useState<string>(product.image);
-  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'videos' | 'specs' | 'seo'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'videos' | 'specs' | 'reviews' | 'seo'>('overview');
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedJsonLd, setCopiedJsonLd] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+
+  // New Review Form State
+  const [reviewerName, setReviewerName] = useState('');
+  const [reviewerRating, setReviewerRating] = useState(5);
+  const [reviewerComment, setReviewerComment] = useState('');
+  const [reviewAddedSuccess, setReviewAddedSuccess] = useState(false);
+
+  const handleReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewerComment.trim()) return;
+    addReview(product.id, reviewerName, reviewerRating, reviewerComment);
+    setReviewerComment('');
+    setReviewerName('');
+    setReviewAddedSuccess(true);
+    setTimeout(() => setReviewAddedSuccess(false), 4000);
+  };
 
   const isFav = favorites.includes(product.id);
   const isCompared = compareList.includes(product.id);
@@ -262,6 +284,65 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               ✓ تم نسخ رابط المنتج بنجاح!
             </div>
           )}
+
+          {/* SEO Breadcrumbs Navigation Bar */}
+          <nav className="flex items-center gap-1.5 text-xs text-slate-400 overflow-x-auto pb-1 border-b border-slate-100 dark:border-slate-800">
+            <button 
+              onClick={() => { setPage('home'); onClose(); }}
+              className="hover:text-amber-400 font-bold shrink-0"
+            >
+              {language === 'ar' ? 'الرئيسية' : 'Home'}
+            </button>
+            <span>/</span>
+            <button 
+              onClick={() => { setSelectedCategory(product.category); setPage('products'); onClose(); }}
+              className="hover:text-amber-400 font-bold shrink-0"
+            >
+              {product.category}
+            </button>
+            <span>/</span>
+            <button 
+              onClick={() => { filterByBrand(product.brand); onClose(); }}
+              className="text-amber-400 font-bold shrink-0 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30 hover:bg-amber-500/20"
+            >
+              {language === 'ar' ? `علامة ${product.brand}` : `Brand ${product.brand}`}
+            </button>
+            <span>/</span>
+            <span className="text-slate-200 truncate max-w-xs">{product.titleAr}</span>
+          </nav>
+
+          {/* Interactive Brand Models Pill / Chip */}
+          {(() => {
+            const sameBrandProducts = products.filter(p => p.brand.toLowerCase() === product.brand.toLowerCase());
+            if (sameBrandProducts.length > 0) {
+              return (
+                <div className="bg-gradient-to-r from-purple-950/80 to-slate-900 border border-purple-800/80 rounded-2xl p-3 flex items-center justify-between flex-wrap gap-2 shadow-md">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🏷️</span>
+                    <div>
+                      <div className="text-xs font-bold text-amber-300 font-['Tajawal']">
+                        {language === 'ar' ? `استعرض جميع موديلات ${product.brand}` : `Browse all models of ${product.brand}`}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {language === 'ar' ? `يوجد ${sameBrandProducts.length} طراز متاح لهذه العلامة التجارية` : `${sameBrandProducts.length} models available for this brand`}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      filterByBrand(product.brand);
+                      onClose();
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-all shadow-md cursor-pointer shrink-0"
+                  >
+                    {language === 'ar' ? `عرض كافة موديلات ${product.brand} ←` : `View all ${product.brand} models →`}
+                  </button>
+                </div>
+              );
+            }
+            return null;
+          })()}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
@@ -598,6 +679,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               </button>
 
               <button
+                onClick={() => setActiveTab('reviews')}
+                className={`pb-3 text-sm font-bold border-b-2 flex items-center gap-1.5 transition-all shrink-0 ${
+                  activeTab === 'reviews'
+                    ? 'border-amber-400 text-amber-300'
+                    : 'border-transparent text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                آراء وتجارب العملاء ({product.reviewCount})
+              </button>
+
+              <button
                 onClick={() => setActiveTab('seo')}
                 className={`pb-3 text-sm font-bold border-b-2 flex items-center gap-1.5 transition-all shrink-0 ${
                   activeTab === 'seo'
@@ -701,6 +794,179 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Tab: Customer Reviews & Ratings */}
+            {activeTab === 'reviews' && (
+              <div className="space-y-6 dir-rtl font-['Cairo']">
+                {/* Rating Overview Header */}
+                <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md">
+                  <div className="text-center sm:text-right">
+                    <div className="text-4xl font-black text-amber-300">{product.rating}</div>
+                    <div className="flex items-center justify-center sm:justify-start gap-1 my-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+                    <p className="text-xs text-slate-400">بناءً على {product.reviewCount} تقييم حقيقي</p>
+                  </div>
+
+                  <div className="flex-1 w-full max-w-md space-y-1.5 text-xs text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <span>5 نجوم</span>
+                      <div className="flex-1 bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div className="bg-amber-400 h-full w-[85%]"></div>
+                      </div>
+                      <span className="w-8 text-left">85%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>4 نجوم</span>
+                      <div className="flex-1 bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div className="bg-amber-400 h-full w-[12%]"></div>
+                      </div>
+                      <span className="w-8 text-left">12%</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>3 نجوم</span>
+                      <div className="flex-1 bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div className="bg-amber-400 h-full w-[3%]"></div>
+                      </div>
+                      <span className="w-8 text-left">3%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Add Review Form */}
+                <form onSubmit={handleReviewSubmit} className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-md">
+                  <h4 className="text-sm font-bold text-amber-300 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>شاركي تجربتك ورأيك عن هذا المنتج:</span>
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">اسمك الكريمة (اختياري):</label>
+                      <input
+                        type="text"
+                        value={reviewerName}
+                        onChange={(e) => setReviewerName(e.target.value)}
+                        placeholder="مثال: أم عبد الله"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-1">تقييمك بالنجوم:</label>
+                      <div className="flex items-center gap-2 pt-1">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setReviewerRating(s)}
+                            className="p-1 cursor-pointer"
+                          >
+                            <Star className={`w-5 h-5 ${s <= reviewerRating ? 'fill-amber-400 text-amber-400' : 'text-slate-600'}`} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">تفاصيل تجربتك وتوصيتك للمشترين:</label>
+                    <textarea
+                      value={reviewerComment}
+                      onChange={(e) => setReviewerComment(e.target.value)}
+                      placeholder="اكتبي ملخص تجربتك عن سرعة الشحن، جودة التصنيع، سهولة الاستخدام..."
+                      rows={3}
+                      required
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-500 resize-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    {reviewAddedSuccess ? (
+                      <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>تمت إضافة تقييمك ورأيك بنجاح!</span>
+                      </span>
+                    ) : <span />}
+
+                    <button
+                      type="submit"
+                      className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs px-5 py-2 rounded-xl transition-all cursor-pointer"
+                    >
+                      إضافة التقييم
+                    </button>
+                  </div>
+                </form>
+
+                {/* Customer Reviews List */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-bold text-slate-200">أحدث آراء المشترين:</h4>
+
+                  {/* Built-in Sample Reviews */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-xs">
+                          س
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-white">سارة الشمري</span>
+                          <span className="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 mr-2">مشتري مؤكد ✓</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center text-amber-400 text-xs">
+                        ★★★★★
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      المنتج رائع جداً واستفدت كثيراً من فيديو مراجعة يسرى سمايل قبل الشراء. الشحن كان سريع عبر أمازون والأداء يفوق التوقعات!
+                    </p>
+                  </div>
+
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center font-bold text-xs">
+                          م
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-white">م. محمد علي</span>
+                          <span className="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 mr-2">مشتري مؤكد ✓</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center text-amber-400 text-xs">
+                        ★★★★★
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      جودة تصنيع عالية جداً وتطبيق التحكم سلس للغاية، وفر علي الكثير من الجهد والوقت في المنزل.
+                    </p>
+                  </div>
+
+                  {product.reviews && product.reviews.map((rev) => (
+                    <div key={rev.id} className="bg-slate-900 border border-amber-500/20 rounded-xl p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center font-bold text-xs">
+                            {rev.userName.charAt(0)}
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-white">{rev.userName}</span>
+                            <span className="text-[10px] text-slate-400 mr-2">{rev.date}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center text-amber-400 text-xs">
+                          {'★'.repeat(rev.rating)}
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed">{rev.comment}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -829,6 +1095,55 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               </div>
             )}
 
+            {/* Related Products Cards Section */}
+            <div className="border-t border-slate-800 pt-6 mt-6 space-y-4 font-['Cairo']">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-black text-amber-300 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>{language === 'ar' ? 'منتجات ذات صلة مقترحة لك:' : 'Recommended Related Products:'}</span>
+                </h3>
+                <span className="text-xs text-slate-400">
+                  {product.category}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {products
+                  .filter(p => p.category === product.category && p.id !== product.id)
+                  .slice(0, 3)
+                  .map((relProd) => (
+                    <div 
+                      key={relProd.id}
+                      onClick={() => { openProductDetail(relProd); setActiveImage(relProd.image); }}
+                      className="bg-slate-900 border border-slate-800 hover:border-amber-400/50 rounded-2xl p-3 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] shadow-lg group"
+                    >
+                      <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-slate-950 mb-2 border border-slate-800">
+                        <img 
+                          src={relProd.image} 
+                          alt={relProd.titleAr} 
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <span className="absolute top-2 right-2 bg-amber-400 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow">
+                          {relProd.brand}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <h4 className="text-xs font-bold text-slate-100 line-clamp-2 leading-snug group-hover:text-amber-300 transition-colors">
+                          {language === 'en' ? (relProd.titleEn || relProd.titleAr) : relProd.titleAr}
+                        </h4>
+                        <div className="flex items-center justify-between text-xs font-bold pt-1">
+                          <span className="text-amber-400">{formatPrice(relProd.discountPrice)}</span>
+                          <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                            ★ {relProd.rating}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

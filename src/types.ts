@@ -10,6 +10,32 @@ export type CategoryId =
   | 'women-corner'
   | 'health-fitness';
 
+export interface UserReview {
+  id: string;
+  productId: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  date: string;
+  verifiedPurchase?: boolean;
+}
+
+export interface BlogPost {
+  id: string;
+  titleAr: string;
+  titleEn: string;
+  summaryAr: string;
+  summaryEn: string;
+  contentAr: string;
+  contentEn: string;
+  category: string;
+  image: string;
+  readTime: string;
+  publishedDate: string;
+  authorName: string;
+  relatedProductIds: string[];
+}
+
 export interface Product {
   id: string;
   titleAr: string;
@@ -32,12 +58,15 @@ export interface Product {
   currency: string;
   rating: number;
   reviewCount: number;
+  reviews?: UserReview[];
   features: string[];
   specs: Record<string, string>;
   keywords: string[];
   isFeatured?: boolean;
   isTopSelling?: boolean;
   isLatest?: boolean;
+  isHidden?: boolean;
+  isActive?: boolean;
   viewsCount: number;
   createdAt: string;
 }
@@ -95,6 +124,34 @@ export interface CartItem {
   productId: string;
   quantity: number;
   addedAt: string;
+}
+
+export interface SiteSettings {
+  siteName: string;
+  siteNameEn: string;
+  logoUrl: string;
+  defaultLanguage: 'ar' | 'en';
+  defaultCurrency: CurrencyCode;
+  pinterestUrl: string;
+  youtubeUrl: string;
+  tiktokUrl: string;
+  amazonTag: string;
+  amazonUrl: string;
+  aliexpressTag: string;
+  aliexpressUrl: string;
+  contactEmail: string;
+}
+
+export interface AiGeneratedProductContent {
+  seoTitle: string;
+  seoDescription: string;
+  productDescription: string;
+  longDescription?: string;
+  tags: string[];
+  hashtags: string[];
+  keywords: string[];
+  imageNote: string;
+  suggestedFeatures?: string[];
 }
 
 export type PageView = 

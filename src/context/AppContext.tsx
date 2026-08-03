@@ -65,12 +65,16 @@ interface AppContextType {
   toggleDarkMode: () => void;
   toggleLanguage: () => void;
   setLanguage: (lang: Language) => void;
+  recentlyViewedIds: string[];
+  filterByBrand: (brandName: string) => void;
   
   // Admin CRUD
   addProduct: (newProduct: Omit<Product, 'id' | 'createdAt' | 'viewsCount'>) => void;
+  importProductsBulk: (newProducts: Product[]) => void;
   updateProduct: (updatedProduct: Product) => void;
   deleteProduct: (id: string) => void;
   resetCatalog: () => void;
+  addReview: (productId: string, userName: string, rating: number, comment: string) => void;
   
   // Metrics
   logAffiliateClick: (productId: string, platform: 'amazon' | 'aliexpress') => void;
@@ -87,6 +91,7 @@ const LOCAL_STORAGE_LANG_KEY = 'yousrasmile_language_v1';
 const LOCAL_STORAGE_CURRENCY_KEY = 'yousrasmile_currency_v1';
 const LOCAL_STORAGE_PRICE_ALERTS_KEY = 'yousrasmile_price_alerts_v1';
 const LOCAL_STORAGE_VIDEOS_KEY = 'yousrasmile_videos_v1';
+const LOCAL_STORAGE_RECENTLY_VIEWED_KEY = 'yousrasmile_recently_viewed_v1';
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>(() => {
@@ -236,6 +241,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<VideoReview | null>(null);
+
+  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_RECENTLY_VIEWED_KEY);
+      return saved ? JSON.parse(saved) : ['prod-1', 'prod-2', 'prod-6'];
+    } catch (e) {
+      return ['prod-1', 'prod-2', 'prod-6'];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_RECENTLY_VIEWED_KEY, JSON.stringify(recentlyViewedIds));
+    } catch (e) {
+      console.error('Failed to save recently viewed ids:', e);
+    }
+  }, [recentlyViewedIds]);
+
+  const filterByBrand = (brandName: string) => {
+    setSearchQuery(brandName);
+    setSelectedCategoryState('all');
+    setSelectedSubcategoryState('all');
+    setActivePage('products');
+  };
 
   const t = translations[language];
 
@@ -392,6 +421,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const openProductDetail = (product: Product) => {
     setSelectedProduct(product);
+    setRecentlyViewedIds(prev => {
+      const filtered = prev.filter(id => id !== product.id);
+      return [product.id, ...filtered].slice(0, 10);
+    });
     // Increment view count
     setProducts(prev => 
       prev.map(p => p.id === product.id ? { ...p, viewsCount: p.viewsCount + 1 } : p)
@@ -469,6 +502,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProducts(prev => [newProd, ...prev]);
   };
 
+  const importProductsBulk = (importedList: Product[]) => {
+    if (!importedList || importedList.length === 0) return;
+    setProducts(prev => {
+      const existingIds = new Set(prev.map(p => p.id));
+      const newItems = importedList.filter(p => !existingIds.has(p.id));
+      return [...newItems, ...prev];
+    });
+  };
+
+  const addReview = (productId: string, userName: string, rating: number, comment: string) => {
+    const newRev = {
+      id: `rev-${Date.now()}`,
+      productId,
+      userName: userName.trim() || (language === 'ar' ? 'مشتري مؤكد' : 'Verified Buyer'),
+      rating,
+      comment,
+      date: new Date().toISOString().split('T')[0],
+      verifiedPurchase: true
+    };
+
+    setProducts(prev => prev.map(p => {
+      if (p.id !== productId) return p;
+      const currentReviews = p.reviews || [];
+      const updatedReviews = [newRev, ...currentReviews];
+      const totalRatings = updatedReviews.reduce((acc, r) => acc + r.rating, 0);
+      const newAvgRating = Number((totalRatings / updatedReviews.length).toFixed(1));
+
+      const updatedProduct = {
+        ...p,
+        rating: newAvgRating,
+        reviewCount: (p.reviewCount || 0) + 1,
+        reviews: updatedReviews
+      };
+
+      if (selectedProduct && selectedProduct.id === productId) {
+        setSelectedProduct(updatedProduct);
+      }
+
+      return updatedProduct;
+    }));
+  };
+
   const updateProduct = (updatedProduct: Product) => {
     setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
   };
@@ -523,6 +598,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         language,
         currency,
         currencyConfig,
+        recentlyViewedIds,
+        filterByBrand,
         t,
         activeStaticTab,
         setCurrency,
@@ -552,9 +629,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleLanguage,
         setLanguage,
         addProduct,
+        importProductsBulk,
         updateProduct,
         deleteProduct,
         resetCatalog,
+        addReview,
         logAffiliateClick
       }}
     >

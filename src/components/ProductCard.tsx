@@ -88,24 +88,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
     return (
       <div 
         onClick={() => openProductDetail(product)}
-        className="group bg-slate-900/90 rounded-2xl border border-slate-800 p-4 hover:shadow-2xl hover:border-purple-600 transition-all duration-300 flex flex-col sm:flex-row gap-5 cursor-pointer text-slate-100"
+        className="group bg-[#180D2B] rounded-2xl border border-purple-500/20 p-3.5 hover:shadow-xl hover:border-amber-400/60 transition-all duration-300 flex flex-col sm:flex-row gap-4 cursor-pointer text-slate-100"
       >
         {/* Product Image */}
-        <div className="relative w-full sm:w-56 h-48 rounded-xl overflow-hidden bg-slate-800 shrink-0 border border-slate-700/50">
+        <div className="relative w-full sm:w-52 h-44 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-purple-500/20">
           <img 
             src={product.image} 
             alt={displayTitle}
             referrerPolicy="no-referrer"
-            className="w-full h-full object-cover transition-transform duration-700 ease-out transform-gpu group-hover:scale-115"
+            className="w-full h-full object-contain p-2 transition-transform duration-700 ease-out transform-gpu group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
           {product.discountPercent > 0 && (
-            <span className="absolute top-3 right-3 bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-sm px-3.5 py-1.5 rounded-xl shadow-xl border border-red-400/40 tracking-wide flex items-center gap-1.5 transform hover:scale-105 transition-transform">
+            <span className="absolute top-2.5 right-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-xs px-2.5 py-1 rounded-lg shadow-md border border-red-400/40 tracking-wide flex items-center gap-1">
               {t.discount} {product.discountPercent}%
             </span>
           )}
           {product.isFeatured && (
-            <span className="absolute top-3 left-3 bg-amber-500 text-slate-950 font-extrabold text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 shadow">
+            <span className="absolute top-2.5 left-2.5 bg-amber-500 text-slate-950 font-extrabold text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 shadow">
               <Sparkles className="w-3 h-3 fill-slate-950" />
               {t.yousraChoice}
             </span>
@@ -115,28 +115,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
         {/* Content */}
         <div className="flex-1 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between gap-2 mb-1.5">
-              <span className="text-xs font-semibold text-amber-300 bg-purple-950/80 border border-purple-800/60 px-2.5 py-0.5 rounded-md">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="text-xs font-semibold text-amber-300 bg-purple-950/90 border border-purple-700/60 px-2 py-0.5 rounded-md">
                 {product.brand}
               </span>
               <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                 <span>{product.rating}</span>
-                <span className="text-slate-400 font-normal">({product.reviewCount})</span>
+                <span className="text-slate-300 font-normal">({product.reviewCount})</span>
               </div>
             </div>
 
-            <h3 className="text-base font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-2 mb-2 font-['Tajawal']">
+            <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 mb-1.5 font-['Tajawal']">
               {displayTitle}
             </h3>
 
-            <p className="text-xs text-slate-400 line-clamp-2 mb-3">
+            <p className="text-xs text-slate-300 line-clamp-2 mb-2">
               {displayDesc}
             </p>
 
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-1.5 mb-2">
               {product.features.slice(0, 2).map((feat, idx) => (
-                <span key={idx} className="text-[11px] text-slate-300 flex items-center gap-1 bg-slate-800/90 px-2 py-0.5 rounded-md border border-slate-700/60">
+                <span key={idx} className="text-[11px] text-slate-200 flex items-center gap-1 bg-slate-900/90 px-2 py-0.5 rounded-md border border-purple-500/20">
                   <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                   {feat}
                 </span>
@@ -144,10 +144,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+          <div className="flex items-center justify-between pt-2 border-t border-purple-500/20">
             {/* Price section */}
             <div className="flex items-baseline gap-2">
-              <span className="text-xl sm:text-2xl font-black text-amber-300 font-['Cairo'] tracking-tight drop-shadow-sm">
+              <span className="text-xl sm:text-2xl font-black text-amber-300 font-['Cairo'] tracking-tight">
                 {formatPrice(product.discountPrice)}
               </span>
               {product.originalPrice > product.discountPrice && (
@@ -186,22 +186,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
   return (
     <div 
       onClick={() => openProductDetail(product)}
-      className="group bg-slate-900 rounded-2xl border border-slate-800/90 hover:border-purple-600/80 shadow-md hover:shadow-2xl transition-all duration-300 flex flex-col overflow-hidden cursor-pointer relative text-slate-100 w-full max-w-sm sm:max-w-none mx-auto"
+      className="group bg-[#180D2B] rounded-2xl border border-purple-500/20 hover:border-amber-400/60 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden cursor-pointer relative text-slate-100 w-full max-w-sm sm:max-w-none mx-auto"
     >
       {/* Top Image Container */}
-      <div className="relative w-full h-44 sm:h-48 bg-slate-800 overflow-hidden border-b border-slate-800">
+      <div className="relative w-full h-40 sm:h-44 bg-slate-900 overflow-hidden border-b border-purple-500/20">
         <img 
           src={product.image} 
           alt={displayTitle}
           referrerPolicy="no-referrer"
-          className="w-full h-full object-cover transition-transform duration-700 ease-out transform-gpu group-hover:scale-115"
+          className="w-full h-full object-contain p-2 transition-transform duration-700 ease-out transform-gpu group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
         {/* Overlay Badges */}
         <div className="absolute top-2.5 right-2.5 flex flex-col items-end gap-1 z-10">
           {product.discountPercent > 0 && (
-            <span className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-xs px-2.5 py-1 rounded-lg shadow-lg border border-red-400/40 tracking-wide flex items-center gap-1 transform hover:scale-105 transition-transform">
+            <span className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-xs px-2.5 py-1 rounded-lg shadow-md border border-red-400/40 tracking-wide flex items-center gap-1">
               <span>{t.discount} {product.discountPercent}%</span>
             </span>
           )}
@@ -306,26 +306,26 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
       </div>
 
       {/* Product Information */}
-      <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
+      <div className="p-2.5 sm:p-3 flex-1 flex flex-col justify-between space-y-1.5">
         <div>
           <div className="flex items-center justify-between text-[11px] mb-1">
-            <span className="font-semibold text-amber-300 bg-purple-950/80 border border-purple-800/60 px-1.5 py-0.5 rounded">
+            <span className="font-semibold text-amber-300 bg-purple-950/90 border border-purple-700/60 px-1.5 py-0.5 rounded">
               {product.brand}
             </span>
             <div className="flex items-center gap-1 text-amber-400 font-bold">
-              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
               <span>{product.rating}</span>
-              <span className="text-slate-400 font-normal">({product.reviewCount})</span>
+              <span className="text-slate-300 font-normal">({product.reviewCount})</span>
             </div>
           </div>
 
-          <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-2 font-['Tajawal'] leading-tight">
+          <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 font-['Tajawal'] leading-tight">
             {displayTitle}
           </h3>
         </div>
 
         {/* Pricing & Affiliate Buy CTA */}
-        <div className="pt-1.5 border-t border-slate-800 space-y-1.5">
+        <div className="pt-1 border-t border-purple-500/20 space-y-1.5">
           <div className="flex items-baseline justify-between">
             <div className="flex items-baseline gap-1">
               <span className="text-lg sm:text-xl font-black text-amber-300 font-['Cairo'] tracking-tight">

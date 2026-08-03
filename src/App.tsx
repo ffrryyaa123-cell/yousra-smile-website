@@ -16,6 +16,9 @@ import { PriceAlertModal } from './components/PriceAlertModal';
 import { ThumbnailEditorModal } from './components/ThumbnailEditorModal';
 import { CartModal } from './components/CartModal';
 import { SEOHead } from './components/SEOHead';
+import { WhatsAppButton } from './components/WhatsAppButton';
+import { ScrollToTop } from './components/ScrollToTop';
+import { RecentPurchaseToast } from './components/RecentPurchaseToast';
 
 const AppContent: React.FC = () => {
   const { 
@@ -26,7 +29,8 @@ const AppContent: React.FC = () => {
     closeVideoModal,
     alertModalProduct,
     editingThumbnailVideo,
-    closeThumbnailEditor
+    closeThumbnailEditor,
+    darkMode
   } = useApp();
 
   const renderCurrentPage = () => {
@@ -59,7 +63,11 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-['Cairo',sans-serif] transition-colors">
+    <div className={`min-h-screen flex flex-col font-['Cairo',sans-serif] transition-colors ${
+      darkMode 
+        ? 'bg-[#0D0714] text-[#F4EFF5]' 
+        : 'bg-[#e0f2fe] text-slate-900'
+    }`}>
       <SEOHead />
       <Header />
       
@@ -98,6 +106,14 @@ const AppContent: React.FC = () => {
           onClose={closeThumbnailEditor} 
         />
       )}
+      {/* Floating WhatsApp Consultation Button */}
+      <WhatsAppButton />
+
+      {/* Floating Back To Top Button */}
+      <ScrollToTop />
+
+      {/* Live Recent Purchase Toast Notification */}
+      <RecentPurchaseToast />
     </div>
   );
 };

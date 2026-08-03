@@ -4,7 +4,7 @@ export const translations = {
   ar: {
     // Header & Nav
     siteName: 'يسرى سمايل',
-    siteTitle: 'Yousra Smile | يسرى سمايل',
+    siteTitle: 'يسرى سمايل',
     tagline: 'مراجعات وفيديوهات تسويق بالعمولة للمنزل العصري',
     affiliateBadge: 'روابط تسويق بالعمولة معتمدة',
     affiliateDisclaimer: 'دليلك الموثوق لأفضل أجهزة المنزل الذكي، المطبخ، والعناية الشخصية مع مراجعات يسرى!',
@@ -126,7 +126,7 @@ export const translations = {
   en: {
     // Header & Nav
     siteName: 'Yousra Smile',
-    siteTitle: 'Yousra Smile | Home & Smart Reviews',
+    siteTitle: 'Yousra Smile',
     tagline: 'Affiliate Marketing Reviews & Product Videos for Modern Living',
     affiliateBadge: 'Verified Affiliate Partner',
     affiliateDisclaimer: 'Your trusted guide to smart home, kitchen, and beauty tech with Yousra’s reviews!',

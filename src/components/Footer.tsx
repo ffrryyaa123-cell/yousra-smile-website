@@ -1,5 +1,5 @@
 import React from 'react';
-import { Youtube, Video, Sparkles, Heart, ShieldCheck, Mail, ArrowLeft } from 'lucide-react';
+import { Youtube, Video, Sparkles, Heart, ShieldCheck, Mail, ArrowLeft, Settings } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CATEGORIES } from '../data/categories';
 import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
@@ -95,6 +95,15 @@ export const Footer: React.FC = () => {
               <li>
                 <button onClick={() => setPage('about', 'about')} className="hover:text-amber-400 transition-colors">
                   {t.aboutUs}
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => setPage('admin')} 
+                  className="hover:text-amber-300 text-purple-400 font-bold transition-colors flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-purple-950/60 border border-purple-800/60 w-fit"
+                >
+                  <Settings className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{language === 'ar' ? 'إدارة المنتجات والاستيراد (Admin)' : 'Product & Catalog Admin'}</span>
                 </button>
               </li>
               <li>

@@ -4,7 +4,7 @@ import { ProductCard } from '../components/ProductCard';
 import { ProductFilters } from '../components/ProductFilters';
 import { CATEGORIES } from '../data/categories';
 import { FilterState } from '../types';
-import { Grid, List, SlidersHorizontal, Search, PackageX } from 'lucide-react';
+import { Grid, List, SlidersHorizontal, Search, PackageX, ChevronRight, ChevronLeft } from 'lucide-react';
 
 export const ProductsPage: React.FC = () => {
   const { 
@@ -18,6 +18,8 @@ export const ProductsPage: React.FC = () => {
 
   const [layout, setLayout] = useState<'grid' | 'list'>('grid');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
 
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: searchQuery || '',
@@ -38,10 +40,12 @@ export const ProductsPage: React.FC = () => {
       subcategory: selectedSubcategory,
       searchQuery: searchQuery
     }));
+    setCurrentPage(1);
   }, [selectedCategory, selectedSubcategory, searchQuery]);
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
+    setCurrentPage(1);
   };
 
   const handleResetFilters = () => {
@@ -111,6 +115,12 @@ export const ProductsPage: React.FC = () => {
   }, [products, filters]);
 
   const categoryTitle = CATEGORIES.find(c => c.id === filters.category)?.nameAr || 'جميع المنتجات';
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredProducts.slice(start, start + itemsPerPage);
+  }, [filteredProducts, currentPage]);
 
   return (
     <div className="space-y-6 pb-16">
@@ -222,14 +232,56 @@ export const ProductsPage: React.FC = () => {
 
           {/* Products List Rendering */}
           {filteredProducts.length > 0 ? (
-            <div className={
-              layout === 'grid' 
-                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
-                : 'space-y-4'
-            }>
-              {filteredProducts.map(prod => (
-                <ProductCard key={prod.id} product={prod} layout={layout} />
-              ))}
+            <div className="space-y-8">
+              <div className={
+                layout === 'grid' 
+                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
+                  : 'space-y-4'
+              }>
+                {paginatedProducts.map(prod => (
+                  <ProductCard key={prod.id} product={prod} layout={layout} />
+                ))}
+              </div>
+
+              {/* Pagination Controls with Arrows */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
+                      currentPage === 1
+                        ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white shadow-md cursor-pointer'
+                    }`}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                    <span>السابق</span>
+                  </button>
+
+                  <div className="flex items-center gap-1.5 font-['Tajawal'] text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <span>الصفحة</span>
+                    <span className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center font-mono">
+                      {currentPage}
+                    </span>
+                    <span>من</span>
+                    <span className="font-mono">{totalPages}</span>
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 transition-all ${
+                      currentPage === totalPages
+                        ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white shadow-md cursor-pointer'
+                    }`}
+                  >
+                    <span>التالي</span>
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-4">

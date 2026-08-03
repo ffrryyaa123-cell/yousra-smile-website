@@ -8,13 +8,22 @@
   html {
     font-family: 'Cairo', 'Readex Pro', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     scroll-behavior: smooth;
-    background-color: #111113;
-    color: #FFFFFF;
+    background-color: #0D0714;
+    color: #F4EFF5;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  
+  body, #root {
+    overflow-x: hidden;
+    max-width: 100vw;
+    background-color: #0D0714;
+    color: #F4EFF5;
   }
   
   html.dark {
-    background-color: #111113;
-    color: #FFFFFF;
+    background-color: #0D0714;
+    color: #F4EFF5;
   }
 }
 
@@ -24,7 +33,7 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #111113;
+  background: #0D0714;
 }
 ::-webkit-scrollbar-thumb {
   background: #E2B714;
@@ -34,24 +43,50 @@
   background: #F0CA38;
 }
 
-/* Contrast Rules: Ensure dark brown/black text on white or light surfaces */
-.bg-white,
-.bg-slate-50,
-.bg-slate-100,
-.bg-slate-200,
-.bg-amber-50,
-.bg-amber-100,
-.bg-amber-200,
-.bg-amber-300,
-.bg-amber-400,
-.bg-amber-500 {
-  color: #d9eff3;
+/* 1. DARK & PURPLE BACKGROUND RULE: MUST ALWAYS HAVE HIGH-CONTRAST LIGHT TEXT */
+html, body, #root,
+.bg-slate-950, .bg-slate-900, .bg-slate-800,
+.bg-purple-950, .bg-purple-900, .bg-purple-800,
+[class*="from-[#1d0a33]"], [class*="via-[#0f071a]"], [class*="bg-[#0f071a]"],
+[class*="bg-[#111113]"], [class*="bg-[#0D0714]"], [class*="bg-[#180D2B]"],
+[style*="background-color: #67106a"], [style*="backgroundColor: '#67106a'"] {
+  color: #F4EFF5;
 }
 
-.bg-white h1, .bg-white h2, .bg-white h3, .bg-white h4, .bg-white p, .bg-white span, .bg-white label,
-.bg-slate-50 h1, .bg-slate-50 h2, .bg-slate-50 h3, .bg-slate-50 p, .bg-slate-50 span,
-.bg-amber-100 h1, .bg-amber-100 h2, .bg-amber-100 h3, .bg-amber-100 p, .bg-amber-100 span {
-  color: #f3efcc;
+/* Ensure headings on dark/purple backgrounds are crisp white, bright gold, or soft light tone */
+.bg-slate-950 h1, .bg-slate-900 h1, .bg-purple-950 h1,
+.bg-slate-950 h2, .bg-slate-900 h2, .bg-purple-950 h2,
+.bg-slate-950 h3, .bg-slate-900 h3, .bg-purple-950 h3,
+.bg-slate-950 h4, .bg-slate-900 h4, .bg-purple-950 h4,
+[class*="from-[#1d0a33]"] h1, [class*="from-[#1d0a33]"] h2, [class*="from-[#1d0a33]"] h3,
+[class*="bg-[#0D0714]"] h1, [class*="bg-[#0D0714]"] h2, [class*="bg-[#0D0714]"] h3 {
+  color: #FFFFFF !important;
+}
+
+/* Ensure paragraphs & labels on dark/purple backgrounds are bright and easily readable */
+.bg-slate-950 p, .bg-slate-900 p, .bg-purple-950 p, .bg-slate-800 p,
+[class*="from-[#1d0a33]"] p, [class*="bg-[#0D0714]"] p {
+  color: #E2D5E5 !important;
+}
+
+/* 2. INNER LIGHT SURFACES ONLY: Use dark brown text for contrast */
+.bg-white,
+.bg-amber-50,
+.bg-stone-50,
+.bg-slate-100 {
+  color: #2C1802;
+}
+
+.bg-white h1, .bg-white h2, .bg-white h3, .bg-white h4,
+.bg-amber-50 h1, .bg-amber-50 h2, .bg-amber-50 h3,
+.bg-stone-50 h1, .bg-stone-50 h2, .bg-stone-50 h3 {
+  color: #2C1802 !important;
+}
+
+.bg-white p, .bg-white label,
+.bg-amber-50 p, .bg-amber-50 label,
+.bg-stone-50 p, .bg-stone-50 label {
+  color: #4A2E1B !important;
 }
 
 /* Editorial & Meta Typography Helpers */
@@ -79,14 +114,6 @@
   background-color: rgba(243, 203, 71, 0.582);
   font-size: 0.75rem;
   font-weight: 600;
-}
-
-.grid-border-container {
-  border: 1px solid rgba(247, 131, 131, 0.671);
-}
-
-.grid-border-item {
-  border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Animation utilities */

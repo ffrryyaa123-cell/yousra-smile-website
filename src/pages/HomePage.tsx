@@ -31,6 +31,10 @@ import {
 import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
 import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.jpg';
 
+import { BlogSection } from '../components/BlogSection';
+import { FlashDealsTicker } from '../components/FlashDealsTicker';
+import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
+
 export const HomePage: React.FC = () => {
   const { 
     products, 
@@ -48,30 +52,33 @@ export const HomePage: React.FC = () => {
   const topSellingProducts = products.filter(p => p.isTopSelling).slice(0, 6);
 
   return (
-    <div className="space-y-4 sm:space-y-6 pb-10 text-[#FDFCFB]">
+    <div className="space-y-3 sm:space-y-4 pb-6 text-[#2C1802] dark:text-[#FDFCFB]">
       
+      {/* Flash Deals Countdown Ticker Bar */}
+      <FlashDealsTicker />
+
       {/* Top Prominent Brand Hero Card with Smart Home Banner Image */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#1d0a33] via-[#0f071a] to-[#0a0412] border border-[#D4AF37]/45 rounded-2xl p-3.5 sm:p-5 shadow-2xl">
-        <div className="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#532180] via-[#3a185c] to-[#280f42] border border-[#D4AF37]/70 rounded-2xl p-3 sm:p-5 shadow-2xl">
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-300/30 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-purple-400/35 rounded-full blur-3xl pointer-events-none"></div>
 
         {/* Top Smart Home Visual Banner Image */}
-        <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-xl overflow-hidden mb-3 border border-[#D4AF37]/40 shadow-xl group">
+        <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-xl overflow-hidden mb-3 border border-[#D4AF37]/60 shadow-xl group">
           <img 
             src={smartHomeBanner} 
             alt="Smart Home & Modern Appliances" 
             referrerPolicy="no-referrer"
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-125 contrast-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0f071a] via-[#0f071a]/40 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#280f42]/75 via-[#280f42]/20 to-transparent"></div>
           
-          <div className="absolute bottom-3 right-3 ltr:left-3 ltr:right-auto bg-slate-950/80 backdrop-blur-md border border-amber-400/40 px-3 py-1 rounded-lg text-amber-300 text-[11px] font-bold font-['Tajawal'] flex items-center gap-1.5 shadow-lg">
+          <div className="absolute bottom-2.5 right-2.5 ltr:left-2.5 ltr:right-auto bg-slate-950/80 backdrop-blur-md border border-amber-400/50 px-3 py-1 rounded-lg text-amber-300 text-xs font-bold font-['Tajawal'] flex items-center gap-1.5 shadow-lg">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>{language === 'en' ? 'Smart Home & Modern Appliances Guide' : 'دليل الأجهزة المنزلية الحديثة والذكية'}</span>
           </div>
         </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto space-y-2.5 text-center">
+        <div className="relative z-10 max-w-4xl mx-auto space-y-2 text-center">
           
           <div className="inline-flex items-center gap-1.5 bg-amber-500/10 text-[#D4AF37] border border-amber-500/30 px-3 py-0.5 rounded-full text-[11px] font-bold font-['Tajawal'] tracking-wider">
             <Sparkles className="w-3 h-3 text-amber-400" />
@@ -79,11 +86,11 @@ export const HomePage: React.FC = () => {
           </div>
 
           {/* Brand Header: Logo + Title */}
-          <div className="flex flex-col md:flex-row items-center justify-center gap-3 sm:gap-5 py-0.5">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-2.5 sm:gap-4 py-0.5">
             {/* Enlarged Crisp Logo Avatar (First child = Right side in RTL) */}
             <div className="relative group shrink-0">
               <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 via-purple-500 to-amber-500 blur-md opacity-85 group-hover:opacity-100 transition duration-500"></div>
-              <div className="relative w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden border-3 border-[#D4AF37] shadow-[0_0_30px_rgba(212,175,55,0.6)] bg-slate-950 transition-transform duration-500 hover:scale-105">
+              <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-3 border-[#D4AF37] shadow-[0_0_25px_rgba(212,175,55,0.6)] bg-slate-950 transition-transform duration-500 hover:scale-105">
                 <img 
                   src={logoImg} 
                   alt={language === 'ar' ? 'ابتسامة يسرى Logo' : 'Yousra Smile Logo'} 
@@ -91,22 +98,28 @@ export const HomePage: React.FC = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="absolute bottom-0.5 right-0.5 bg-amber-400 text-slate-950 p-1.5 rounded-full shadow-lg border-2 border-slate-950 font-bold" title="Verified Creator">
-                <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+              <span className="absolute bottom-0.5 right-0.5 bg-amber-400 text-slate-950 p-1 rounded-full shadow-lg border-2 border-slate-950 font-bold" title="Verified Creator">
+                <Sparkles className="w-3 h-3 fill-slate-950" />
               </span>
             </div>
 
-            {/* Prominent Golden Title Text */}
-            <div className="text-center md:text-right rtl:md:text-right ltr:md:text-left space-y-1">
-              <h1 className={`text-4xl sm:text-6xl md:text-[68px] font-black leading-tight tracking-tight bg-gradient-to-r from-amber-200 via-amber-400 to-amber-300 bg-clip-text text-transparent drop-shadow-lg ${
-                language === 'ar' ? "font-['Tajawal']" : "font-serif-editorial"
-              }`}>
+            {/* Prominent Golden Title Text (Focused element: centered & brightened for dark background) */}
+            <div className="text-center space-y-0.5">
+              <h1 
+                style={{ color: '#efbfed', marginTop: '4px', marginBottom: '21px' }}
+                className={`text-3xl sm:text-5xl md:text-[58px] font-black leading-tight tracking-tight text-center drop-shadow-xl ${
+                  language === 'ar' ? "font-['Tajawal']" : "font-serif-editorial"
+                }`}
+              >
                 {language === 'ar' ? 'ابتسامة يسرى' : 'Yousra Smile'}
               </h1>
             </div>
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mx-auto font-normal leading-normal font-['Tajawal']">
+          <p 
+            style={{ color: '#e7d3ee' }}
+            className="text-xs sm:text-sm max-w-2xl mx-auto font-medium leading-relaxed font-['Tajawal'] text-center"
+          >
             {language === 'en' 
               ? 'Smart devices, modern home essentials, and honest affiliate recommendations. We select the best for you to transform your daily lifestyle.'
               : 'الأجهزة الذكية والمنزل العصري بلمسة من الفخامة والصدق. ننتقي لك الأفضل لنغير نمط حياتك اليومي.'}
@@ -115,9 +128,12 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Daily Deals Notice Line above Product Cards */}
-      <div className="bg-gradient-to-r from-amber-500/15 via-purple-950/80 to-amber-500/15 border border-amber-500/40 rounded-xl p-2.5 sm:p-3 text-center text-xs font-bold text-amber-200 font-['Tajawal'] flex items-center justify-center gap-2 shadow-lg backdrop-blur-md">
+      <div 
+        style={{ backgroundColor: '#67106a' }}
+        className="border border-purple-500/40 rounded-xl p-2 sm:p-2.5 text-center text-xs font-bold font-['Tajawal'] flex items-center justify-center gap-2 shadow-md backdrop-blur-md"
+      >
         <span className="text-amber-400 text-sm">🔥</span>
-        <span>
+        <span style={{ color: '#f4eff5' }}>
           {language === 'en' 
             ? 'Top deals are updated daily from Amazon & AliExpress; prices may change based on availability.' 
             : 'يتم تحديث أفضل العروض يوميًا من Amazon وAliExpress، وقد تتغير الأسعار حسب التوفر.'}
@@ -128,47 +144,47 @@ export const HomePage: React.FC = () => {
       <HeroBanner />
 
       {/* Design Variation: Editorial Product Strip */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between border-b border-[#FDFCFB]/10 pb-2">
-          <div className="font-mono-meta text-xs text-[#D4AF37]">
+      <section className="space-y-2.5">
+        <div className="flex items-center justify-between border-b border-purple-500/20 pb-1.5">
+          <div className="font-mono-meta text-xs text-amber-400">
             // {language === 'en' ? 'EDITORIAL SELECTIONS' : 'اختيارات التحرير الفاخرة'}
           </div>
           <button 
             onClick={() => { setSelectedCategory('all'); setPage('products'); }}
-            className="font-mono-meta text-xs text-[#FDFCFB]/70 hover:text-[#D4AF37] flex items-center gap-1 transition-colors"
+            className="font-mono-meta text-xs text-slate-300 hover:text-amber-300 flex items-center gap-1 transition-colors"
           >
             {language === 'en' ? 'VIEW CATALOG' : 'عرض الكتالوج الكامل'} →
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-[#FDFCFB]/10 border border-[#FDFCFB]/10 rounded-2xl overflow-hidden shadow-xl">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-purple-900/30 border border-purple-500/20 rounded-2xl overflow-hidden shadow-lg">
           {editorialStripProducts.map((prod, idx) => {
             const title = language === 'en' ? (prod.titleEn || prod.titleAr) : prod.titleAr;
             return (
               <div 
                 key={prod.id}
                 onClick={() => openProductDetail(prod)}
-                className="group bg-[#111113] hover:bg-[#1A1A1C] p-3.5 transition-all duration-300 cursor-pointer flex flex-col justify-between"
+                className="group bg-[#180D2B] hover:bg-[#23123D] p-3 transition-all duration-300 cursor-pointer flex flex-col justify-between border border-purple-900/40"
               >
                 <div>
-                  <div className="font-mono-meta text-[11px] text-[#D4AF37] mb-1.5">
+                  <div className="font-mono-meta text-[11px] text-amber-300 mb-1">
                     {prod.brand.toUpperCase()} / [0{idx + 1}]
                   </div>
-                  <div className="w-full aspect-square bg-[#1A1A1C] rounded-xl overflow-hidden mb-3 border border-[#FDFCFB]/5">
+                  <div className="w-full aspect-square bg-slate-900 rounded-xl overflow-hidden mb-2 border border-purple-500/20">
                     <img 
                       src={prod.image} 
                       alt={title}
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                     />
                   </div>
-                  <h3 className="font-serif-editorial text-lg text-white group-hover:text-[#D4AF37] transition-colors mb-1 line-clamp-2 leading-snug">
+                  <h3 className="font-serif-editorial text-base sm:text-lg text-white group-hover:text-amber-300 transition-colors mb-1 line-clamp-2 leading-snug">
                     {title}
                   </h3>
                 </div>
-                <div className="font-mono-meta text-xs text-[#FDFCFB]/60 pt-2 border-t border-[#FDFCFB]/10 flex justify-between items-center">
+                <div className="font-mono-meta text-xs text-slate-300 pt-2 border-t border-purple-500/20 flex justify-between items-center">
                   <span>Price: {formatPrice(prod.discountPrice)}</span>
-                  <span className="text-[#D4AF37]">→</span>
+                  <span className="text-amber-400">→</span>
                 </div>
               </div>
             );
@@ -177,29 +193,29 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Design Variation: High-Contrast Stats Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-3 border-t border-b border-[#FDFCFB]/10 my-4 py-1">
-        <div className="p-4 border-b md:border-b-0 md:border-l border-[#FDFCFB]/10 text-center md:text-right space-y-1">
-          <span className="font-serif-editorial text-4xl sm:text-5xl text-white block">124k</span>
-          <span className="font-mono-meta text-xs text-[#D4AF37]">YouTube Community</span>
+      <section className="grid grid-cols-1 md:grid-cols-3 border border-purple-500/20 my-2.5 py-2 bg-[#180D2B]/80 rounded-xl shadow-lg backdrop-blur-md">
+        <div className="p-3 border-b md:border-b-0 md:border-l border-purple-500/20 text-center md:text-right space-y-0.5">
+          <span className="font-serif-editorial text-3xl sm:text-4xl text-white block font-extrabold">124k</span>
+          <span className="font-mono-meta text-xs text-amber-300 font-bold">YouTube Community</span>
         </div>
-        <div className="p-4 border-b md:border-b-0 md:border-l border-[#FDFCFB]/10 text-center md:text-right space-y-1">
-          <span className="font-serif-editorial text-4xl sm:text-5xl text-white block">450k</span>
-          <span className="font-mono-meta text-xs text-[#D4AF37]">TikTok Reach</span>
+        <div className="p-3 border-b md:border-b-0 md:border-l border-purple-500/20 text-center md:text-right space-y-0.5">
+          <span className="font-serif-editorial text-3xl sm:text-4xl text-white block font-extrabold">450k</span>
+          <span className="font-mono-meta text-xs text-amber-300 font-bold">TikTok Reach</span>
         </div>
-        <div className="p-4 text-center md:text-right space-y-1">
-          <span className="font-serif-editorial text-4xl sm:text-5xl text-[#D4AF37] block">0%</span>
-          <span className="font-mono-meta text-xs text-[#FDFCFB]/70">Fake Reviews Guarantee</span>
+        <div className="p-3 text-center md:text-right space-y-0.5">
+          <span className="font-serif-editorial text-3xl sm:text-4xl text-amber-300 block font-extrabold">0%</span>
+          <span className="font-mono-meta text-xs text-slate-200 font-semibold">Fake Reviews Guarantee</span>
         </div>
       </section>
 
       {/* Category Grid Section */}
-      <section className="space-y-3">
+      <section className="space-y-2.5">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-white font-['Tajawal'] tracking-tight">
+            <h2 className="text-lg sm:text-xl font-black text-white font-['Tajawal'] tracking-tight">
               {t.categories}
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-300 mt-0.5">
               {language === 'en' ? 'Explore top rated products in smart home, kitchen, and personal care' : 'اختر القسم لاستكشاف منتجات المنزل الذكي والديكور والعناية بالمطبخ والعناية الشخصية للجميع'}
             </p>
           </div>
@@ -220,9 +236,9 @@ export const HomePage: React.FC = () => {
               <div
                 key={cat.id}
                 onClick={() => { setSelectedCategory(cat.id); setPage('products'); }}
-                className="group relative bg-slate-900/90 rounded-2xl p-2.5 border border-slate-800 hover:border-amber-400/60 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col items-center text-center overflow-hidden"
+                className="group relative bg-[#180D2B] rounded-2xl p-2 border border-purple-500/20 hover:border-amber-400/60 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col items-center text-center overflow-hidden"
               >
-                <div className="w-full h-20 rounded-xl overflow-hidden mb-2 bg-slate-800 relative border border-slate-700/40">
+                <div className="w-full h-20 rounded-xl overflow-hidden mb-1.5 bg-slate-900 relative border border-purple-500/20">
                   <img 
                     src={cat.image} 
                     alt={catName}
@@ -235,10 +251,10 @@ export const HomePage: React.FC = () => {
                   </span>
                 </div>
 
-                <h3 className="text-xs font-bold text-white group-hover:text-amber-400 transition-colors font-['Tajawal']">
+                <h3 className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors font-['Tajawal']">
                   {catName}
                 </h3>
-                <p className="text-[10px] text-slate-400 line-clamp-1">
+                <p className="text-[10px] text-slate-300 line-clamp-1">
                   {cat.subcategories.slice(0, 2).join(' • ')}
                 </p>
               </div>
@@ -497,6 +513,9 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* Buying Guides & Blog Articles Section */}
+      <BlogSection />
+
       {/* Why Trust Yousra Smile Affiliate Section */}
       <section className="bg-slate-900/80 rounded-3xl p-6 sm:p-10 border border-slate-800 space-y-8">
         <div className="text-center max-w-3xl mx-auto space-y-3">
@@ -544,6 +563,9 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Recently Viewed Products Section */}
+      <RecentlyViewedSection />
 
       {/* Bottom Prominent Call-to-Action (CTA) Banner Button */}
       <section className="relative overflow-hidden bg-gradient-to-r from-amber-500 via-amber-600 to-purple-800 text-slate-950 rounded-3xl p-8 sm:p-12 shadow-2xl text-center space-y-6 border-2 border-amber-300">

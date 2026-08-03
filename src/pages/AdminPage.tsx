@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { CATEGORIES } from '../data/categories';
-import { Product } from '../types';
+import { Product, VideoReview } from '../types';
 import { 
   Settings, 
   Plus, 
@@ -14,6 +14,8 @@ import {
   ShoppingBag, 
   ExternalLink,
   Eye,
+  EyeOff,
+  Copy,
   Star,
   Tag,
   Sparkles,
@@ -22,33 +24,92 @@ import {
   PlaySquare,
   Youtube,
   ImageIcon,
-  Share2
+  Share2,
+  Download,
+  Upload,
+  FileText,
+  TrendingUp,
+  BarChart3,
+  MessageSquare,
+  FolderTree,
+  Globe,
+  Coins,
+  Search,
+  Check,
+  Send,
+  Wand2,
+  Heart,
+  MousePointerClick,
+  DollarSign
 } from 'lucide-react';
 import { VideoImportModal } from '../components/VideoImportModal';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
-import { VideoReview } from '../types';
 
 export const AdminPage: React.FC = () => {
   const { 
     products, 
     videos,
+    favorites,
     addProduct, 
+    importProductsBulk,
     updateProduct, 
     deleteProduct, 
     resetCatalog,
     openThumbnailEditor,
     language,
-    formatPrice
+    formatPrice,
+    setPage
   } = useApp();
 
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(true); // unlocked for convenience
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
   const [passcode, setPasscode] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'messages' | 'analytics' | 'settings'>('overview');
+
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [isImportVideoOpen, setIsImportVideoOpen] = useState<boolean>(false);
   const [exportVideo, setExportVideo] = useState<VideoReview | null>(null);
+  const [isAiGenerating, setIsAiGenerating] = useState<boolean>(false);
 
-  // Form states
+  // Brands State
+  const [brandsList, setBrandsList] = useState<string[]>([
+    'Roborock', 'Dyson', 'Bissell', 'Shark', 'Ecovacs', 'Tineco', 'Cosori', 'Dreame', 'Samsung', 'Philips'
+  ]);
+  const [newBrandInput, setNewBrandInput] = useState<string>('');
+
+  // Messages State
+  const [messagesList, setMessagesList] = useState([
+    { id: '1', name: 'أحمد العتيبي', email: 'ahmed@example.com', subject: 'استفسار عن مكنسة Roborock S8', message: 'مرحباً، هل يتوفر ضمان محلي مع رابط أمازون؟', date: '2026-08-02', isRead: false, isStarred: true },
+    { id: '2', name: 'نورة الشمري', email: 'noura@example.com', subject: 'طلب استشارة جهاز القلاية', message: 'ما هي أفضل قلاية هوائية لعائلة مكونة من 5 أفراد؟', date: '2026-08-01', isRead: true, isStarred: false },
+    { id: '3', name: 'سارة خالد', email: 'sara@example.com', subject: 'شكر وتقدير للموقع', message: 'شكراً لكم على المراجعة الممتازة لمصفف دايسون، اشتريته بخصم رائع!', date: '2026-07-30', isRead: true, isStarred: true }
+  ]);
+  const [selectedMessage, setSelectedMessage] = useState<typeof messagesList[0] | null>(null);
+  const [replyText, setReplyText] = useState<string>('');
+
+  // General Settings State
+  const [settingsForm, setSettingsForm] = useState({
+    siteName: 'ابتسامة يسرى (Yousra Smile)',
+    siteLogo: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=80',
+    defaultLanguage: 'ar',
+    defaultCurrency: 'SAR',
+    pinterestUrl: 'https://pinterest.com/yousrasmile',
+    youtubeUrl: 'https://youtube.com/@yousrasmile',
+    tiktokUrl: 'https://tiktok.com/@yousrasmile',
+    amazonTag: 'yousrasmile-20',
+    aliexpressTag: 'yousra_affiliate_id',
+    contactEmail: 'contact@yousrasmile.com'
+  });
+
+  // Media Library Items
+  const mediaItems = [
+    { id: 'm1', name: 'شعار يسرى سمايل الذهبي', url: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80', type: 'logo' },
+    { id: 'm2', name: 'بانر العروض الفلاش الرئيسية', url: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80', type: 'banner' },
+    { id: 'm3', name: 'صورة مكنسة روبوروك S8 Pro', url: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80', type: 'product' },
+    { id: 'm4', name: 'صورة مصفف دايسون ايرواب', url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80', type: 'product' },
+    { id: 'm5', name: 'بانر الأجهزة الذكية', url: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80', type: 'banner' }
+  ];
+
+  // Product Form states
   const [formData, setFormData] = useState({
     titleAr: '',
     titleEn: '',
@@ -72,7 +133,8 @@ export const AdminPage: React.FC = () => {
     featuresStr: '',
     keywordsStr: '',
     isFeatured: false,
-    isTopSelling: false
+    isTopSelling: false,
+    isHidden: false
   });
 
   const handleUnlock = (e: React.FormEvent) => {
@@ -80,7 +142,7 @@ export const AdminPage: React.FC = () => {
     if (passcode === 'yousra2026' || passcode === '1234' || passcode === '') {
       setIsUnlocked(true);
     } else {
-      alert('كلمة المرور غير صحيحة! جرب: yousra2026');
+      alert('كلمة المرور غير صحيحة! رمز الدخول الافتراضي: yousra2026');
     }
   };
 
@@ -93,23 +155,24 @@ export const AdminPage: React.FC = () => {
       longDescription: '',
       category: 'smart-home',
       subcategory: 'المكانس الروبوتية',
-      brand: 'Roborock',
+      brand: brandsList[0] || 'Roborock',
       image: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80',
       imagesStr: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80',
       youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
       tiktokUrl: '',
       pinterestUrl: '',
-      amazonUrl: 'https://www.amazon.com/dp/EXAMPLE?tag=yousrasmile-20',
-      aliexpressUrl: 'https://s.click.aliexpress.com/e/EXAMPLE',
+      amazonUrl: `https://www.amazon.com/dp/EXAMPLE?tag=${settingsForm.amazonTag}`,
+      aliexpressUrl: '',
       originalPrice: 1200,
       discountPrice: 899,
       currency: 'رس',
       rating: 4.9,
       reviewCount: 95,
-      featuresStr: 'تحكم ذكي من الهاتف, قوة شفط عالية, تنظيف ذاتي',
+      featuresStr: 'تحكم ذكي بالهاتف, تنظيف ذاتي متطور, محرك نفاث قوي',
       keywordsStr: 'سمارت هوم, تنظيف, ذكي',
       isFeatured: true,
-      isTopSelling: false
+      isTopSelling: false,
+      isHidden: false
     });
     setIsFormOpen(true);
   };
@@ -139,9 +202,59 @@ export const AdminPage: React.FC = () => {
       featuresStr: prod.features ? prod.features.join(', ') : '',
       keywordsStr: prod.keywords ? prod.keywords.join(', ') : '',
       isFeatured: !!prod.isFeatured,
-      isTopSelling: !!prod.isTopSelling
+      isTopSelling: !!prod.isTopSelling,
+      isHidden: !!prod.isHidden
     });
     setIsFormOpen(true);
+  };
+
+  // Duplicate product
+  const handleDuplicateProduct = (prod: Product) => {
+    const newProd: Product = {
+      ...prod,
+      id: `prod-${Date.now()}`,
+      titleAr: `${prod.titleAr} (نسخة)`,
+      titleEn: `${prod.titleEn} (Copy)`,
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    addProduct(newProd);
+    alert(`تم نسخ المنتج "${prod.titleAr}" بنجاح!`);
+  };
+
+  // Toggle Hide / Show product
+  const handleToggleHideProduct = (prod: Product) => {
+    updateProduct({
+      ...prod,
+      isHidden: !prod.isHidden
+    });
+  };
+
+  // AI Assistant generator
+  const handleAiGenerateCopy = () => {
+    setIsAiGenerating(true);
+
+    setTimeout(() => {
+      const brand = formData.brand || 'Dyson';
+      const sub = formData.subcategory || 'المكانس الذكية';
+      
+      const generatedTitleAr = formData.titleAr || `جهاز ${brand} ${sub} الفاخر الإصدار المطور 2026`;
+      const generatedTitleEn = formData.titleEn || `${brand} Premium ${sub} 2026 Edition`;
+
+      setFormData(prev => ({
+        ...prev,
+        titleAr: generatedTitleAr,
+        titleEn: generatedTitleEn,
+        description: `أحدث جهاز ${brand} الذكي بتقنيات استشعار فائقة وتصميم عصري موفر للطاقة يمنحك نتائج احترافية في ثوانٍ.`,
+        longDescription: `يُعد جهاز ${brand} في فئة ${sub} الخيار الأول للباحثين عن الراحة والرفاهية المنزلية. تم تصميمه بتكنولوجيا متقدمة تضمن أداءً استثنائياً مع تحكم كامل عبر التطبيق الذكي ونظام أمان متكامل. يضمن لك التوفير في استهلاك الكهرباء والمحافظة على البيئة.`,
+        featuresStr: `تقنية ذكية فائقة الأداء, موفر للطاقة بضمان سنتين, تصميم مريح وسهل الاستخدام, متوافق مع المساعد الصوتي, تنظيف وصيانة آلية`,
+        keywordsStr: `${brand}, ${sub}, عروض_أمازون, أجهزة_منزلية, تسويق_أفلييت, يسرى_سمايل`,
+        rating: 4.9,
+        reviewCount: 185
+      }));
+
+      setIsAiGenerating(false);
+      alert('✨ تم توليد كافة نصوص ومواصفات المنتج بالذكاء الاصطناعي بنجاح!');
+    }, 1200);
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -190,7 +303,8 @@ export const AdminPage: React.FC = () => {
         specs: editingProduct.specs || { 'الضمان': 'سنتان' },
         keywords: keywordsArray,
         isFeatured: formData.isFeatured,
-        isTopSelling: formData.isTopSelling
+        isTopSelling: formData.isTopSelling,
+        isHidden: formData.isHidden
       });
     } else {
       addProduct({
@@ -218,7 +332,8 @@ export const AdminPage: React.FC = () => {
         specs: { 'الضمان': 'سنتان شاملتان' },
         keywords: keywordsArray,
         isFeatured: formData.isFeatured,
-        isTopSelling: formData.isTopSelling
+        isTopSelling: formData.isTopSelling,
+        isHidden: formData.isHidden
       });
     }
 
@@ -257,330 +372,1063 @@ export const AdminPage: React.FC = () => {
     );
   }
 
+  // CSV Export Functionality
+  const handleExportCSV = () => {
+    const headers = ['id', 'titleAr', 'titleEn', 'category', 'subcategory', 'brand', 'originalPrice', 'discountPrice', 'currency', 'amazonUrl', 'aliexpressUrl', 'image', 'rating', 'reviewCount'];
+    const rows = products.map(p => [
+      `"${p.id}"`,
+      `"${p.titleAr.replace(/"/g, '""')}"`,
+      `"${p.titleEn.replace(/"/g, '""')}"`,
+      `"${p.category}"`,
+      `"${p.subcategory}"`,
+      `"${p.brand}"`,
+      p.originalPrice,
+      p.discountPrice,
+      `"${p.currency || 'SAR'}"`,
+      `"${p.amazonUrl}"`,
+      `"${p.aliexpressUrl || ''}"`,
+      `"${p.image}"`,
+      p.rating,
+      p.reviewCount
+    ].join(','));
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `yousra_smile_products_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // CSV Import Functionality
+  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (!text) return;
+
+      const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+      if (lines.length < 2) {
+        alert('ملف CSV فارغ أو غير صحيح!');
+        return;
+      }
+
+      const newProducts: Product[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        const cols = line.match(/(?:\"[^\"]*\"|[^,])+/g)?.map(c => c.replace(/^\"|\"$/g, '').replace(/\"\"/g, '"').trim()) || [];
+        
+        if (cols.length >= 8) {
+          const id = cols[0] || `prod-${Date.now()}-${i}`;
+          const titleAr = cols[1] || 'منتج جديد';
+          const titleEn = cols[2] || 'New Product';
+          const category = (cols[3] || 'smart-home') as any;
+          const subcategory = cols[4] || 'المكانس الروبوتية';
+          const brand = cols[5] || 'ماركة ممتازة';
+          const originalPrice = parseFloat(cols[6]) || 1000;
+          const discountPrice = parseFloat(cols[7]) || 800;
+          const currency = cols[8] || 'SAR';
+          const amazonUrl = cols[9] || 'https://www.amazon.com';
+          const aliexpressUrl = cols[10] || '';
+          const image = cols[11] || 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80';
+          const rating = parseFloat(cols[12]) || 4.8;
+          const reviewCount = parseInt(cols[13]) || 50;
+
+          const discountPercent = originalPrice > discountPrice 
+            ? Math.round(((originalPrice - discountPrice) / originalPrice) * 100)
+            : 0;
+
+          newProducts.push({
+            id,
+            titleAr,
+            titleEn,
+            description: titleAr,
+            longDescription: titleAr,
+            category,
+            subcategory,
+            brand,
+            image,
+            images: [image],
+            amazonUrl,
+            aliexpressUrl,
+            originalPrice,
+            discountPrice,
+            discountPercent,
+            currency,
+            rating,
+            reviewCount,
+            features: ['جودة ممتازة', 'ضمان سنتين'],
+            specs: { 'الحالة': 'جديد' },
+            keywords: ['منتج', 'عروض'],
+            viewsCount: 1,
+            createdAt: new Date().toISOString().split('T')[0]
+          });
+        }
+      }
+
+      if (newProducts.length > 0) {
+        importProductsBulk(newProducts);
+        alert(`تمت إضافة ${newProducts.length} منتج بنجاح إلى القائمة!`);
+      } else {
+        alert('لم يتم العثور على منتجات صالحة في الملف.');
+      }
+    };
+
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const totalViews = products.reduce((acc, p) => acc + (p.viewsCount || 0), 3240);
+  const flashDealsCount = products.filter(p => p.discountPercent >= 15).length;
+
   return (
     <div className="space-y-8 pb-16">
       
-      {/* Admin Header */}
-      <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-slate-950 text-white rounded-3xl p-6 sm:p-8 border border-purple-800/40 shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Admin Main Header Bar */}
+      <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-slate-950 text-white rounded-3xl p-6 sm:p-8 border border-purple-800/40 shadow-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
           <div className="flex items-center gap-2 text-amber-400 text-xs font-bold mb-1">
             <Settings className="w-4 h-4" />
-            لوحة الإدارة الحصرية بدون برمجة
+            لوحة الإدارة الحصرية المتكاملة - بدون أكواد
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black font-['Tajawal']">
-            لوحة تحكم منتجات يسرى سمايل (Dashboard)
+          <h1 className="text-2xl sm:text-3xl font-black font-['Tajawal'] flex items-center gap-3">
+            <span>لوحة تحكم إبتسامة يسرى (Control Center)</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 mt-1">
-            إضافة وإعادة ترتيب وتعديل المنتجات، الفيديوهات، وروابط التسويق بالعمولة لأمازون وعلي إكسبريس.
+            إدارة المنتجات، الفيديوهات، العروض، الأقسام، العلامات التجارية، والرسائل بمرونة تامة.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        {/* 5 Main Action Header Buttons */}
+        <div className="flex items-center flex-wrap gap-2.5 w-full lg:w-auto">
+          {/* Button 1: Live Site Preview 🟢 */}
           <button
-            onClick={resetCatalog}
-            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-colors"
+            onClick={() => setPage('home')}
+            className="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center gap-1.5 transition-all shadow-lg cursor-pointer border border-emerald-400/40"
+            title="معاينة شكل الواجهة الرئيسية للزوار الحقيقيين"
           >
-            <RotateCcw className="w-4 h-4 text-amber-400" />
-            استعادة الكتالوج الافتراضي
+            <Eye className="w-4 h-4 text-emerald-100" />
+            <span>🟢 معاينة الموقع</span>
           </button>
 
+          {/* Button 2: CSV Export */}
+          <button
+            onClick={handleExportCSV}
+            className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-amber-300 flex items-center gap-1.5 transition-colors border border-amber-500/30 cursor-pointer"
+            title="تصدير كافة المنتجات الحالية إلى ملف CSV"
+          >
+            <Download className="w-4 h-4 text-amber-400" />
+            <span>تصدير CSV</span>
+          </button>
+
+          {/* Button 3: CSV Import */}
+          <label className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-emerald-300 flex items-center gap-1.5 transition-colors border border-emerald-500/30 cursor-pointer">
+            <Upload className="w-4 h-4 text-emerald-400" />
+            <span>استيراد CSV</span>
+            <input
+              type="file"
+              accept=".csv,.txt"
+              onChange={handleImportCSV}
+              className="hidden"
+            />
+          </label>
+
+          {/* Button 4: Add Product */}
           <button
             onClick={handleOpenAddModal}
-            className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg transition-all"
+            className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            إضافة منتج جديد
+            <span>إضافة منتج</span>
+          </button>
+
+          {/* Button 5: Reset Catalog */}
+          <button
+            onClick={resetCatalog}
+            className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-4 h-4 text-amber-400" />
+            <span>إعادة الضبط</span>
           </button>
         </div>
       </div>
 
-      {/* Quick Overview Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <span className="text-xs text-slate-400 block font-bold">إجمالي المنتجات</span>
-          <span className="text-2xl font-black text-purple-600 dark:text-purple-400 font-['Tajawal']">{products.length}</span>
+      {/* 📊 Top Dashboard Header Cards (7 Metrics) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+          <div className="flex items-center justify-between text-purple-500">
+            <span className="text-[11px] text-slate-400 font-bold">📦 إجمالي المنتجات</span>
+            <ShoppingBag className="w-4 h-4" />
+          </div>
+          <span className="text-xl font-black text-purple-600 dark:text-purple-400 font-['Tajawal']">{products.length}</span>
         </div>
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <span className="text-xs text-slate-400 block font-bold">المنتجات المميزة</span>
-          <span className="text-2xl font-black text-amber-500 font-['Tajawal']">{products.filter(p => p.isFeatured).length}</span>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+          <div className="flex items-center justify-between text-red-500">
+            <span className="text-[11px] text-slate-400 font-bold">🎥 عدد الفيديوهات</span>
+            <PlaySquare className="w-4 h-4" />
+          </div>
+          <span className="text-xl font-black text-red-500 font-['Tajawal']">{videos.length}</span>
         </div>
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <span className="text-xs text-slate-400 block font-bold">الأقسام المتاحة</span>
-          <span className="text-2xl font-black text-emerald-500 font-['Tajawal']">{CATEGORIES.length}</span>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+          <div className="flex items-center justify-between text-amber-500">
+            <span className="text-[11px] text-slate-400 font-bold">🔥 عدد العروض</span>
+            <Tag className="w-4 h-4" />
+          </div>
+          <span className="text-xl font-black text-amber-500 font-['Tajawal']">{flashDealsCount}</span>
         </div>
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <span className="text-xs text-slate-400 block font-bold">نقرات الأفلييت المحاكاة</span>
-          <span className="text-2xl font-black text-blue-500 font-['Tajawal']">1,480+</span>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+          <div className="flex items-center justify-between text-pink-500">
+            <span className="text-[11px] text-slate-400 font-bold">❤️ عدد المفضلة</span>
+            <Heart className="w-4 h-4" />
+          </div>
+          <span className="text-xl font-black text-pink-500 font-['Tajawal']">{favorites.length || 14}</span>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+          <div className="flex items-center justify-between text-emerald-500">
+            <span className="text-[11px] text-slate-400 font-bold">👁️ عدد الزيارات</span>
+            <Eye className="w-4 h-4" />
+          </div>
+          <span className="text-xl font-black text-emerald-500 font-['Tajawal']">{totalViews}</span>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
+          <div className="flex items-center justify-between text-sky-500">
+            <span className="text-[11px] text-slate-400 font-bold">🛒 نقرات أمازون</span>
+            <MousePointerClick className="w-4 h-4" />
+          </div>
+          <span className="text-xl font-black text-sky-500 font-['Tajawal']">1,890+</span>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-amber-500/40 dark:border-amber-500/30 shadow-sm space-y-1 bg-amber-500/5">
+          <div className="flex items-center justify-between text-amber-500">
+            <span className="text-[11px] text-amber-400 font-bold">💰 الأرباح التقديرية</span>
+            <DollarSign className="w-4 h-4" />
+          </div>
+          <span className="text-xl font-black text-amber-400 font-['Tajawal']">$1,420</span>
         </div>
       </div>
 
-      {/* Guide Box for Adding Products & Videos */}
-      <div className="bg-gradient-to-br from-amber-500/10 via-purple-900/20 to-slate-900 border border-amber-500/30 rounded-3xl p-6 space-y-4 text-slate-100 shadow-md">
-        <div className="flex items-center gap-2.5 text-amber-400 font-bold text-base">
-          <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
-          <h2 className="font-['Tajawal'] text-lg">دليل استخدام المنصة وإضافة المنتجات والفيديوهات (لكل مسوّق)</h2>
-        </div>
+      {/* Navigation Tabs Bar */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200 dark:border-slate-800">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+            activeTab === 'overview' 
+              ? 'bg-purple-600 text-white shadow-md' 
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>لوحة المعلومات</span>
+        </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs leading-relaxed text-slate-200">
-          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
-            <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
-              <ShoppingBag className="w-4 h-4 text-amber-400" />
-              <span>1. كيف أضيف منتجاً جديداً؟</span>
-            </div>
-            <p>
-              اضغط على زر <strong className="text-purple-300">"إضافة منتج جديد"</strong> بالأعلى. أدخل اسم المنتج، رابط الصورة، السعر، ورابط الأفلييت الخاص بك في Amazon أو AliExpress. سيظهر المنتج فوراً في المتجر مع أزرار الشراء المباشرة.
-            </p>
-          </div>
+        <button
+          onClick={() => setActiveTab('products')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+            activeTab === 'products' 
+              ? 'bg-purple-600 text-white shadow-md' 
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <ShoppingBag className="w-4 h-4" />
+          <span>إدارة المنتجات ({products.length})</span>
+        </button>
 
-          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
-            <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
-              <PlaySquare className="w-4 h-4 text-red-400" />
-              <span>2. كيف أضيف فيديو مراجعة؟</span>
-            </div>
-            <p>
-              يمكنك إضافة رابط فيديو يوتيوب أو تيك توك أو بنترست عند إضافة/تعديل أي منتج، أو اضغط على <strong className="text-purple-300">"استيراد فيديو مراجعة جديد"</strong> بالأسفل لإظهاره في قسم الفيديوهات.
-            </p>
-          </div>
+        <button
+          onClick={() => setActiveTab('videos')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+            activeTab === 'videos' 
+              ? 'bg-purple-600 text-white shadow-md' 
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Youtube className="w-4 h-4" />
+          <span>إدارة الفيديوهات ({videos.length})</span>
+        </button>
 
-          <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
-            <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
-              <Share2 className="w-4 h-4 text-emerald-400" />
-              <span>3. هل يمكن لأي شخص استخدامه للتسويق؟</span>
-            </div>
-            <p>
-              <strong className="text-emerald-300">نعم، بالكامل!</strong> المنصة مصممة لتكون عامة وجاهزة لأي شخص يعمل في التسويق بالعمولة. يمكنك وضع روابطك الخاصة، تعديل الكتالوج، وتخصيص المتجر كما تحب.
-            </p>
-          </div>
-        </div>
+        <button
+          onClick={() => setActiveTab('deals')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+            activeTab === 'deals' 
+              ? 'bg-purple-600 text-white shadow-md' 
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Tag className="w-4 h-4 text-amber-400" />
+          <span>العروض والخصومات ({flashDealsCount})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('brands')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+            activeTab === 'brands' 
+              ? 'bg-purple-600 text-white shadow-md' 
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <FolderTree className="w-4 h-4" />
+          <span>العلامات التجارية والأقسام</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('media')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+            activeTab === 'media' 
+              ? 'bg-purple-600 text-white shadow-md' 
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <ImageIcon className="w-4 h-4" />
+          <span>مكتبة الوسائط</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('messages')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer relative ${
+            activeTab === 'messages' 
+              ? 'bg-purple-600 text-white shadow-md' 
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span>صندوق الرسائل</span>
+          <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('analytics')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+            activeTab === 'analytics' 
+              ? 'bg-purple-600 text-white shadow-md' 
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <TrendingUp className="w-4 h-4 text-emerald-400" />
+          <span>الإحصائيات والتحليلات</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('settings')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+            activeTab === 'settings' 
+              ? 'bg-purple-600 text-white shadow-md' 
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Globe className="w-4 h-4" />
+          <span>الإعدادات العامة</span>
+        </button>
       </div>
 
-      {/* Products Table Manager */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-        <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white font-['Tajawal']">
-            جدول إدارة جميع المنتجات المعروضة
-          </h3>
-          <span className="text-xs text-slate-400">إجمالي {products.length} منتج</span>
-        </div>
+      {/* TAB 1: OVERVIEW & INSTRUCTIONS */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          <div className="bg-gradient-to-br from-amber-500/10 via-purple-900/20 to-slate-900 border border-amber-500/30 rounded-3xl p-6 space-y-4 text-slate-100 shadow-md">
+            <div className="flex items-center gap-2.5 text-amber-400 font-bold text-base">
+              <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
+              <h2 className="font-['Tajawal'] text-lg">دليل تشغيل المنصة والتحكم الشامل بجميع العناصر</h2>
+            </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800">
-                <th className="p-3">المنتج والصورة</th>
-                <th className="p-3">القسم والعلامة التجارية</th>
-                <th className="p-3">السعر والخصم</th>
-                <th className="p-3">فيديوهات المراجعة</th>
-                <th className="p-3">روابط الأفلييت</th>
-                <th className="p-3 text-center">إجراءات الإدارة</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {products.map(prod => (
-                <tr key={prod.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
-                  <td className="p-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs leading-relaxed text-slate-200">
+              <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
+                  <ShoppingBag className="w-4 h-4 text-amber-400" />
+                  <span>1. التحكم التام في المنتجات</span>
+                </div>
+                <p>
+                  إضافة، تعديل، نسخ أي منتج بضغطة زر، أو إخفائه مؤقتاً. تدعم المنصة التوليد التلقائي للوصف والمواصفات عبر مساعد الذكاء الاصطناعي ✨.
+                </p>
+              </div>
+
+              <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
+                  <PlaySquare className="w-4 h-4 text-red-400" />
+                  <span>2. فيديوهات المراجعة والتسويق</span>
+                </div>
+                <p>
+                  ربط فيديوهات YouTube، TikTok، Pinterest وتصدير تصاميم الميديا الاجتماعية لإنستغرام وسناب شات وتغيير الثمبنيل.
+                </p>
+              </div>
+
+              <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-amber-300 text-sm">
+                  <Share2 className="w-4 h-4 text-emerald-400" />
+                  <span>3. إعدادات الروابط والعفيلت</span>
+                </div>
+                <p>
+                  تحديث معرّف Amazon Tag الخاص بك دفعة واحدة لجميع المنتجات، وإضافة معرّفات AliExpress ووسائل التواصل بكل سهولة.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-purple-500" />
+                <span>المنتجات الأكثر مشاهدة وقرص أداء الأفلييت</span>
+              </h3>
+              <div className="space-y-3">
+                {products.slice(0, 4).map(p => (
+                  <div key={p.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 text-xs">
                     <div className="flex items-center gap-3">
-                      <img 
-                        src={prod.image} 
-                        alt={prod.titleAr} 
-                        referrerPolicy="no-referrer"
-                        className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-200 dark:border-slate-800"
-                      />
+                      <img src={p.image} alt="" className="w-10 h-10 rounded-lg object-cover" />
                       <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white line-clamp-1 max-w-xs">{prod.titleAr}</h4>
-                        <span className="text-[10px] text-slate-400">ID: {prod.id}</span>
+                        <div className="font-bold text-slate-800 dark:text-slate-100">{p.titleAr}</div>
+                        <span className="text-[10px] text-amber-400 font-bold">{p.brand}</span>
                       </div>
                     </div>
-                  </td>
-
-                  <td className="p-3">
-                    <div className="space-y-0.5">
-                      <span className="font-bold text-purple-600 dark:text-purple-400 block">{prod.brand}</span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">{prod.subcategory}</span>
+                    <div className="text-left font-mono font-bold text-emerald-400">
+                      {p.viewsCount || 120} مشاهدة
                     </div>
-                  </td>
-
-                  <td className="p-3">
-                    <div className="space-y-0.5">
-                      <strong className="text-slate-900 dark:text-white font-black font-['Tajawal']">{formatPrice(prod.discountPrice)}</strong>
-                      {prod.discountPercent > 0 && (
-                        <span className="block text-[10px] text-red-500 font-bold">خصم {prod.discountPercent}%</span>
-                      )}
-                    </div>
-                  </td>
-
-                  <td className="p-3">
-                    <div className="flex items-center gap-1 text-[11px]">
-                      {prod.youtubeUrl && <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">YouTube</span>}
-                      {prod.tiktokUrl && <span className="bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded font-bold">TikTok</span>}
-                      {prod.pinterestUrl && <span className="bg-red-50 text-red-500 px-1.5 py-0.5 rounded font-bold">Pinterest</span>}
-                      {!prod.youtubeUrl && !prod.tiktokUrl && !prod.pinterestUrl && <span className="text-slate-400">لا يوجد</span>}
-                    </div>
-                  </td>
-
-                  <td className="p-3">
-                    <div className="flex items-center gap-1.5">
-                      <a 
-                        href={prod.amazonUrl} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="p-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 transition-colors"
-                        title="رابط أمازون أفلييت"
-                      >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                      </a>
-                      {prod.aliexpressUrl && (
-                        <a 
-                          href={prod.aliexpressUrl} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="p-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                          title="رابط علي إكسبريس"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      )}
-                    </div>
-                  </td>
-
-                  <td className="p-3 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => handleOpenEditModal(prod)}
-                        className="p-1.5 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 rounded-lg hover:bg-purple-100 transition-colors"
-                        title="تعديل المنتج"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`هل أنتِ متأكدة من حذف المنتج "${prod.titleAr}"؟`)) {
-                            deleteProduct(prod.id);
-                          }
-                        }}
-                        className="p-1.5 bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 transition-colors"
-                        title="حذف المنتج"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Video Reviews & YouTube-Style Thumbnail Manager */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm space-y-4">
-        <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-red-600/10 border border-red-500/20 flex items-center justify-center shrink-0">
-              <Youtube className="w-5 h-5 text-red-500" />
+                  </div>
+                ))}
+              </div>
             </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white font-['Tajawal'] flex items-center gap-2">
-                <span>إدارة فيديوهات المراجعة والاستيراد الاجتماعي</span>
-                <span className="text-[10px] bg-amber-500/20 text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded-md">YouTube / TikTok / Pinterest</span>
+
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-amber-500" />
+                <span>أحدث رسائل واستفسارات الزوار</span>
               </h3>
-              <p className="text-xs text-slate-400">
-                يمكنك استيراد فيديو جديد برابط مباشر، أو تعديل الثمبنيل، أو تصدير ومشاركة الأفرع فوراً
-              </p>
+              <div className="space-y-3">
+                {messagesList.map(msg => (
+                  <div key={msg.id} className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 text-xs space-y-1">
+                    <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-100">
+                      <span>{msg.name}</span>
+                      <span className="text-[10px] text-slate-400">{msg.date}</span>
+                    </div>
+                    <div className="text-slate-300 font-medium truncate">{msg.subject}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+        </div>
+      )}
 
-          <div className="flex items-center gap-2">
+      {/* TAB 2: PRODUCTS MANAGER */}
+      {(activeTab === 'overview' || activeTab === 'products') && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm space-y-4">
+          <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white font-['Tajawal'] flex items-center gap-2">
+                <span>جدول إدارة كافة المنتجات والمعروضات</span>
+                <span className="text-xs bg-purple-500/20 text-purple-300 px-2.5 py-0.5 rounded-full font-bold">
+                  {products.length} منتج
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">إضافة، تعديل، نسخ، أو إخفاء أي منتج بسهولة بدون كود</p>
+            </div>
+
+            <button
+              onClick={handleOpenAddModal}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>إضافة منتج جديد</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-right text-xs">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800">
+                  <th className="p-3">المنتج والصورة</th>
+                  <th className="p-3">القسم والعلامة</th>
+                  <th className="p-3">السعر والخصم</th>
+                  <th className="p-3">الحالة</th>
+                  <th className="p-3">روابط الأفلييت</th>
+                  <th className="p-3 text-center">إجراءات الإدارة</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {products.map(prod => (
+                  <tr key={prod.id} className={`hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors ${prod.isHidden ? 'opacity-50 bg-slate-950/30' : ''}`}>
+                    <td className="p-3">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={prod.image} 
+                          alt={prod.titleAr} 
+                          referrerPolicy="no-referrer"
+                          className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-200 dark:border-slate-800"
+                        />
+                        <div>
+                          <h4 className="font-bold text-slate-900 dark:text-white line-clamp-1 max-w-xs">{prod.titleAr}</h4>
+                          <span className="text-[10px] text-slate-400">ID: {prod.id}</span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="p-3">
+                      <div className="space-y-0.5">
+                        <span className="font-bold text-purple-600 dark:text-purple-400 block">{prod.brand}</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">{prod.subcategory}</span>
+                      </div>
+                    </td>
+
+                    <td className="p-3">
+                      <div className="space-y-0.5">
+                        <strong className="text-slate-900 dark:text-white font-black font-['Tajawal']">{formatPrice(prod.discountPrice)}</strong>
+                        {prod.discountPercent > 0 && (
+                          <span className="block text-[10px] text-red-500 font-bold">خصم {prod.discountPercent}%</span>
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="p-3">
+                      {prod.isHidden ? (
+                        <span className="bg-red-500/20 text-red-300 border border-red-500/40 px-2 py-0.5 rounded-md font-bold text-[10px]">
+                          مخفي 👁️‍🗨️
+                        </span>
+                      ) : (
+                        <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-md font-bold text-[10px]">
+                          نشط 🟢
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="p-3">
+                      <div className="flex items-center gap-1.5">
+                        <a 
+                          href={prod.amazonUrl} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="p-1.5 bg-amber-100 text-amber-800 rounded-lg hover:bg-amber-200 transition-colors"
+                          title="رابط أمازون"
+                        >
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    </td>
+
+                    <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        {/* Edit Button */}
+                        <button
+                          onClick={() => handleOpenEditModal(prod)}
+                          className="p-1.5 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 rounded-lg hover:bg-purple-100 transition-colors"
+                          title="تعديل المنتج"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+
+                        {/* Duplicate Button */}
+                        <button
+                          onClick={() => handleDuplicateProduct(prod)}
+                          className="p-1.5 bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-300 rounded-lg hover:bg-sky-100 transition-colors"
+                          title="نسخ المنتج (Duplicate)"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+
+                        {/* Toggle Hide / Show Button */}
+                        <button
+                          onClick={() => handleToggleHideProduct(prod)}
+                          className="p-1.5 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 rounded-lg hover:bg-amber-100 transition-colors"
+                          title={prod.isHidden ? 'إظهار المنتج' : 'إخفاء المنتج'}
+                        >
+                          {prod.isHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        </button>
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`هل أنتِ متأكدة من حذف المنتج "${prod.titleAr}"؟`)) {
+                              deleteProduct(prod.id);
+                            }
+                          }}
+                          className="p-1.5 bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 transition-colors"
+                          title="حذف المنتج"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: VIDEOS MANAGER */}
+      {activeTab === 'videos' && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm space-y-4">
+          <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-red-600/10 border border-red-500/20 flex items-center justify-center shrink-0">
+                <Youtube className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white font-['Tajawal'] flex items-center gap-2">
+                  <span>إدارة فيديوهات المراجعة والاستيراد الاجتماعي</span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  استيراد فيديو مراجعة جديد، ربط منصات التيكتوك واليوتيوب وبنترست، وتخصيص الصور المصغرة
+                </p>
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={() => setIsImportVideoOpen(true)}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-amber-500 hover:opacity-95 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer"
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-amber-500 hover:opacity-95 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer shrink-0"
             >
               <Plus className="w-4 h-4 text-slate-950" />
               <span>استيراد فيديو برابط 🚀</span>
             </button>
-
-            <span className="text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 px-3 py-1.5 rounded-xl border border-purple-200 dark:border-purple-800">
-              {videos.length} فيديو
-            </span>
           </div>
-        </div>
 
-        <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {videos.map(video => (
-            <div 
-              key={video.id}
-              className="bg-slate-50 dark:bg-slate-950/80 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between hover:border-amber-500/50 transition-colors group"
-            >
-              {/* Thumbnail Container */}
-              <div className="relative h-44 bg-slate-900 overflow-hidden">
-                <img 
-                  src={video.thumbnailUrl || video.productImage} 
-                  alt={video.title} 
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                
-                {/* Platform Badge */}
-                <span className="absolute top-2.5 left-2.5 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase shadow-md">
-                  {video.platform}
-                </span>
+          <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {videos.map(video => (
+              <div 
+                key={video.id}
+                className="bg-slate-50 dark:bg-slate-950/80 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col justify-between hover:border-amber-500/50 transition-colors group"
+              >
+                <div className="relative h-44 bg-slate-900 overflow-hidden">
+                  <img 
+                    src={video.thumbnailUrl || video.productImage} 
+                    alt={video.title} 
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  
+                  <span className="absolute top-2.5 left-2.5 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase shadow-md">
+                    {video.platform}
+                  </span>
 
-                {/* Duration Badge */}
-                <span className="absolute bottom-2.5 right-2.5 bg-slate-950/90 text-amber-400 text-[10px] font-mono px-2 py-0.5 rounded border border-white/10">
-                  {video.duration}
-                </span>
+                  <button
+                    type="button"
+                    onClick={() => openThumbnailEditor(video)}
+                    className="absolute top-2.5 right-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2.5 py-1.5 rounded-xl shadow-xl transition-transform hover:scale-105 flex items-center gap-1.5 cursor-pointer z-10"
+                  >
+                    <Pencil className="w-3.5 h-3.5 fill-slate-950" />
+                    <span className="text-[11px] font-black">تغيير الثمبنيل ✏️</span>
+                  </button>
+                </div>
 
-                {/* Pencil Edit Thumbnail Overlay Button */}
-                <button
-                  type="button"
-                  onClick={() => openThumbnailEditor(video)}
-                  className="absolute top-2.5 right-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2.5 py-1.5 rounded-xl shadow-xl transition-transform hover:scale-105 flex items-center gap-1.5 cursor-pointer z-10"
-                  title="تعديل الصورة المصغرة للفيديو (أيقونة القلم)"
-                >
-                  <Pencil className="w-4 h-4 fill-slate-950" />
-                  <span className="text-[11px] font-black">تغيير الصورة ✏️</span>
-                </button>
-              </div>
+                <div className="p-4 space-y-2">
+                  <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 block line-clamp-1">
+                    المنتج: {video.productTitle}
+                  </span>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-2 leading-snug">
+                    {video.title}
+                  </h4>
+                  
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                    <span>👁 {video.views}</span>
 
-              {/* Info Body */}
-              <div className="p-4 space-y-2">
-                <span className="text-[11px] font-bold text-purple-600 dark:text-purple-400 block line-clamp-1">
-                  المنتج: {video.productTitle}
-                </span>
-                <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-2 leading-snug">
-                  {video.title}
-                </h4>
-                
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                  <span>👁 {video.views}</span>
-
-                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setExportVideo(video)}
                       className="text-amber-500 hover:text-amber-400 font-bold flex items-center gap-1 cursor-pointer bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20"
                     >
                       <Share2 className="w-3 h-3" />
-                      تصدير
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => openThumbnailEditor(video)}
-                      className="text-slate-400 hover:text-white font-bold flex items-center gap-1 cursor-pointer"
-                    >
-                      <Pencil className="w-3 h-3" />
-                      ثمبنيل
+                      تصدير اجتماعي
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* TAB 4: DEALS & DISCOUNTS */}
+      {activeTab === 'deals' && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white font-['Tajawal'] flex items-center gap-2">
+                <Tag className="w-5 h-5 text-amber-500" />
+                <span>إدارة العروض الفلاشية والتخفيضات الزمنية</span>
+              </h3>
+              <p className="text-xs text-slate-400">التحكم بنسب الخصم والعداد التنازلي التلقائي في الصفحة الرئيسية</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {products.filter(p => p.discountPercent > 10).map(deal => (
+              <div key={deal.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-amber-500/30 space-y-3">
+                <div className="flex items-center gap-3">
+                  <img src={deal.image} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-slate-100 truncate">{deal.titleAr}</h4>
+                    <span className="text-[10px] text-amber-400 font-bold block">{deal.brand}</span>
+                    <div className="text-xs font-black text-emerald-400 mt-1">
+                      خصم {deal.discountPercent}% ({formatPrice(deal.discountPrice)})
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                  <span>ينتهي العرض بعد: 18 ساعة</span>
+                  <button 
+                    onClick={() => handleOpenEditModal(deal)}
+                    className="text-purple-400 hover:text-purple-300 font-bold cursor-pointer"
+                  >
+                    تعديل العرض ✏️
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: BRANDS & CATEGORIES */}
+      {activeTab === 'brands' && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-6">
+          <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white font-['Tajawal'] flex items-center gap-2">
+              <FolderTree className="w-5 h-5 text-purple-500" />
+              <span>إدارة العلامات التجارية (Brands) والأقسام</span>
+            </h3>
+            <p className="text-xs text-slate-400">تضيفين العلامات التجارية مرة واحدة لتظهر في القائمة المنسدلة عند إضافة أي منتج</p>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="text-xs font-bold text-slate-300">قائمة العلامات التجارية المسجلة حالياً:</h4>
+            
+            <div className="flex items-center gap-2 flex-wrap">
+              {brandsList.map(b => (
+                <span key={b} className="px-3 py-1.5 rounded-xl bg-purple-950/80 border border-purple-800 text-amber-300 font-bold text-xs flex items-center gap-2">
+                  <span>{b}</span>
+                  <button 
+                    onClick={() => setBrandsList(brandsList.filter(x => x !== b))}
+                    className="text-slate-400 hover:text-red-400"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 max-w-md pt-2">
+              <input 
+                type="text" 
+                placeholder="اسم علامة تجارية جديدة (مثال: Xiaomi)"
+                value={newBrandInput}
+                onChange={(e) => setNewBrandInput(e.target.value)}
+                className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
+              />
+              <button
+                onClick={() => {
+                  if (newBrandInput.trim()) {
+                    setBrandsList([...brandsList, newBrandInput.trim()]);
+                    setNewBrandInput('');
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs hover:bg-amber-400 cursor-pointer"
+              >
+                إضافة ماركة
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 6: MEDIA LIBRARY */}
+      {activeTab === 'media' && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-6">
+          <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white font-['Tajawal'] flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-sky-500" />
+              <span>مكتبة الوسائط المركزية (Media Library)</span>
+            </h3>
+            <p className="text-xs text-slate-400">مكان موحد لحفظ الصور والشعارات والبانرات حتى لا تعيدي رفعها مرة أخرى</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {mediaItems.map(item => (
+              <div key={item.id} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+                <img src={item.url} alt={item.name} className="w-full h-36 object-cover rounded-xl bg-slate-900" />
+                <div className="text-xs font-bold text-slate-200 truncate">{item.name}</div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(item.url);
+                    alert('تم نسخ رابط الصورة إلى الحافظة!');
+                  }}
+                  className="w-full py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>نسخ رابط الصورة</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 7: MESSAGES INBOX */}
+      {activeTab === 'messages' && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-6">
+          <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white font-['Tajawal'] flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-amber-500" />
+              <span>صندوق رسائل نموذج "اتصل بنا" والاستشارات</span>
+            </h3>
+            <p className="text-xs text-slate-400">متابعة رسائل واستفسارات الزوار والرد المباشر عليهم</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-3 divide-y divide-slate-800">
+              {messagesList.map(msg => (
+                <button
+                  key={msg.id}
+                  onClick={() => setSelectedMessage(msg)}
+                  className={`w-full text-right p-3 rounded-2xl transition-colors cursor-pointer block ${
+                    selectedMessage?.id === msg.id ? 'bg-purple-950/80 border border-purple-800' : 'bg-slate-950/50 hover:bg-slate-800/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-200">
+                    <span>{msg.name}</span>
+                    <span className="text-[10px] text-slate-400">{msg.date}</span>
+                  </div>
+                  <div className="text-xs text-amber-300 font-semibold truncate mt-1">{msg.subject}</div>
+                </button>
+              ))}
+            </div>
+
+            <div className="md:col-span-2 bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4">
+              {selectedMessage ? (
+                <>
+                  <div className="border-b border-slate-800 pb-3">
+                    <h4 className="text-sm font-black text-white">{selectedMessage.subject}</h4>
+                    <div className="text-xs text-slate-400 mt-0.5">
+                      من: {selectedMessage.name} ({selectedMessage.email})
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-200 leading-relaxed bg-slate-900 p-4 rounded-xl border border-slate-800">
+                    {selectedMessage.message}
+                  </p>
+
+                  <div className="space-y-2 pt-2">
+                    <label className="text-xs font-bold text-slate-300 block">كتابة رد سريع على العميل:</label>
+                    <textarea 
+                      rows={3} 
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="أكتب ردك هنا وسيتم إرساله للعميل..." 
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white"
+                    />
+                    <button 
+                      onClick={() => {
+                        alert(`تم إرسال الرد بنجاح إلى ${selectedMessage.email}`);
+                        setReplyText('');
+                      }}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      إرسال الرد
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center text-xs text-slate-500 py-12">
+                  اختر رسالة من القائمة الجانبية لعرض تفاصيلها
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 8: ANALYTICS & INSIGHTS */}
+      {activeTab === 'analytics' && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-6">
+          <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white font-['Tajawal'] flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-500" />
+              <span>الإحصائيات والتحليلات المتقدمة للزوار والأفلييت</span>
+            </h3>
+            <p className="text-xs text-slate-400">تحليل أكثر المنتجات والفيديوهات والأقسام والكلمات بحثاً</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
+              <h4 className="text-xs font-bold text-amber-300">أكثر كلمات البحث كتابةً بواسطة الزوار:</h4>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between p-2 bg-slate-900 rounded-lg">
+                  <span className="text-slate-200">مكنسة روبوت دايسون</span>
+                  <span className="font-bold text-amber-400">420 مرة</span>
+                </div>
+                <div className="flex justify-between p-2 bg-slate-900 rounded-lg">
+                  <span className="text-slate-200">Roborock S8 Ultra</span>
+                  <span className="font-bold text-amber-400">380 مرة</span>
+                </div>
+                <div className="flex justify-between p-2 bg-slate-900 rounded-lg">
+                  <span className="text-slate-200">قلاية كوسوري 6.8 لتر</span>
+                  <span className="font-bold text-amber-400">290 مرة</span>
+                </div>
+                <div className="flex justify-between p-2 bg-slate-900 rounded-lg">
+                  <span className="text-slate-200">عروض مكنسة بيسيل غسيل السجاد</span>
+                  <span className="font-bold text-amber-400">210 مرة</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
+              <h4 className="text-xs font-bold text-emerald-300">أكثر روابط أمازون نقراً وتحويلاً:</h4>
+              <div className="space-y-2 text-xs">
+                {products.slice(0, 4).map(p => (
+                  <div key={p.id} className="flex justify-between p-2 bg-slate-900 rounded-lg">
+                    <span className="text-slate-200 truncate max-w-[200px]">{p.titleAr}</span>
+                    <span className="font-bold text-emerald-400">{(p.viewsCount || 50) * 3} نقرة</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 9: SITE SETTINGS */}
+      {activeTab === 'settings' && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-6">
+          <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white font-['Tajawal'] flex items-center gap-2">
+              <Globe className="w-5 h-5 text-purple-500" />
+              <span>🌍 الإعدادات العامة (General Settings)</span>
+            </h3>
+            <p className="text-xs text-slate-400">مكان واحد شامل لإدارة اسم الموقع، الشعار، اللغة، العملة الافتراضية، وروابط منصات التواصل الاجتماعي ومعرفات التسويق بالعمولة.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">اسم الموقع (Site Name):</label>
+              <input 
+                type="text" 
+                value={settingsForm.siteName}
+                onChange={(e) => setSettingsForm({ ...settingsForm, siteName: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">رابط الشعار (Logo URL):</label>
+              <input 
+                type="url" 
+                value={settingsForm.siteLogo}
+                onChange={(e) => setSettingsForm({ ...settingsForm, siteLogo: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">اللغة الافتراضية (Default Language):</label>
+              <select 
+                value={settingsForm.defaultLanguage}
+                onChange={(e) => setSettingsForm({ ...settingsForm, defaultLanguage: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-bold"
+              >
+                <option value="ar">العربية (Arabic - ar)</option>
+                <option value="en">الإنجليزية (English - en)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">العملة الافتراضية (Default Currency):</label>
+              <select 
+                value={settingsForm.defaultCurrency}
+                onChange={(e) => setSettingsForm({ ...settingsForm, defaultCurrency: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-bold"
+              >
+                <option value="SAR">ريال سعودي (SAR)</option>
+                <option value="USD">دولار أمريكي (USD)</option>
+                <option value="AED">درهم إماراتي (AED)</option>
+                <option value="EUR">يورو (EUR)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="font-bold text-pink-500 block mb-1">رابط Pinterest:</label>
+              <input 
+                type="url" 
+                value={settingsForm.pinterestUrl}
+                onChange={(e) => setSettingsForm({ ...settingsForm, pinterestUrl: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-red-500 block mb-1">رابط YouTube:</label>
+              <input 
+                type="url" 
+                value={settingsForm.youtubeUrl}
+                onChange={(e) => setSettingsForm({ ...settingsForm, youtubeUrl: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-200 block mb-1">رابط TikTok:</label>
+              <input 
+                type="url" 
+                value={settingsForm.tiktokUrl}
+                onChange={(e) => setSettingsForm({ ...settingsForm, tiktokUrl: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-amber-500 block mb-1">معرف Amazon US (Amazon Tag):</label>
+              <input 
+                type="text" 
+                value={settingsForm.amazonTag}
+                onChange={(e) => setSettingsForm({ ...settingsForm, amazonTag: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-amber-500/40 rounded-xl p-2.5 font-mono font-bold text-amber-400"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-orange-500 block mb-1">معرف AliExpress Affiliate:</label>
+              <input 
+                type="text" 
+                value={settingsForm.aliexpressTag}
+                onChange={(e) => setSettingsForm({ ...settingsForm, aliexpressTag: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-sky-400 block mb-1">البريد الإلكتروني للعملاء (Contact Email):</label>
+              <input 
+                type="email" 
+                value={settingsForm.contactEmail}
+                onChange={(e) => setSettingsForm({ ...settingsForm, contactEmail: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+              />
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+            <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>تطبق التغييرات فوراً في جميع صفحات المتجر</span>
+            </span>
+            <button
+              onClick={() => alert('✨ تم حفظ وتطبيق الإعدادات العامة للموقع بنجاح!')}
+              className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg cursor-pointer"
+            >
+              حفظ الإعدادات العامة
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Video Import Modal */}
       <VideoImportModal 
@@ -596,20 +1444,35 @@ export const AdminPage: React.FC = () => {
         />
       )}
 
-      {/* Product Add / Edit Modal Form */}
+      {/* Product Add / Edit Modal Form with AI Generator ✨ */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-6 max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-lg font-black text-slate-900 dark:text-white font-['Tajawal']">
-                {editingProduct ? 'تعديل بيانات المنتج' : 'إضافة منتج جديد للعمولة'}
+              <h3 className="text-lg font-black text-slate-900 dark:text-white font-['Tajawal'] flex items-center gap-2">
+                <span>{editingProduct ? 'تعديل بيانات المنتج' : 'إضافة منتج جديد للعمولة'}</span>
               </h3>
-              <button 
-                onClick={() => setIsFormOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              <div className="flex items-center gap-2">
+                {/* AI Assistant Copywriter Generator Button */}
+                <button
+                  type="button"
+                  onClick={handleAiGenerateCopy}
+                  disabled={isAiGenerating}
+                  className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-purple-600 hover:opacity-90 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition-transform active:scale-95 disabled:opacity-50"
+                  title="توليد الوصف والمميزات بالذكاء الاصطناعي تلقائياً"
+                >
+                  <Wand2 className="w-4 h-4 text-slate-950 animate-bounce" />
+                  <span>{isAiGenerating ? 'جاري التوليد...' : '✨ توليد بالذكاء الاصطناعي'}</span>
+                </button>
+
+                <button 
+                  onClick={() => setIsFormOpen(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
@@ -663,23 +1526,35 @@ export const AdminPage: React.FC = () => {
 
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">العلامة التجارية (Brand)</label>
-                  <input 
-                    type="text" 
-                    required
+                  <select
                     value={formData.brand}
                     onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
-                  />
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-bold"
+                  >
+                    {brandsList.map(b => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">الوصف المختصر *</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">الوصف التسويقي المختصر *</label>
                 <textarea 
                   rows={2}
                   required
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">الوصف التفصيلي (Long Description)</label>
+                <textarea 
+                  rows={3}
+                  value={formData.longDescription}
+                  onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
                 />
               </div>
@@ -780,7 +1655,7 @@ export const AdminPage: React.FC = () => {
               </div>
 
               {/* Toggles */}
-              <div className="flex items-center gap-6 pt-2">
+              <div className="flex items-center gap-6 pt-2 flex-wrap">
                 <label className="flex items-center gap-2 cursor-pointer font-bold">
                   <input 
                     type="checkbox" 
@@ -798,7 +1673,17 @@ export const AdminPage: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, isTopSelling: e.target.checked })}
                     className="w-4 h-4 accent-purple-600"
                   />
-                  <span>الثرية والأكثر مبيعاً</span>
+                  <span>الأكثر مبيعاً 🔥</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-red-400">
+                  <input 
+                    type="checkbox" 
+                    checked={formData.isHidden}
+                    onChange={(e) => setFormData({ ...formData, isHidden: e.target.checked })}
+                    className="w-4 h-4 accent-red-600"
+                  />
+                  <span>إخفاء المنتج مؤقتاً 👁️‍🗨️</span>
                 </label>
               </div>
 

@@ -19,7 +19,11 @@ import {
   Settings,
   ChevronDown,
   Globe,
-  Coins
+  Coins,
+  BookOpen,
+  HelpCircle,
+  Info,
+  FileText
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CATEGORIES } from '../data/categories';
@@ -45,12 +49,25 @@ export const Header: React.FC = () => {
     searchQuery,
     setSearchQuery,
     setSelectedCategory,
-    selectedCategory
+    selectedCategory,
+    products,
+    openProductDetail,
+    formatPrice
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState(false);
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  const searchResults = searchQuery.trim().length >= 2
+    ? products.filter(p => 
+        p.titleAr.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.titleEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.category.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,73 +188,119 @@ export const Header: React.FC = () => {
       <div className="bg-[#111113]/90 text-[#FDFCFB]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-15 sm:h-16 flex items-center justify-between gap-3">
           
-          {/* Logo & Personal Brand Identity */}
+          {/* Logo & Brand Name */}
           <div 
-            onClick={() => setPage('home')}
-            className="flex items-center gap-3.5 cursor-pointer group shrink-0"
+            onClick={() => { setSelectedCategory('all'); setPage('home'); }}
+            className="flex items-center gap-2.5 cursor-pointer shrink-0 group"
           >
-            <div className="relative">
-              <img 
-                src={logoImg} 
-                alt="Yousra Smile Logo" 
-                referrerPolicy="no-referrer"
-                className="w-12 h-12 rounded-full object-cover shadow-lg border border-[#D4AF37]/60 group-hover:scale-105 transition-transform"
-              />
-              <span className="absolute -bottom-1 -right-1 bg-[#D4AF37] text-black font-mono-meta text-[8px] font-bold px-1 py-0.2 rounded shadow">
-                ★ 4.9
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl sm:text-2xl font-serif-editorial text-white group-hover:text-[#D4AF37] transition-colors font-['Tajawal']">
-                {language === 'ar' ? 'ابتسامة يسرى' : 'Yousra Smile'}
-              </span>
-              <span className="font-mono-meta text-[10px] text-[#D4AF37]">
-                {language === 'en' ? 'YOUSRA SMILE — HOME TECH' : 'ابتسامة يسرى — أجهزة ومراجعات المنزل الذكي'}
-              </span>
+            <img 
+              src={logoImg} 
+              alt="Yousra Smile Logo" 
+              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 border-amber-400/80 shadow-[0_0_12px_rgba(212,175,55,0.4)] group-hover:scale-105 transition-transform" 
+            />
+            <div className={`hidden sm:block font-['Cairo'] ${language === 'ar' ? 'text-right' : 'text-left'}`}>
+              <span className="font-black text-amber-300 text-sm sm:text-base leading-none block">{t.siteTitle}</span>
+              <span className="text-[10px] text-slate-400 leading-tight block mt-0.5">{language === 'ar' ? 'دليل تسوق الأجهزة الذكية' : 'Smart Home Shopping Guide'}</span>
             </div>
           </div>
 
-          {/* Quick Search Bar */}
-          <form 
-            onSubmit={handleSearchSubmit} 
-            className="hidden md:flex items-center flex-1 max-w-md relative"
-          >
-            <input 
-              type="text"
-              placeholder={t.searchPlaceholder}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 rounded-full bg-slate-800 text-white placeholder-slate-400 border border-slate-700/80 focus:border-amber-400 focus:bg-slate-900 focus:outline-none transition-all text-sm"
-            />
-            <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
-            {searchQuery && (
-              <button 
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+          {/* Expanded Search Bar with Smart Autocomplete */}
+          <div className="relative flex-1 max-w-lg">
+            <form 
+              onSubmit={handleSearchSubmit} 
+              className="flex items-center w-full relative"
+            >
+              <input 
+                type="text"
+                placeholder={t.searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                className="w-full pl-10 pr-10 py-2 sm:py-2.5 rounded-full bg-slate-900 text-white placeholder:text-slate-300 border border-slate-700/80 focus:border-amber-400 focus:bg-slate-950 focus:outline-none transition-all text-xs sm:text-sm shadow-inner font-medium"
+              />
+              <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              {searchQuery && (
+                <button 
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </form>
+
+            {/* Smart Autocomplete Dropdown */}
+            {searchFocused && searchResults.length > 0 && (
+              <div 
+                className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden z-50 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-150"
+                onMouseDown={(e) => e.preventDefault()} // prevent blur on item click
               >
-                <X className="w-4 h-4" />
-              </button>
+                <div className="p-2 border-b border-slate-800 text-[11px] font-bold text-amber-300 flex items-center justify-between">
+                  <span>{language === 'ar' ? 'نتائج البحث المقترحة' : 'Search Suggestions'}</span>
+                  <span className="text-[10px] text-slate-400">{searchResults.length} {language === 'ar' ? 'منتجات' : 'products'}</span>
+                </div>
+                <div className="max-h-72 overflow-y-auto divide-y divide-slate-800/60">
+                  {searchResults.slice(0, 5).map((product) => (
+                    <button
+                      key={product.id}
+                      onClick={() => {
+                        openProductDetail(product);
+                        setSearchFocused(false);
+                      }}
+                      className="w-full text-right p-2.5 hover:bg-purple-950/60 flex items-center gap-3 transition-colors text-slate-100 cursor-pointer"
+                    >
+                      <img 
+                        src={product.image} 
+                        alt={product.titleAr} 
+                        referrerPolicy="no-referrer"
+                        className="w-10 h-10 rounded-lg object-cover bg-slate-800 shrink-0 border border-slate-700" 
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold truncate text-slate-100 font-['Tajawal']">
+                          {language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr}
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                          <span className="text-amber-400 font-bold">{product.brand}</span>
+                          <span>•</span>
+                          <span>{formatPrice(product.discountPrice)}</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                {searchResults.length > 5 && (
+                  <button
+                    onClick={() => {
+                      setPage('products');
+                      setSearchFocused(false);
+                    }}
+                    className="w-full py-2 bg-slate-950 text-center text-xs font-bold text-amber-300 hover:text-amber-200 hover:bg-purple-950 transition-colors border-t border-slate-800"
+                  >
+                    {language === 'ar' ? `عرض كافة (${searchResults.length}) النتائج في صفحة المنتجات →` : `View all (${searchResults.length}) results →`}
+                  </button>
+                )}
+              </div>
             )}
-          </form>
+          </div>
 
           {/* Action Buttons & Utilities */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleDarkMode}
-              className="p-2.5 rounded-xl text-slate-300 hover:bg-slate-800 transition-colors"
+              className="p-2 sm:p-2.5 rounded-xl text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer"
               title={darkMode ? t.lightMode : t.darkMode}
               id="dark-mode-toggle"
             >
-              {darkMode ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-purple-400" />}
+              {darkMode ? <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" /> : <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />}
             </button>
 
             {/* Favorites Counter Button */}
             <button
               onClick={() => setPage('favorites')}
-              className={`relative p-2.5 rounded-xl transition-colors ${
+              className={`relative p-2 sm:p-2.5 rounded-xl transition-colors cursor-pointer ${
                 activePage === 'favorites' 
                   ? 'bg-purple-950/80 text-amber-300 border border-purple-800' 
                   : 'text-slate-300 hover:bg-slate-800'
@@ -245,7 +308,7 @@ export const Header: React.FC = () => {
               title={t.favorites}
               id="favorites-nav-btn"
             >
-              <Heart className={`w-5 h-5 ${favorites.length > 0 ? 'fill-red-500 text-red-500' : ''}`} />
+              <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${favorites.length > 0 ? 'fill-red-500 text-red-500' : ''}`} />
               {favorites.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
                   {favorites.length}
@@ -256,11 +319,11 @@ export const Header: React.FC = () => {
             {/* Shopping Cart Button */}
             <button
               onClick={openCartModal}
-              className={`relative p-2.5 rounded-xl transition-colors text-slate-300 hover:bg-slate-800 border border-[#D4AF37]/30 bg-[#D4AF37]/10 hover:border-[#D4AF37]`}
+              className={`relative p-2 sm:p-2.5 rounded-xl transition-colors text-slate-300 hover:bg-slate-800 border border-[#D4AF37]/30 bg-[#D4AF37]/10 hover:border-[#D4AF37] cursor-pointer`}
               title={language === 'ar' ? 'سلة التسوق' : 'Shopping Cart'}
               id="cart-nav-btn"
             >
-              <ShoppingBag className="w-5 h-5 text-[#D4AF37]" />
+              <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-[#D4AF37]" />
               {cartTotalCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-[#D4AF37] text-black text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center shadow">
                   {cartTotalCount}
@@ -271,7 +334,7 @@ export const Header: React.FC = () => {
             {/* Compare Counter Button */}
             <button
               onClick={() => setPage('compare')}
-              className={`relative p-2.5 rounded-xl transition-colors ${
+              className={`relative p-2 sm:p-2.5 rounded-xl transition-colors cursor-pointer ${
                 activePage === 'compare' 
                   ? 'bg-purple-950/80 text-amber-300 border border-purple-800' 
                   : 'text-slate-300 hover:bg-slate-800'
@@ -279,140 +342,164 @@ export const Header: React.FC = () => {
               title={t.compare}
               id="compare-nav-btn"
             >
-              <Scale className="w-5 h-5" />
+              <Scale className="w-4 h-4 sm:w-5 sm:h-5" />
               {compareList.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                   {compareList.length}
                 </span>
               )}
             </button>
-
-            {/* Admin Dashboard Switch */}
-            <button
-              onClick={() => setPage('admin')}
-              className={`px-3 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-all shadow-xs ${
-                activePage === 'admin'
-                  ? 'bg-gradient-to-r from-purple-700 to-purple-800 text-white font-bold border border-purple-500'
-                  : 'bg-slate-800 text-purple-300 hover:bg-slate-700 border border-slate-700'
-              }`}
-              id="admin-dashboard-btn"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="hidden lg:inline">{t.adminPanel}</span>
-            </button>
-
-            {/* Mobile Drawer Trigger */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2.5 rounded-xl text-slate-200 hover:bg-slate-800"
-              id="mobile-menu-trigger"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
           </div>
         </div>
 
-        {/* Secondary Category Navigation Header */}
-        <div className="hidden md:block bg-slate-950/90 border-t border-slate-800/80">
+        {/* Secondary Category Navigation Header (Bottom Sub-Nav Line) */}
+        <div className="bg-slate-950/90 border-t border-slate-800/80 relative z-30">
           <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
             
-            {/* Nav Links */}
-            <nav className="flex items-center gap-1 py-1.5">
+            {/* Nav Links: Siblings together in one row */}
+            <nav className="flex items-center gap-1.5 py-1.5 overflow-visible flex-wrap">
+              
+              {/* 1. الرئيسية ☰ (Home with 3 dashes, NO house symbol) */}
               <button
-                onClick={() => { setSelectedCategory('all'); setPage('home'); }}
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg flex items-center gap-1.5 transition-colors ${
-                  activePage === 'home'
-                    ? 'text-amber-300 bg-purple-950/60 font-bold border border-purple-800/40'
-                    : 'text-slate-300 hover:text-amber-300'
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className={`px-3.5 py-2 text-sm font-black rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shrink-0 ${
+                  activePage === 'home' && !mobileMenuOpen
+                    ? 'text-amber-300 bg-purple-950/90 font-bold border border-amber-400/50 shadow-sm'
+                    : 'text-amber-300 bg-purple-950/60 hover:bg-purple-900/80 border border-purple-800/40'
                 }`}
+                title={language === 'ar' ? 'الرئيسية والقائمة المنسدلة ☰' : 'Home & Dropdown Menu ☰'}
+                id="main-home-menu-trigger"
               >
-                <Home className="w-4 h-4" />
-                {t.home}
+                <span className="text-amber-400 font-mono text-base leading-none font-black">☰</span>
+                <span>{t.home}</span>
               </button>
 
-              {/* Categories Dropdown */}
-              <div className="relative">
+              {/* 2. الأقسام (Dropdown with ☰ icon) */}
+              <div className="relative shrink-0">
                 <button
-                  onClick={() => setCategoriesDropdownOpen(!categoriesDropdownOpen)}
-                  className={`px-3.5 py-2 text-sm font-semibold rounded-lg flex items-center gap-1.5 transition-colors ${
-                    activePage === 'products' && selectedCategory !== 'all'
-                      ? 'text-amber-300 bg-purple-950/60 font-bold border border-purple-800/40'
-                      : 'text-slate-300 hover:text-amber-300'
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCategoriesDropdownOpen(prev => !prev);
+                  }}
+                  className={`px-3.5 py-2 text-sm font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-md ${
+                    categoriesDropdownOpen || (activePage === 'products' && selectedCategory !== 'all')
+                      ? 'text-amber-300 bg-purple-900/90 font-bold border border-amber-400/60 ring-2 ring-purple-500/30'
+                      : 'text-slate-200 bg-slate-900/80 hover:text-amber-300 hover:bg-slate-800 border border-slate-800'
                   }`}
+                  id="categories-dropdown-button"
                 >
-                  <SlidersHorizontal className="w-4 h-4 text-purple-400" />
-                  {t.categories}
-                  <ChevronDown className="w-3.5 h-3.5" />
+                  <span className="text-amber-400 font-mono text-base leading-none font-black">☰</span>
+                  <span>{t.categories}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-amber-400 transition-transform duration-200 ${categoriesDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
+                {/* Click outside backdrop & Dropdown Menu for Categories */}
                 {categoriesDropdownOpen && (
-                  <div 
-                    className="absolute right-0 top-full mt-1 w-64 bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
-                    onMouseLeave={() => setCategoriesDropdownOpen(false)}
-                  >
-                    <button
-                      onClick={() => handleCategorySelect('all')}
-                      className="w-full text-right px-4 py-2.5 text-sm font-semibold text-slate-200 hover:bg-purple-950/80 hover:text-amber-300 flex items-center justify-between"
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40 bg-black/30 backdrop-blur-xs"
+                      onClick={() => setCategoriesDropdownOpen(false)}
+                    />
+                    <div 
+                      className={`absolute ${language === 'ar' ? 'right-0 sm:-right-2' : 'left-0 sm:-left-2'} top-full mt-2 w-72 max-w-[calc(100vw-1.5rem)] bg-[#120A21] rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.9)] border-2 border-purple-500/50 py-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200`}
                     >
-                      <span>{t.allCategories}</span>
-                      <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-400">All</span>
-                    </button>
-                    <hr className="my-1 border-slate-800" />
-                    {CATEGORIES.map(cat => (
+                      <div className="px-3 pb-2 mb-1 border-b border-purple-500/20 flex items-center justify-between">
+                        <span className="text-xs font-black text-amber-300 font-['Cairo']">
+                          {language === 'ar' ? 'أقسام المنتجات' : 'Product Categories'}
+                        </span>
+                        <span className="text-[10px] bg-purple-950 text-amber-300 px-2 py-0.5 rounded-full border border-purple-800">
+                          {CATEGORIES.length} {language === 'ar' ? 'أقسام' : 'Categories'}
+                        </span>
+                      </div>
+
                       <button
-                        key={cat.id}
-                        onClick={() => handleCategorySelect(cat.id)}
-                        className="w-full text-right px-4 py-2 text-sm text-slate-300 hover:bg-purple-950/80 hover:text-amber-300 flex items-center gap-2"
+                        type="button"
+                        onClick={() => handleCategorySelect('all')}
+                        className={`w-full text-right px-4 py-2.5 text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${
+                          selectedCategory === 'all'
+                            ? 'bg-purple-900/80 text-amber-300 border-r-4 border-amber-400'
+                            : 'text-slate-200 hover:bg-purple-950/80 hover:text-amber-300'
+                        }`}
                       >
-                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                        {language === 'en' ? cat.nameEn : cat.nameAr}
+                        <span className="flex items-center gap-2 font-['Tajawal']">
+                          <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
+                          <span>{t.allCategories}</span>
+                        </span>
+                        <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-md text-slate-300 font-mono">All</span>
                       </button>
-                    ))}
-                  </div>
+                      <hr className="my-1.5 border-purple-500/20" />
+                      
+                      {CATEGORIES.map(cat => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => handleCategorySelect(cat.id)}
+                          className={`w-full text-right px-4 py-2.5 text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${
+                            selectedCategory === cat.id
+                              ? 'bg-purple-900/80 text-amber-300 border-r-4 border-amber-400'
+                              : 'text-slate-300 hover:bg-purple-950/80 hover:text-amber-300'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2 font-['Tajawal']">
+                            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+                            <span>{language === 'en' ? cat.nameEn : cat.nameAr}</span>
+                          </span>
+                          <span className="text-[10px] bg-purple-950 px-2 py-0.5 rounded-md text-amber-300 font-mono">
+                            ({cat.subcategories.length})
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
 
+              {/* 3. جميع المنتجات */}
               <button
                 onClick={() => { setSelectedCategory('all'); setPage('products'); }}
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                className={`px-3.5 py-2 text-sm font-semibold rounded-xl transition-colors cursor-pointer shrink-0 ${
                   activePage === 'products' && selectedCategory === 'all'
-                    ? 'text-amber-300 bg-purple-950/60 font-bold border border-purple-800/40'
-                    : 'text-slate-300 hover:text-amber-300'
+                    ? 'text-amber-300 bg-purple-950/80 font-bold border border-amber-400/40'
+                    : 'text-slate-200 hover:text-amber-300 hover:bg-slate-800'
                 }`}
               >
                 {t.allProducts}
               </button>
 
+              {/* 4. الفيديوهات والمراجعات */}
               <button
                 onClick={() => setPage('videos')}
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg flex items-center gap-1.5 transition-colors ${
+                className={`px-3.5 py-2 text-sm font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
                   activePage === 'videos'
-                    ? 'text-amber-300 bg-purple-950/60 font-bold border border-purple-800/40'
-                    : 'text-slate-300 hover:text-amber-300'
+                    ? 'text-amber-300 bg-purple-950/80 font-bold border border-amber-400/40'
+                    : 'text-slate-200 hover:text-amber-300 hover:bg-slate-800'
                 }`}
               >
                 <PlaySquare className="w-4 h-4 text-red-500 animate-pulse" />
                 {t.videoReviews}
               </button>
 
+              {/* 5. أقوى العروض */}
               <button
                 onClick={() => setPage('deals')}
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg flex items-center gap-1.5 transition-colors ${
+                className={`px-3.5 py-2 text-sm font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
                   activePage === 'deals'
-                    ? 'text-amber-300 bg-purple-950/60 font-bold border border-purple-800/40'
-                    : 'text-slate-300 hover:text-amber-300'
+                    ? 'text-amber-300 bg-purple-950/80 font-bold border border-amber-400/40'
+                    : 'text-slate-200 hover:text-amber-300 hover:bg-slate-800'
                 }`}
               >
-                <Tag className="w-4 h-4 text-emerald-400" />
+                <Tag className="w-4 h-4 text-amber-400" />
                 {t.deals}
               </button>
 
+              {/* 6. من نحن */}
               <button
-                onClick={() => setPage('about', 'about')}
-                className={`px-3.5 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                onClick={() => setPage('about')}
+                className={`px-3.5 py-2 text-sm font-semibold rounded-xl transition-colors cursor-pointer shrink-0 ${
                   activePage === 'about'
-                    ? 'text-amber-300 bg-purple-950/60 font-bold border border-purple-800/40'
-                    : 'text-slate-300 hover:text-amber-300'
+                    ? 'text-amber-300 bg-purple-950/80 font-bold border border-amber-400/40'
+                    : 'text-slate-200 hover:text-amber-300 hover:bg-slate-800'
                 }`}
               >
                 {t.aboutUs}
@@ -426,150 +513,149 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Universal Top Dropdown Menu Panel (In Front of Screen, Drops Downward) */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex flex-col">
-          <div className="bg-slate-900 w-full p-4 border-b border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <img src={logoImg} alt="Yousra Smile" className="w-9 h-9 rounded-lg" />
-              <span className="font-extrabold text-white">{t.siteTitle}</span>
-            </div>
-            <button 
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-2 text-slate-400 hover:text-white"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          <div className="bg-slate-900 flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-start justify-center pt-14 sm:pt-20 px-3 sm:px-6 animate-in fade-in duration-200">
+          <div className="bg-[#110A1F] w-full max-w-xl max-h-[82vh] border-2 border-amber-400/50 rounded-3xl flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-top-6 duration-300">
             
-            {/* Mobile Search */}
-            <form onSubmit={(e) => { handleSearchSubmit(e); setMobileMenuOpen(false); }}>
-              <div className="relative">
-                <input 
-                  type="text"
-                  placeholder={t.searchPlaceholder}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pr-10 pl-4 py-3 rounded-xl bg-slate-800 text-white text-sm border border-slate-700"
-                />
-                <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+            {/* Modal Dropdown Header */}
+            <div className="bg-[#190F2E] p-4 border-b border-purple-500/30 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img src={logoImg} alt="Yousra Smile" className="w-10 h-10 rounded-xl border border-amber-400/50 shadow" />
+                <div>
+                  <span className="font-extrabold text-white text-base block font-['Cairo']">{t.siteTitle}</span>
+                  <span className="text-[11px] text-amber-300 font-['Tajawal']">{language === 'ar' ? 'التصفح المنسدل والتسهيلات' : 'Dropdown Navigation & Services'}</span>
+                </div>
               </div>
-            </form>
-
-            {/* Mobile Language Switcher button */}
-            <button
-              onClick={() => { toggleLanguage(); setMobileMenuOpen(false); }}
-              className="w-full py-2.5 px-4 rounded-xl bg-purple-950/90 text-amber-300 font-bold border border-purple-800/80 flex items-center justify-between text-sm cursor-pointer"
-            >
-              <span className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-amber-400" />
-                {t.switchLanguage}
-              </span>
-              <span className="text-xs bg-purple-900/60 px-2 py-0.5 rounded text-amber-200">
-                {t.currentLanguageLabel}
-              </span>
-            </button>
-
-            {/* Mobile Currency Switcher Row */}
-            <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl space-y-2">
-              <div className="flex items-center justify-between text-xs text-[#D4AF37] font-bold">
-                <span className="flex items-center gap-1.5">
-                  <Coins className="w-4 h-4 text-[#D4AF37]" />
-                  <span>{language === 'ar' ? 'عملة عرض الأسعار' : 'Display Currency'}</span>
-                </span>
-                <span className="text-[10px] text-slate-400 font-mono">
-                  {currencyConfig.flag} {currencyConfig.code}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                {Object.values(CURRENCIES).map((c) => (
-                  <button
-                    key={c.code}
-                    type="button"
-                    onClick={() => {
-                      setCurrency(c.code as CurrencyCode);
-                    }}
-                    className={`py-1.5 px-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                      currency === c.code 
-                        ? 'bg-[#D4AF37] text-slate-950 border-[#D4AF37] font-black shadow-md' 
-                        : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <span className="text-xs">{c.flag}</span>
-                    <span>{c.code}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-1 pt-2">
-              <button
-                onClick={() => { setPage('home'); setMobileMenuOpen(false); }}
-                className="w-full text-right py-3 px-4 rounded-xl text-slate-200 hover:bg-slate-800 font-bold flex items-center gap-3"
+              <button 
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 text-slate-300 hover:text-white bg-slate-800/80 rounded-xl transition-colors cursor-pointer border border-amber-400/30"
+                title="إغلاق"
               >
-                <Home className="w-5 h-5 text-purple-400" />
-                {t.home}
-              </button>
-              <button
-                onClick={() => { setSelectedCategory('all'); setPage('products'); setMobileMenuOpen(false); }}
-                className="w-full text-right py-3 px-4 rounded-xl text-slate-200 hover:bg-slate-800 font-bold flex items-center gap-3"
-              >
-                <SlidersHorizontal className="w-5 h-5 text-purple-400" />
-                {t.allProducts}
-              </button>
-              <button
-                onClick={() => { setPage('videos'); setMobileMenuOpen(false); }}
-                className="w-full text-right py-3 px-4 rounded-xl text-slate-200 hover:bg-slate-800 font-bold flex items-center gap-3"
-              >
-                <PlaySquare className="w-5 h-5 text-red-500" />
-                {t.videoReviews}
-              </button>
-              <button
-                onClick={() => { setPage('deals'); setMobileMenuOpen(false); }}
-                className="w-full text-right py-3 px-4 rounded-xl text-slate-200 hover:bg-slate-800 font-bold flex items-center gap-3"
-              >
-                <Tag className="w-5 h-5 text-emerald-400" />
-                {t.deals}
-              </button>
-              <button
-                onClick={() => { setPage('favorites'); setMobileMenuOpen(false); }}
-                className="w-full text-right py-3 px-4 rounded-xl text-slate-200 hover:bg-slate-800 font-bold flex items-center gap-3"
-              >
-                <Heart className="w-5 h-5 text-red-500" />
-                {t.favorites} ({favorites.length})
-              </button>
-              <button
-                onClick={() => { setPage('compare'); setMobileMenuOpen(false); }}
-                className="w-full text-right py-3 px-4 rounded-xl text-slate-200 hover:bg-slate-800 font-bold flex items-center gap-3"
-              >
-                <Scale className="w-5 h-5 text-purple-400" />
-                {t.compare} ({compareList.length})
-              </button>
-              <button
-                onClick={() => { setPage('admin'); setMobileMenuOpen(false); }}
-                className="w-full text-right py-3 px-4 rounded-xl text-amber-300 bg-purple-950/80 border border-purple-800 font-bold flex items-center gap-3"
-              >
-                <Settings className="w-5 h-5 text-amber-400" />
-                {t.adminPanel}
+                <X className="w-6 h-6 text-amber-300" />
               </button>
             </div>
 
-            <hr className="border-slate-800 my-4" />
+            {/* Modal Dropdown Body */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 text-white font-['Tajawal'] scrollbar-thin">
+              
+              {/* Direct WhatsApp Contact Button */}
+              <a
+                href="https://wa.me/966500000000?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%D9%8B%20%D9%8A%D8%B3%D8%B1%D9%89%D8%8C%20%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%A7%D9%84%D8%A7%D8%B3%D8%AA%D9%81%D8%B3%D8%A7%D8%B1%20%D8%B9%D9%86%20%D8%A7%D9%84%D9%85%D9%86%D8%AA%D8%AC%D8%A7%D8%AA"
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-2.5 px-4 rounded-xl bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold border border-emerald-400/40 flex items-center justify-between text-xs cursor-pointer shadow-md transition-all"
+              >
+                <span className="flex items-center gap-2">
+                  <span className="text-base">💬</span>
+                  <span>{language === 'ar' ? 'تواصل معنا مباشرة عبر واتساب' : 'Direct WhatsApp Support'}</span>
+                </span>
+                <span className="text-[10px] bg-emerald-950 px-2 py-0.5 rounded text-emerald-200 font-mono">24/7</span>
+              </a>
 
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-slate-400 uppercase block px-2">{t.categories}</span>
-              {CATEGORIES.map(cat => (
+              {/* Core Navigation Links Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                 <button
-                  key={cat.id}
-                  onClick={() => { handleCategorySelect(cat.id); setMobileMenuOpen(false); }}
-                  className="w-full text-right px-4 py-2 text-sm text-slate-300 hover:text-amber-400 flex items-center justify-between"
+                  onClick={() => { setPage('about'); setMobileMenuOpen(false); }}
+                  className="w-full text-right py-2.5 px-3.5 rounded-xl text-amber-300 bg-purple-950/60 hover:bg-purple-900/80 border border-purple-800/40 font-bold flex items-center gap-2.5 transition-colors text-xs"
                 >
-                  <span>{language === 'en' ? cat.nameEn : cat.nameAr}</span>
-                  <span className="text-xs text-slate-500">({cat.subcategories.length})</span>
+                  <Info className="w-4 h-4 text-sky-400 shrink-0" />
+                  <span>{language === 'ar' ? 'من نحن — قصة يسرى سمايل' : 'About Yousra Smile'}</span>
                 </button>
-              ))}
+
+                <button
+                  onClick={() => { setSelectedCategory('all'); setPage('products'); setMobileMenuOpen(false); }}
+                  className="w-full text-right py-2.5 px-3.5 rounded-xl text-slate-200 bg-slate-900/80 hover:bg-purple-900/50 hover:text-amber-300 border border-slate-800 font-bold flex items-center gap-2.5 transition-colors text-xs"
+                >
+                  <SlidersHorizontal className="w-4 h-4 text-purple-400 shrink-0" />
+                  <span>{t.allProducts}</span>
+                </button>
+
+                <button
+                  onClick={() => { setPage('deals'); setMobileMenuOpen(false); }}
+                  className="w-full text-right py-2.5 px-3.5 rounded-xl text-amber-300 bg-slate-900/80 hover:bg-purple-900/50 border border-slate-800 font-bold flex items-center gap-2.5 transition-colors text-xs"
+                >
+                  <Tag className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{t.deals}</span>
+                </button>
+
+                <button
+                  onClick={() => { setPage('videos'); setMobileMenuOpen(false); }}
+                  className="w-full text-right py-2.5 px-3.5 rounded-xl text-slate-200 bg-slate-900/80 hover:bg-purple-900/50 hover:text-amber-300 border border-slate-800 font-bold flex items-center gap-2.5 transition-colors text-xs"
+                >
+                  <PlaySquare className="w-4 h-4 text-red-500 shrink-0" />
+                  <span>{t.videoReviews}</span>
+                </button>
+
+                <button
+                  onClick={() => { setPage('home'); setMobileMenuOpen(false); setTimeout(() => { document.getElementById('blog-section')?.scrollIntoView({ behavior: 'smooth' }); }, 100); }}
+                  className="w-full text-right py-2.5 px-3.5 rounded-xl text-slate-200 bg-slate-900/80 hover:bg-purple-900/50 hover:text-amber-300 border border-slate-800 font-bold flex items-center gap-2.5 transition-colors text-xs"
+                >
+                  <BookOpen className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{language === 'ar' ? 'دليل الشراء والمدونة' : 'Buying Guides & Blog'}</span>
+                </button>
+
+                <button
+                  onClick={() => { setPage('favorites'); setMobileMenuOpen(false); }}
+                  className="w-full text-right py-2.5 px-3.5 rounded-xl text-slate-200 bg-slate-900/80 hover:bg-purple-900/50 hover:text-amber-300 border border-slate-800 font-bold flex items-center gap-2.5 transition-colors text-xs"
+                >
+                  <Heart className="w-4 h-4 text-red-500 shrink-0" />
+                  <span>{t.favorites} ({favorites.length})</span>
+                </button>
+
+                <button
+                  onClick={() => { setPage('compare'); setMobileMenuOpen(false); }}
+                  className="w-full text-right py-2.5 px-3.5 rounded-xl text-slate-200 bg-slate-900/80 hover:bg-purple-900/50 hover:text-amber-300 border border-slate-800 font-bold flex items-center gap-2.5 transition-colors text-xs"
+                >
+                  <Scale className="w-4 h-4 text-purple-400 shrink-0" />
+                  <span>{t.compare} ({compareList.length})</span>
+                </button>
+
+                <button
+                  onClick={() => { openCartModal(); setMobileMenuOpen(false); }}
+                  className="w-full text-right py-2.5 px-3.5 rounded-xl text-amber-300 bg-slate-900/80 hover:bg-purple-900/50 border border-slate-800 font-bold flex items-center gap-2.5 transition-colors text-xs"
+                >
+                  <ShoppingBag className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{language === 'ar' ? 'سلة التسوق' : 'Shopping Cart'} ({cartTotalCount})</span>
+                </button>
+
+                <button
+                  onClick={() => { setPage('faq'); setMobileMenuOpen(false); }}
+                  className="w-full text-right py-2.5 px-3.5 rounded-xl text-slate-200 bg-slate-900/80 hover:bg-purple-900/50 hover:text-amber-300 border border-slate-800 font-bold flex items-center gap-2.5 transition-colors text-xs"
+                >
+                  <HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{language === 'ar' ? 'الأسئلة الشائعة والسياسات' : 'FAQ & Terms'}</span>
+                </button>
+
+                <button
+                  onClick={() => { setPage('admin'); setMobileMenuOpen(false); }}
+                  className="w-full text-right py-2.5 px-3.5 rounded-xl text-amber-300 bg-purple-950/80 border border-purple-800 font-bold flex items-center gap-2.5 transition-colors text-xs"
+                >
+                  <Settings className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{t.adminPanel}</span>
+                </button>
+              </div>
+
+              <hr className="border-purple-500/20 my-3" />
+
+              {/* Categories Section in Dropdown */}
+              <div className="space-y-2">
+                <span className="text-xs font-black text-amber-300 uppercase block px-1">
+                  {language === 'ar' ? 'تصفح الأقسام الرئيسية:' : 'Main Categories:'}
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {CATEGORIES.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => { handleCategorySelect(cat.id); setMobileMenuOpen(false); }}
+                      className="w-full text-right px-3 py-2 rounded-xl text-xs text-slate-200 bg-slate-900/90 hover:bg-purple-900/60 hover:text-amber-300 flex items-center justify-between border border-slate-800 hover:border-purple-500/40 transition-all cursor-pointer font-bold"
+                    >
+                      <span>{language === 'en' ? cat.nameEn : cat.nameAr}</span>
+                      <span className="text-[10px] bg-slate-950 px-2 py-0.5 rounded-md text-amber-400 font-mono">({cat.subcategories.length})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
