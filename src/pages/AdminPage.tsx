@@ -58,7 +58,9 @@ export const AdminPage: React.FC = () => {
     openThumbnailEditor,
     language,
     formatPrice,
-    setPage
+    setPage,
+    siteSettings,
+    updateSiteSettings
   } = useApp();
 
   const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
@@ -88,17 +90,39 @@ export const AdminPage: React.FC = () => {
 
   // General Settings State
   const [settingsForm, setSettingsForm] = useState({
-    siteName: 'ابتسامة يسرى (Yousra Smile)',
-    siteLogo: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=80',
-    defaultLanguage: 'ar',
-    defaultCurrency: 'SAR',
-    pinterestUrl: 'https://pinterest.com/yousrasmile',
-    youtubeUrl: 'https://youtube.com/@yousrasmile',
-    tiktokUrl: 'https://tiktok.com/@yousrasmile',
-    amazonTag: 'yousrasmile-20',
-    aliexpressTag: 'yousra_affiliate_id',
-    contactEmail: 'contact@yousrasmile.com'
+    siteName: siteSettings.siteName,
+    siteLogo: siteSettings.siteLogo,
+    defaultLanguage: siteSettings.defaultLanguage,
+    defaultCurrency: siteSettings.defaultCurrency,
+    pinterestUrl: siteSettings.pinterestUrl,
+    youtubeUrl: siteSettings.youtubeUrl,
+    tiktokUrl: siteSettings.tiktokUrl,
+    amazonTag: siteSettings.amazonTag,
+    aliexpressTag: siteSettings.aliexpressTag,
+    contactEmail: siteSettings.contactEmail
   });
+
+  // AI Assistant States
+  const [aiProductName, setAiProductName] = useState<string>('');
+  const [aiProductCategory, setAiProductCategory] = useState<string>('smart-home');
+  const [aiExtraDetails, setAiExtraDetails] = useState<string>('');
+  const [aiGeneratedResult, setAiGeneratedResult] = useState<any | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setSettingsForm({
+      siteName: siteSettings.siteName,
+      siteLogo: siteSettings.siteLogo,
+      defaultLanguage: siteSettings.defaultLanguage,
+      defaultCurrency: siteSettings.defaultCurrency,
+      pinterestUrl: siteSettings.pinterestUrl,
+      youtubeUrl: siteSettings.youtubeUrl,
+      tiktokUrl: siteSettings.tiktokUrl,
+      amazonTag: siteSettings.amazonTag,
+      aliexpressTag: siteSettings.aliexpressTag,
+      contactEmail: siteSettings.contactEmail
+    });
+  }, [siteSettings]);
 
   // Media Library Items
   const mediaItems = [
@@ -144,6 +168,93 @@ export const AdminPage: React.FC = () => {
     } else {
       alert('كلمة المرور غير صحيحة! رمز الدخول الافتراضي: yousra2026');
     }
+  };
+
+  const [loadingStep, setLoadingStep] = useState<number>(0);
+  const loadingSteps = [
+    '🤖 جاري تحليل ميزات اسم وفئة المنتج ولغة المتجر...',
+    '✨ يكتب Gemini مسودات تسويقية بليغة وموجهة للمستهلك العربي...',
+    '🔍 جاري توليد وتدقيق وسوم وميتا الـ SEO والعلامات الشائعة...',
+    '🎨 تصميم ملاحظات الصور واللمسة الاحترافية النهائية لمنصة يسرى سمايل...'
+  ];
+
+  const handleGenerateAiContent = async () => {
+    if (!aiProductName || aiProductName.trim() === '') {
+      setAiError('يرجى إدخال اسم المنتج لتشغيل المساعد الذكي.');
+      return;
+    }
+
+    setIsAiGenerating(true);
+    setAiError(null);
+    setAiGeneratedResult(null);
+    setLoadingStep(0);
+
+    const interval = setInterval(() => {
+      setLoadingStep((prev) => (prev < 3 ? prev + 1 : 0));
+    }, 2000);
+
+    try {
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productName: aiProductName,
+          productCategory: aiProductCategory,
+          extraDetails: aiExtraDetails,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'فشل توليد المحتوى بالذكاء الاصطناعي.');
+      }
+
+      setAiGeneratedResult(result.data);
+    } catch (err: any) {
+      console.error(err);
+      setAiError(err.message || 'حدث خطأ غير متوقع أثناء توليد النصوص الذكية.');
+    } finally {
+      clearInterval(interval);
+      setIsAiGenerating(false);
+    }
+  };
+
+  const handleApplyAiGeneratedProduct = () => {
+    if (!aiGeneratedResult) return;
+
+    setEditingProduct(null);
+    setFormData({
+      titleAr: aiGeneratedResult.seoTitle || '',
+      titleEn: aiProductName || '',
+      description: aiGeneratedResult.productDescription || '',
+      longDescription: aiGeneratedResult.longDescription || '',
+      category: (aiProductCategory as any) || 'smart-home',
+      subcategory: 'منتجات ذكية مميزة',
+      brand: 'يسرى سمايل الذكي',
+      image: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80',
+      imagesStr: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80',
+      youtubeUrl: '',
+      tiktokUrl: '',
+      pinterestUrl: '',
+      amazonUrl: 'https://amazon.com',
+      aliexpressUrl: 'https://aliexpress.com',
+      originalPrice: 499,
+      discountPrice: 399,
+      currency: 'SAR',
+      rating: 5.0,
+      reviewCount: 1,
+      featuresStr: (aiGeneratedResult.tags || []).join(', '),
+      keywordsStr: (aiGeneratedResult.keywords || []).join(', '),
+      isFeatured: true,
+      isTopSelling: false,
+      isHidden: false
+    });
+
+    setIsFormOpen(true);
+    alert('📥 تم تطبيق المحتوى المولد في نموذج المنتج الجديد بنجاح! تم ملء العنوان، الوصف، والمواصفات تلقائياً.');
   };
 
   const handleOpenAddModal = () => {
@@ -727,6 +838,18 @@ export const AdminPage: React.FC = () => {
         >
           <Globe className="w-4 h-4" />
           <span>الإعدادات العامة</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('ai-assistant' as any)}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border border-purple-500/20 ${
+            activeTab === ('ai-assistant' as any) 
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
+              : 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 hover:bg-purple-500/10'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-purple-500 animate-pulse" />
+          <span>🤖 مساعد الذكاء الاصطناعي</span>
         </button>
       </div>
 
@@ -1421,11 +1544,326 @@ export const AdminPage: React.FC = () => {
               <span>تطبق التغييرات فوراً في جميع صفحات المتجر</span>
             </span>
             <button
-              onClick={() => alert('✨ تم حفظ وتطبيق الإعدادات العامة للموقع بنجاح!')}
+              onClick={() => {
+                updateSiteSettings(settingsForm);
+                alert('✨ تم حفظ وتطبيق الإعدادات العامة للموقع بنجاح!');
+              }}
               className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg cursor-pointer"
             >
               حفظ الإعدادات العامة
             </button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === ('ai-assistant' as any) && (
+        <div className="space-y-6">
+          {/* Header Card */}
+          <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-3xl p-6 text-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-purple-400 font-bold mb-1">
+                <Sparkles className="w-5 h-5 text-purple-400 animate-pulse" />
+                <h2 className="text-base font-bold">مساعد كتابة المحتوى والـ SEO بالذكاء الاصطناعي</h2>
+              </div>
+              <p className="text-xs text-slate-300">
+                قم بتوليد عنوان SEO، وصف SEO، مراجعة ووصف تفصيلي للمنتج، وسموم تسويقية، وملاحظة فنية منسقة للصورة بضغطة زر واحدة باستخدام خادم Gemini.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Form Section */}
+            <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm self-start">
+              <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <Wand2 className="w-4 h-4 text-purple-500" />
+                <span>إدخال بيانات التوليد</span>
+              </h3>
+
+              <div className="space-y-3.5 text-xs">
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">اسم المنتج المراد كتابته:</label>
+                  <input
+                    type="text"
+                    value={aiProductName}
+                    onChange={(e) => setAiProductName(e.target.value)}
+                    placeholder="مثال: مكنسة دايسون V15 اللاسلكية الذكية"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">فئة/قسم المنتج:</label>
+                  <select
+                    value={aiProductCategory}
+                    onChange={(e) => setAiProductCategory(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-bold"
+                  >
+                    <option value="smart-home">أجهزة المنزل الذكية (Smart Home)</option>
+                    <option value="kitchen">أجهزة المطبخ العصرية (Kitchen)</option>
+                    <option value="care-beauty">العناية والجمال (Care & Beauty)</option>
+                    <option value="decor">أفكار وديكورات (Decor & Ideas)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">ميزات إضافية وتفاصيل مخصصة (اختياري):</label>
+                  <textarea
+                    value={aiExtraDetails}
+                    onChange={(e) => setAiExtraDetails(e.target.value)}
+                    rows={4}
+                    placeholder="مثال: شفط بقوة 230 واط هوائي، شاشة LCD ملونة، مستشعر ذكي للأتربة، ليزر أخضر لكشف الأتربة الدقيقة..."
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-white"
+                  />
+                </div>
+
+                {aiError && (
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold">
+                    ⚠️ {aiError}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleGenerateAiContent}
+                  disabled={isAiGenerating}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isAiGenerating ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>جاري التوليد...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>إنشاء محتوى بالذكاء الاصطناعي</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Results Section */}
+            <div className="lg:col-span-8 space-y-6">
+              {isAiGenerating && (
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center space-y-6 shadow-sm">
+                  <div className="relative w-20 h-20 mx-auto">
+                    <div className="absolute inset-0 border-4 border-purple-500/10 rounded-full"></div>
+                    <div className="absolute inset-0 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                    <Sparkles className="absolute inset-0 m-auto w-8 h-8 text-purple-500 animate-pulse" />
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-slate-800 dark:text-slate-100 text-base">جاري إنشاء السحر الذكي...</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                      {loadingSteps[loadingStep]}
+                    </p>
+                  </div>
+                  <div className="flex justify-center gap-1.5">
+                    {loadingSteps.map((_, idx) => (
+                      <span
+                        key={idx}
+                        className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                          idx === loadingStep ? 'bg-purple-600 scale-125' : 'bg-slate-200 dark:bg-slate-800'
+                        }`}
+                      ></span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!isAiGenerating && !aiGeneratedResult && (
+                <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center space-y-4 shadow-sm">
+                  <div className="w-16 h-16 bg-purple-50 dark:bg-purple-950/30 rounded-full flex items-center justify-center mx-auto text-purple-500">
+                    <Wand2 className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">مستعد للبدء بالتوليد السحري!</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+                      أدخل اسم المنتج واضغط على زر التوليد للحصول على نسخة تسويقية مبهرة ومحسنة لمحركات البحث تنافس المحترفين.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {!isAiGenerating && aiGeneratedResult && (
+                <div className="space-y-6">
+                  {/* Action Top Bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <span className="text-xs font-bold text-emerald-500 flex items-center gap-1">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>تم التوليد بنجاح! جاهز للتطبيق أو النسخ</span>
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleApplyAiGeneratedProduct}
+                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>تطبيق كمنتج جديد</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          const fullText = `
+العنوان: ${aiGeneratedResult.seoTitle}
+الوصف القصير: ${aiGeneratedResult.productDescription}
+الوصف الطويل: ${aiGeneratedResult.longDescription}
+الوسوم: ${aiGeneratedResult.tags.join(', ')}
+الهاشتاقات: ${aiGeneratedResult.hashtags.join(' ')}
+الكلمات المفتاحية: ${aiGeneratedResult.keywords.join(', ')}
+ملاحظة الصورة: ${aiGeneratedResult.imageNote}
+                          `.trim();
+                          navigator.clipboard.writeText(fullText);
+                          alert('📋 تم نسخ جميع النصوص بنجاح!');
+                        }}
+                        className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <Copy className="w-4 h-4" />
+                        <span>نسخ الكل</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Bento Grid Results */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* SEO Title Card */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-sm relative group">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-purple-600 dark:text-purple-400">عنوان SEO الجذاب (SEO Title)</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(aiGeneratedResult.seoTitle);
+                            alert('📋 تم نسخ العنوان!');
+                          }}
+                          className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-all cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-relaxed font-['Tajawal']">
+                        {aiGeneratedResult.seoTitle}
+                      </p>
+                    </div>
+
+                    {/* SEO Meta Description */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-sm relative group">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">وصف الميتا SEO (Meta Description)</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(aiGeneratedResult.seoDescription);
+                            alert('📋 تم نسخ وصف الميتا!');
+                          }}
+                          className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-all cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        {aiGeneratedResult.seoDescription}
+                      </p>
+                    </div>
+
+                    {/* Opening Product Description */}
+                    <div className="md:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-sm relative group">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">فقرة الوصف التسويقي الافتتاحي</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(aiGeneratedResult.productDescription);
+                            alert('📋 تم نسخ الوصف الافتتاحي!');
+                          }}
+                          className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-all cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+                        {aiGeneratedResult.productDescription}
+                      </p>
+                    </div>
+
+                    {/* Detailed Review */}
+                    <div className="md:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-sm relative group">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-600 dark:text-amber-400">مراجعة يسرى سمايل الشاملة (وصف تفصيلي)</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(aiGeneratedResult.longDescription);
+                            alert('📋 تم نسخ المراجعة التفصيلية!');
+                          }}
+                          className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 transition-all cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-line space-y-2">
+                        {aiGeneratedResult.longDescription}
+                      </div>
+                    </div>
+
+                    {/* Image Note Card with high contrast */}
+                    <div className="md:col-span-2 bg-amber-500/5 border border-amber-500/20 rounded-2xl p-5 space-y-3 shadow-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
+                          <ImageIcon className="w-4 h-4" />
+                          <span>توجيه وملاحظة فنية هامة جداً على صورة المنتج</span>
+                        </span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(aiGeneratedResult.imageNote);
+                            alert('📋 تم نسخ ملاحظة الصورة!');
+                          }}
+                          className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-all cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-700 dark:text-amber-100/90 leading-relaxed font-bold italic">
+                        {aiGeneratedResult.imageNote}
+                      </p>
+                    </div>
+
+                    {/* Tags, Hashtags, Keywords */}
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Tags */}
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-2 border border-slate-100 dark:border-slate-800">
+                        <span className="text-xs font-bold text-purple-600 block">الوسوم (Tags)</span>
+                        <div className="flex flex-wrap gap-1">
+                          {aiGeneratedResult.tags.map((tag: string, idx: number) => (
+                            <span key={idx} className="px-2 py-1 rounded bg-purple-500/10 text-purple-500 font-bold text-[10px]">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Hashtags */}
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-2 border border-slate-100 dark:border-slate-800">
+                        <span className="text-xs font-bold text-pink-600 block">الهاشتاقات (Hashtags)</span>
+                        <div className="flex flex-wrap gap-1">
+                          {aiGeneratedResult.hashtags.map((hash: string, idx: number) => (
+                            <span key={idx} className="px-2 py-1 rounded bg-pink-500/10 text-pink-500 font-bold text-[10px]">
+                              {hash}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Keywords */}
+                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-2 border border-slate-100 dark:border-slate-800">
+                        <span className="text-xs font-bold text-sky-600 block">الكلمات المفتاحية (Keywords)</span>
+                        <div className="flex flex-wrap gap-1">
+                          {aiGeneratedResult.keywords.map((kw: string, idx: number) => (
+                            <span key={idx} className="px-2 py-1 rounded bg-sky-500/10 text-sky-500 font-bold text-[10px]">
+                              {kw}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

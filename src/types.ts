@@ -128,17 +128,14 @@ export interface CartItem {
 
 export interface SiteSettings {
   siteName: string;
-  siteNameEn: string;
-  logoUrl: string;
+  siteLogo: string;
   defaultLanguage: 'ar' | 'en';
   defaultCurrency: CurrencyCode;
   pinterestUrl: string;
   youtubeUrl: string;
   tiktokUrl: string;
   amazonTag: string;
-  amazonUrl: string;
   aliexpressTag: string;
-  aliexpressUrl: string;
   contactEmail: string;
 }
 

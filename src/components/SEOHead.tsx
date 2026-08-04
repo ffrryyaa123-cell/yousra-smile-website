@@ -8,14 +8,17 @@ interface SEOHeadProps {
 }
 
 export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription }) => {
-  const { activePage, selectedProduct, language, activeStaticTab } = useApp();
+  const { activePage, selectedProduct, language, activeStaticTab, siteSettings } = useApp();
 
   useEffect(() => {
-    let title = 'ابتسامة يسرى | Yousra Smile - مراجعات الأجهزة الذكية والمنزل العصري';
-    let description = 'موقع ابتسامة يسرى (Yousra Smile) لمراجعات الأجهزة الذكية، المكانس الروبوتية، أدوات المطبخ العصرية، ومستلزمات المرأة والرياضة مع أفضل كوبونات وخصومات أمازون وعلي إكسبريس.';
-    let keywords = 'ابتسامة يسرى, ابتسامة يسرا, Yousra Smile, مراجعات أجهزة, تسويق بالعمولة, أمازون, علي إكسبريس, مكانس روبوتية, قلاية هوائية, أجهزة منزلية ذكية';
+    const siteName = siteSettings.siteName || 'ابتسامة يسرى (Yousra Smile)';
+    const siteLogo = siteSettings.siteLogo || 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80';
+    
+    let title = `${siteName} - مراجعات الأجهزة الذكية والمنزل العصري`;
+    let description = `موقع ${siteName} لمراجعات الأجهزة المنزلية الذكية والمطبخ العصري والجمال مع أفضل كوبونات وعروض أمازون وعلي إكسبريس.`;
+    let keywords = `${siteName}, مراجعات أجهزة, تسويق بالعمولة, أمازون, علي إكسبريس, مكانس روبوتية, قلاية هوائية, أجهزة منزلية ذكية`;
     let ogType = 'website';
-    let imageUrl = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=1200&q=80';
+    let imageUrl = siteLogo;
     let currentUrl = window.location.href;
 
     const currentProduct: Product | null = selectedProduct;
@@ -98,7 +101,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
     setMetaTag('property', 'og:image', imageUrl);
     setMetaTag('property', 'og:type', ogType);
     setMetaTag('property', 'og:url', currentUrl);
-    setMetaTag('property', 'og:site_name', 'Yousra Smile | يسرى سمايل');
+    setMetaTag('property', 'og:site_name', siteName);
     setMetaTag('property', 'og:locale', language === 'ar' ? 'ar_SA' : 'en_US');
 
     // Update Twitter Cards
@@ -198,23 +201,23 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
         "@graph": [
           {
             "@type": "WebSite",
-            "@id": "https://yousrasmile.com/#website",
-            "url": "https://yousrasmile.com",
-            "name": "Yousra Smile",
-            "alternateName": "يسرى سمايل",
-            "description": "العلامة التجارية الشخصية الأولى لمراجعات وتصنيفات الأجهزة الذكية والمنزل العصري",
+            "@id": `${currentUrl}#website`,
+            "url": currentUrl,
+            "name": siteName,
+            "alternateName": siteName,
+            "description": description,
             "inLanguage": language === 'ar' ? 'ar' : 'en'
           },
           {
             "@type": "Organization",
-            "@id": "https://yousrasmile.com/#organization",
-            "name": "Yousra Smile",
-            "url": "https://yousrasmile.com",
-            "logo": "https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=400&q=80",
+            "@id": `${currentUrl}#organization`,
+            "name": siteName,
+            "url": currentUrl,
+            "logo": siteLogo,
             "sameAs": [
-              "https://youtube.com",
-              "https://tiktok.com",
-              "https://pinterest.com"
+              siteSettings.youtubeUrl || "https://youtube.com",
+              siteSettings.tiktokUrl || "https://tiktok.com",
+              siteSettings.pinterestUrl || "https://pinterest.com"
             ]
           },
           {

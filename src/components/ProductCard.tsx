@@ -38,7 +38,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
     openCartModal,
     language,
     formatPrice,
-    t
+    t,
+    getAffiliateUrl
   } = useApp();
 
   const isFav = favorites.includes(product.id);
@@ -52,14 +53,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
   const handleBuyAmazon = (e: React.MouseEvent) => {
     e.stopPropagation();
     logAffiliateClick(product.id, 'amazon');
-    window.open(product.amazonUrl, '_blank', 'noopener,noreferrer');
+    const url = getAffiliateUrl(product, 'amazon');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleBuyAliExpress = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (product.aliexpressUrl) {
       logAffiliateClick(product.id, 'aliexpress');
-      window.open(product.aliexpressUrl, '_blank', 'noopener,noreferrer');
+      const url = getAffiliateUrl(product, 'aliexpress');
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
 

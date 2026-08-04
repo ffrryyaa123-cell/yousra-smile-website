@@ -70,7 +70,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
     openProductDetail,
     filterByBrand,
     setPage,
-    setSelectedCategory
+    setSelectedCategory,
+    getAffiliateUrl
   } = useApp();
 
   if (!product) return null;
@@ -156,13 +157,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
   const handleAmazonBuy = () => {
     logAffiliateClick(product.id, 'amazon');
-    window.open(product.amazonUrl, '_blank', 'noopener,noreferrer');
+    const url = getAffiliateUrl(product, 'amazon');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleAliExpressBuy = () => {
     if (product.aliexpressUrl) {
       logAffiliateClick(product.id, 'aliexpress');
-      window.open(product.aliexpressUrl, '_blank', 'noopener,noreferrer');
+      const url = getAffiliateUrl(product, 'aliexpress');
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -551,6 +554,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
               {/* Affiliate Action CTAs with Live Store Price Badges */}
               <div className="space-y-3 pt-2">
+                <div className="bg-emerald-950/60 border border-emerald-500/40 p-2.5 rounded-xl flex items-center justify-between text-xs text-emerald-300 font-bold">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{language === 'ar' ? 'نعم - روابط شراء أصلية ومعتمدة 100%' : 'Yes - 100% Direct & Authentic Purchase Links'}</span>
+                  </div>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    {language === 'ar' ? 'موثوق' : 'Verified'}
+                  </span>
+                </div>
+
                 <div className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <ShoppingBag className="w-4 h-4 text-purple-600" />

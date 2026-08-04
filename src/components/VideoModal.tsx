@@ -10,7 +10,7 @@ interface VideoModalProps {
 }
 
 export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
-  const { products, openProductDetail, logAffiliateClick, language, formatPrice } = useApp();
+  const { products, openProductDetail, logAffiliateClick, language, formatPrice, getAffiliateUrl } = useApp();
   const [showExportModal, setShowExportModal] = useState(false);
 
   if (!video) return null;
@@ -114,7 +114,8 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
                 <button
                   onClick={() => {
                     logAffiliateClick(linkedProduct.id, 'amazon');
-                    window.open(linkedProduct.amazonUrl, '_blank', 'noopener,noreferrer');
+                    const url = getAffiliateUrl(linkedProduct, 'amazon');
+                    window.open(url, '_blank', 'noopener,noreferrer');
                   }}
                   className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs flex items-center justify-between gap-2 shadow-md cursor-pointer"
                 >
@@ -132,8 +133,8 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
                 <button
                   onClick={() => {
                     logAffiliateClick(linkedProduct.id, 'aliexpress');
-                    const aliUrl = linkedProduct.aliexpressUrl || `https://www.aliexpress.com/wholesale?SearchText=${encodeURIComponent(linkedProduct.titleEn)}`;
-                    window.open(aliUrl, '_blank', 'noopener,noreferrer');
+                    const url = getAffiliateUrl(linkedProduct, 'aliexpress');
+                    window.open(url, '_blank', 'noopener,noreferrer');
                   }}
                   className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black text-xs flex items-center justify-between gap-2 shadow-md cursor-pointer"
                 >

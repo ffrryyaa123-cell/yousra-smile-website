@@ -33,9 +33,15 @@ export const HeroBanner: React.FC = () => {
         {/* Text Content Left/Right in RTL */}
         <div className="lg:col-span-7 space-y-6">
           
-          <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3.5 py-1.5 rounded-full text-xs font-bold backdrop-blur-md">
-            <Flame className="w-4 h-4 text-amber-400 animate-bounce" />
-            {t.affiliateBadge}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3.5 py-1.5 rounded-full text-xs font-bold backdrop-blur-md">
+              <Flame className="w-4 h-4 text-amber-400 animate-bounce" />
+              {t.affiliateBadge}
+            </div>
+            <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-full text-xs font-black backdrop-blur-md shadow-sm">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              {language === 'ar' ? 'نعم - منصة موثوقة ومراجعات معتمدة' : 'Yes - 100% Verified Platform'}
+            </div>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black font-['Tajawal'] leading-tight tracking-tight">

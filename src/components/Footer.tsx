@@ -5,7 +5,7 @@ import { CATEGORIES } from '../data/categories';
 import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
 
 export const Footer: React.FC = () => {
-  const { setPage, setSelectedCategory, language, t } = useApp();
+  const { setPage, setSelectedCategory, language, t, siteSettings } = useApp();
   const [emailInput, setEmailInput] = React.useState('');
   const [subscribed, setSubscribed] = React.useState(false);
 
@@ -26,10 +26,10 @@ export const Footer: React.FC = () => {
           {/* Brand Info & Story */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <img src={logoImg} alt="Yousra Smile" className="w-12 h-12 rounded-xl object-cover border-2 border-purple-500/40" />
+              <img src={siteSettings.siteLogo || logoImg} alt="Yousra Smile" className="w-12 h-12 rounded-xl object-cover border-2 border-purple-500/40" referrerPolicy="no-referrer" />
               <div>
                 <span className="text-xl font-extrabold text-white font-['Tajawal'] tracking-wide">
-                  {t.siteTitle}
+                  {siteSettings.siteName || t.siteTitle}
                 </span>
                 <p className="text-xs text-slate-400">{t.footerBrandBio}</p>
               </div>
@@ -41,7 +41,7 @@ export const Footer: React.FC = () => {
 
             <div className="flex items-center gap-3 pt-2">
               <a 
-                href="https://youtube.com" 
+                href={siteSettings.youtubeUrl || "https://youtube.com"} 
                 target="_blank" 
                 rel="noreferrer"
                 className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-red-600/20 text-slate-300 hover:text-red-500 border border-slate-800 flex items-center justify-center transition-all"
@@ -50,7 +50,7 @@ export const Footer: React.FC = () => {
                 <Youtube className="w-5 h-5" />
               </a>
               <a 
-                href="https://tiktok.com" 
+                href={siteSettings.tiktokUrl || "https://tiktok.com"} 
                 target="_blank" 
                 rel="noreferrer"
                 className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-pink-600/20 text-slate-300 hover:text-pink-400 border border-slate-800 flex items-center justify-center transition-all"
@@ -59,7 +59,7 @@ export const Footer: React.FC = () => {
                 <Video className="w-5 h-5" />
               </a>
               <a 
-                href="https://pinterest.com" 
+                href={siteSettings.pinterestUrl || "https://pinterest.com"} 
                 target="_blank" 
                 rel="noreferrer"
                 className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-red-600/20 text-slate-300 hover:text-red-400 border border-slate-800 flex items-center justify-center transition-all"
@@ -192,9 +192,9 @@ export const Footer: React.FC = () => {
 
         {/* Copyright Notice */}
         <div className="pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} Yousra Smile. {t.allRightsReserved}.</p>
+          <p>© {new Date().getFullYear()} {siteSettings.siteName || 'Yousra Smile'}. {t.allRightsReserved}.</p>
           <p className="flex items-center gap-1">
-            {t.craftedWith} <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" /> Yousra Smile Reviews
+            {t.craftedWith} <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" /> {siteSettings.siteName || 'Yousra Smile'} Reviews
           </p>
         </div>
       </div>

@@ -26,7 +26,8 @@ export const CartModal: React.FC = () => {
     language,
     t,
     openProductDetail,
-    logAffiliateClick
+    logAffiliateClick,
+    getAffiliateUrl
   } = useApp();
 
   if (!cartModalOpen) return null;
@@ -182,7 +183,7 @@ export const CartModal: React.FC = () => {
 
                         {/* Direct Amazon link */}
                         <a
-                          href={product.amazonUrl}
+                          href={getAffiliateUrl(product, 'amazon')}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={() => logAffiliateClick(product.id, 'amazon')}
@@ -233,7 +234,7 @@ export const CartModal: React.FC = () => {
             {/* Direct Purchase Action Buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
               <a
-                href={cartItems[0]?.product.amazonUrl || 'https://www.amazon.com'}
+                href={cartItems[0] ? getAffiliateUrl(cartItems[0].product, 'amazon') : 'https://www.amazon.com'}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => {
@@ -247,7 +248,7 @@ export const CartModal: React.FC = () => {
 
               {cartItems.some(i => i.product.aliexpressUrl) && (
                 <a
-                  href={cartItems.find(i => i.product.aliexpressUrl)?.product.aliexpressUrl || '#'}
+                  href={getAffiliateUrl(cartItems.find(i => i.product.aliexpressUrl)!.product, 'aliexpress')}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => {

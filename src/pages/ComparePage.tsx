@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Scale, Trash2, ShoppingBag, ExternalLink, Star, ArrowLeft } from 'lucide-react';
 
 export const ComparePage: React.FC = () => {
-  const { products, compareList, toggleCompare, clearCompare, setPage, logAffiliateClick, formatPrice } = useApp();
+  const { products, compareList, toggleCompare, clearCompare, setPage, logAffiliateClick, formatPrice, getAffiliateUrl } = useApp();
 
   const comparedProducts = products.filter(p => compareList.includes(p.id));
 
@@ -146,7 +146,8 @@ export const ComparePage: React.FC = () => {
                     <button
                       onClick={() => {
                         logAffiliateClick(prod.id, 'amazon');
-                        window.open(prod.amazonUrl, '_blank', 'noopener,noreferrer');
+                        const url = getAffiliateUrl(prod, 'amazon');
+                        window.open(url, '_blank', 'noopener,noreferrer');
                       }}
                       className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-1 shadow-md"
                     >

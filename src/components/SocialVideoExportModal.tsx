@@ -33,7 +33,7 @@ const TikTokIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" })
 );
 
 export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ video, onClose }) => {
-  const { products, language } = useApp();
+  const { products, language, getAffiliateUrl } = useApp();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
 
@@ -45,7 +45,7 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
 
   // Pinterest Pin URL Creation
   const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(
-    linkedProduct?.amazonUrl || targetUrl
+    linkedProduct ? getAffiliateUrl(linkedProduct, 'amazon') : targetUrl
   )}&media=${encodeURIComponent(thumbnail)}&description=${encodeURIComponent(
     `${video.title} - ${video.productTitle} | مراجعة شاملة وتجربة منتج`
   )}`;
@@ -264,7 +264,7 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
               </div>
 
               <a
-                href={linkedProduct.amazonUrl}
+                href={getAffiliateUrl(linkedProduct, 'amazon')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 shadow-md shrink-0 cursor-pointer"

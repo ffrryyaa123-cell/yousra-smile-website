@@ -52,7 +52,8 @@ export const Header: React.FC = () => {
     selectedCategory,
     products,
     openProductDetail,
-    formatPrice
+    formatPrice,
+    siteSettings
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -193,13 +194,25 @@ export const Header: React.FC = () => {
             onClick={() => { setSelectedCategory('all'); setPage('home'); }}
             className="flex items-center gap-2.5 cursor-pointer shrink-0 group"
           >
-            <img 
-              src={logoImg} 
-              alt="Yousra Smile Logo" 
-              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 border-amber-400/80 shadow-[0_0_12px_rgba(212,175,55,0.4)] group-hover:scale-105 transition-transform" 
-            />
+            <div className="relative">
+              <img 
+                src={siteSettings.siteLogo || logoImg} 
+                alt="Yousra Smile Logo" 
+                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 border-amber-400/80 shadow-[0_0_12px_rgba(212,175,55,0.4)] group-hover:scale-105 transition-transform object-cover" 
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 p-0.5 rounded-full border border-slate-900 shadow-md flex items-center justify-center" title={language === 'ar' ? 'حساب موثوق ومعتمد' : 'Verified Brand'}>
+                <ShieldCheck className="w-3.5 h-3.5 text-white" />
+              </div>
+            </div>
             <div className={`hidden sm:block font-['Cairo'] ${language === 'ar' ? 'text-right' : 'text-left'}`}>
-              <span className="font-black text-amber-300 text-sm sm:text-base leading-none block">{t.siteTitle}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-black text-amber-300 text-sm sm:text-base leading-none block">{siteSettings.siteName || t.siteTitle}</span>
+                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full text-[10px] font-extrabold leading-none shadow-sm">
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                  {language === 'ar' ? 'نعم - موثوق' : 'Yes - Verified'}
+                </span>
+              </div>
               <span className="text-[10px] text-slate-400 leading-tight block mt-0.5">{language === 'ar' ? 'دليل تسوق الأجهزة الذكية' : 'Smart Home Shopping Guide'}</span>
             </div>
           </div>
@@ -521,9 +534,9 @@ export const Header: React.FC = () => {
             {/* Modal Dropdown Header */}
             <div className="bg-[#190F2E] p-4 border-b border-purple-500/30 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src={logoImg} alt="Yousra Smile" className="w-10 h-10 rounded-xl border border-amber-400/50 shadow" />
+                <img src={siteSettings.siteLogo || logoImg} alt="Yousra Smile" className="w-10 h-10 rounded-xl border border-amber-400/50 shadow" referrerPolicy="no-referrer" />
                 <div>
-                  <span className="font-extrabold text-white text-base block font-['Cairo']">{t.siteTitle}</span>
+                  <span className="font-extrabold text-white text-base block font-['Cairo']">{siteSettings.siteName || t.siteTitle}</span>
                   <span className="text-[11px] text-amber-300 font-['Tajawal']">{language === 'ar' ? 'التصفح المنسدل والتسهيلات' : 'Dropdown Navigation & Services'}</span>
                 </div>
               </div>

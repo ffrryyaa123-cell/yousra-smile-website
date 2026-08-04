@@ -6,7 +6,7 @@ import { VideoImportModal } from '../components/VideoImportModal';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 
 export const VideosPage: React.FC = () => {
-  const { videos, products, openVideoModal, openProductDetail, openThumbnailEditor, logAffiliateClick, language, formatPrice } = useApp();
+  const { videos, products, openVideoModal, openProductDetail, openThumbnailEditor, logAffiliateClick, language, formatPrice, getAffiliateUrl } = useApp();
   const [platformFilter, setPlatformFilter] = useState<'all' | 'youtube' | 'tiktok' | 'pinterest'>('all');
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedExportVideo, setSelectedExportVideo] = useState<VideoReview | null>(null);
@@ -183,7 +183,8 @@ export const VideosPage: React.FC = () => {
                     <button
                       onClick={() => {
                         logAffiliateClick(linkedProd.id, 'amazon');
-                        window.open(linkedProd.amazonUrl, '_blank', 'noopener,noreferrer');
+                        const url = getAffiliateUrl(linkedProd, 'amazon');
+                        window.open(url, '_blank', 'noopener,noreferrer');
                       }}
                       className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs flex items-center gap-1 shadow cursor-pointer"
                     >

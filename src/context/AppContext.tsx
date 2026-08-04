@@ -1,12 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Product, PageView, VideoReview, PriceAlert, CartItem } from '../types';
+import { Product, PageView, VideoReview, PriceAlert, CartItem, SiteSettings, BlogPost } from '../types';
 import { INITIAL_PRODUCTS } from '../data/initialProducts';
 import { SAMPLE_VIDEOS } from '../data/sampleVideos';
+import { SAMPLE_BLOG_POSTS } from '../data/blogPosts';
 import { translations, Language } from '../utils/i18n';
 import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../utils/currency';
 
 interface AppContextType {
   products: Product[];
+  blogPosts: BlogPost[];
+  addBlogPost: (newPost: Omit<BlogPost, 'id' | 'publishedDate'>) => void;
+  updateBlogPost: (updatedPost: BlogPost) => void;
+  deleteBlogPost: (id: string) => void;
   favorites: string[];
   cart: CartItem[];
   cartModalOpen: boolean;
@@ -78,6 +83,11 @@ interface AppContextType {
   
   // Metrics
   logAffiliateClick: (productId: string, platform: 'amazon' | 'aliexpress') => void;
+
+  // Site settings
+  siteSettings: SiteSettings;
+  updateSiteSettings: (settings: Partial<SiteSettings>) => void;
+  getAffiliateUrl: (product: Product, platform: 'amazon' | 'aliexpress') => string;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -92,6 +102,20 @@ const LOCAL_STORAGE_CURRENCY_KEY = 'yousrasmile_currency_v1';
 const LOCAL_STORAGE_PRICE_ALERTS_KEY = 'yousrasmile_price_alerts_v1';
 const LOCAL_STORAGE_VIDEOS_KEY = 'yousrasmile_videos_v1';
 const LOCAL_STORAGE_RECENTLY_VIEWED_KEY = 'yousrasmile_recently_viewed_v1';
+const LOCAL_STORAGE_SETTINGS_KEY = 'yousrasmile_settings_v2';
+
+const DEFAULT_SITE_SETTINGS: SiteSettings = {
+  siteName: 'ابتسامة يسرى (Yousra Smile)',
+  siteLogo: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=80',
+  defaultLanguage: 'ar',
+  defaultCurrency: 'SAR',
+  pinterestUrl: 'https://pinterest.com/yousrasmile',
+  youtubeUrl: 'https://youtube.com/@yousrasmile',
+  tiktokUrl: 'https://tiktok.com/@yousrasmile',
+  amazonTag: 'yousrasmile-20',
+  aliexpressTag: 'yousra_affiliate_id',
+  contactEmail: 'contact@yousrasmile.com'
+};
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>(() => {
@@ -192,14 +216,82 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
+  // Site settings state
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_SETTINGS_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Error loading settings:', e);
+    }
+    return DEFAULT_SITE_SETTINGS;
+  });
+
+  const updateSiteSettings = useCallback((newSettings: Partial<SiteSettings>) => {
+    setSiteSettings(prev => {
+      const updated = { ...prev, ...newSettings };
+      try {
+        localStorage.setItem(LOCAL_STORAGE_SETTINGS_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to save settings:', e);
+      }
+      return updated;
+    });
+  }, []);
+
+  const getAffiliateUrl = useCallback((product: Product, platform: 'amazon' | 'aliexpress'): string => {
+    if (platform === 'amazon') {
+      const url = product.amazonUrl || 'https://www.amazon.com';
+      if (siteSettings.amazonTag) {
+        try {
+          const parsedUrl = new URL(url);
+          parsedUrl.searchParams.set('tag', siteSettings.amazonTag);
+          return parsedUrl.toString();
+        } catch (e) {
+          if (url.includes('?')) {
+            if (url.includes('tag=')) {
+              return url.replace(/tag=[^&]+/, `tag=${siteSettings.amazonTag}`);
+            }
+            return `${url}&tag=${siteSettings.amazonTag}`;
+          }
+          return `${url}?tag=${siteSettings.amazonTag}`;
+        }
+      }
+      return url;
+    } else {
+      const url = product.aliexpressUrl || 'https://www.aliexpress.com';
+      if (siteSettings.aliexpressTag) {
+        try {
+          const parsedUrl = new URL(url);
+          parsedUrl.searchParams.set('aff_id', siteSettings.aliexpressTag);
+          return parsedUrl.toString();
+        } catch (e) {
+          if (url.includes('?')) {
+            if (url.includes('aff_id=')) {
+              return url.replace(/aff_id=[^&]+/, `aff_id=${siteSettings.aliexpressTag}`);
+            }
+            return `${url}&aff_id=${siteSettings.aliexpressTag}`;
+          }
+          return `${url}?aff_id=${siteSettings.aliexpressTag}`;
+        }
+      }
+      return url;
+    }
+  }, [siteSettings.amazonTag, siteSettings.aliexpressTag]);
+
   // Language state: 'ar' | 'en'
   const [language, setLanguageState] = useState<Language>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_LANG_KEY);
-      return (saved === 'en' || saved === 'ar') ? saved : 'ar';
-    } catch (e) {
-      return 'ar';
-    }
+      if (saved === 'en' || saved === 'ar') return saved;
+      
+      const savedSettings = localStorage.getItem(LOCAL_STORAGE_SETTINGS_KEY);
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed?.defaultLanguage) return parsed.defaultLanguage;
+      }
+    } catch (e) {}
+    return 'ar';
   });
 
   // Currency state
@@ -207,10 +299,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_CURRENCY_KEY) as CurrencyCode;
       if (saved && CURRENCIES[saved]) return saved;
+
+      const savedSettings = localStorage.getItem(LOCAL_STORAGE_SETTINGS_KEY);
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed?.defaultCurrency && CURRENCIES[parsed.defaultCurrency]) return parsed.defaultCurrency;
+      }
     } catch (e) {
       console.error('Error loading currency:', e);
     }
-    return 'USD';
+    return 'SAR';
   });
 
   const setCurrency = useCallback((code: CurrencyCode) => {
@@ -634,7 +732,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteProduct,
         resetCatalog,
         addReview,
-        logAffiliateClick
+        logAffiliateClick,
+        siteSettings,
+        updateSiteSettings,
+        getAffiliateUrl
       }}
     >
       {children}

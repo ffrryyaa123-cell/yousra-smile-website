@@ -26,7 +26,8 @@ import {
   Globe,
   ArrowRight,
   ExternalLink,
-  ChevronLeft
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
 import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.jpg';
@@ -50,6 +51,35 @@ export const HomePage: React.FC = () => {
   const featuredProducts = products.filter(p => p.isFeatured || p.discountPercent >= 25).slice(0, 8);
   const editorialStripProducts = products.slice(0, 4);
   const topSellingProducts = products.filter(p => p.isTopSelling).slice(0, 6);
+
+  const dealsCarouselRef = React.useRef<HTMLDivElement>(null);
+  const topSellingCarouselRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollDeals = (direction: 'left' | 'right') => {
+    if (dealsCarouselRef.current) {
+      const container = dealsCarouselRef.current;
+      const scrollAmount = 320;
+      const isRtl = document.documentElement.dir === 'rtl' || language === 'ar';
+      let offset = direction === 'left' ? -scrollAmount : scrollAmount;
+      if (isRtl) {
+        offset = -offset;
+      }
+      container.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  };
+
+  const scrollTopSelling = (direction: 'left' | 'right') => {
+    if (topSellingCarouselRef.current) {
+      const container = topSellingCarouselRef.current;
+      const scrollAmount = 320;
+      const isRtl = document.documentElement.dir === 'rtl' || language === 'ar';
+      let offset = direction === 'left' ? -scrollAmount : scrollAmount;
+      if (isRtl) {
+        offset = -offset;
+      }
+      container.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  };
 
   return (
     <div className="space-y-3 sm:space-y-4 pb-6 text-[#2C1802] dark:text-[#FDFCFB]">
@@ -292,10 +322,38 @@ export const HomePage: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 relative z-10">
-          {featuredProducts.slice(0, 4).map(prod => (
-            <ProductCard key={prod.id} product={prod} />
-          ))}
+        {/* Horizontal Carousel with Arrows */}
+        <div className="relative group/carousel z-10">
+          {/* Scroll container */}
+          <div 
+            ref={dealsCarouselRef}
+            className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-none pb-2 select-none"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {featuredProducts.map(prod => (
+              <div key={prod.id} className="w-[280px] sm:w-[320px] shrink-0 snap-start">
+                <ProductCard product={prod} />
+              </div>
+            ))}
+          </div>
+
+          {/* Left Arrow Button (Physical Left) */}
+          <button
+            onClick={() => scrollDeals('left')}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-slate-950/90 hover:bg-slate-900 border border-purple-500/30 hover:border-amber-400 text-amber-400 flex items-center justify-center shadow-lg transition-all md:opacity-0 md:group-hover/carousel:opacity-100 hover:scale-115 active:scale-95 cursor-pointer"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          {/* Right Arrow Button (Physical Right) */}
+          <button
+            onClick={() => scrollDeals('right')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-slate-950/90 hover:bg-slate-900 border border-purple-500/30 hover:border-amber-400 text-amber-400 flex items-center justify-center shadow-lg transition-all md:opacity-0 md:group-hover/carousel:opacity-100 hover:scale-115 active:scale-95 cursor-pointer"
+            aria-label="Scroll right"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
         </div>
       </section>
 
@@ -391,10 +449,38 @@ export const HomePage: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {topSellingProducts.map(prod => (
-            <ProductCard key={prod.id} product={prod} />
-          ))}
+        {/* Horizontal Carousel with Arrows */}
+        <div className="relative group/carousel z-10">
+          {/* Scroll container */}
+          <div 
+            ref={topSellingCarouselRef}
+            className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-none pb-2 select-none"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {topSellingProducts.map(prod => (
+              <div key={prod.id} className="w-[280px] sm:w-[320px] shrink-0 snap-start">
+                <ProductCard product={prod} />
+              </div>
+            ))}
+          </div>
+
+          {/* Left Arrow Button (Physical Left) */}
+          <button
+            onClick={() => scrollTopSelling('left')}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-slate-950/90 hover:bg-slate-900 border border-purple-500/30 hover:border-amber-400 text-amber-400 flex items-center justify-center shadow-lg transition-all md:opacity-0 md:group-hover/carousel:opacity-100 hover:scale-115 active:scale-95 cursor-pointer"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          {/* Right Arrow Button (Physical Right) */}
+          <button
+            onClick={() => scrollTopSelling('right')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-slate-950/90 hover:bg-slate-900 border border-purple-500/30 hover:border-amber-400 text-amber-400 flex items-center justify-center shadow-lg transition-all md:opacity-0 md:group-hover/carousel:opacity-100 hover:scale-115 active:scale-95 cursor-pointer"
+            aria-label="Scroll right"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
         </div>
       </section>
 
