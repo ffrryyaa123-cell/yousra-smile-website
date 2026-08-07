@@ -9,6 +9,7 @@ import { DealsPage } from './pages/DealsPage';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { ComparePage } from './pages/ComparePage';
 import { AdminPage } from './pages/AdminPage';
+import { AdminAuthGate } from './components/AdminAuthGate';
 import { StaticPage } from './pages/StaticPage';
 import { ProductDetailModal } from './components/ProductDetailModal';
 import { VideoModal } from './components/VideoModal';
@@ -49,7 +50,11 @@ const AppContent: React.FC = () => {
       case 'compare':
         return <ComparePage />;
       case 'admin':
-        return <AdminPage />;
+        return (
+          <AdminAuthGate>
+            <AdminPage />
+          </AdminAuthGate>
+        );
       case 'about':
       case 'contact':
       case 'privacy':
@@ -77,7 +82,6 @@ const AppContent: React.FC = () => {
 
       <Footer />
 
-      {/* Product Detail Modal */}
       {selectedProduct && (
         <ProductDetailModal 
           product={selectedProduct} 
@@ -85,7 +89,6 @@ const AppContent: React.FC = () => {
         />
       )}
 
-      {/* Video Review Playback Modal */}
       {selectedVideo && (
         <VideoModal 
           video={selectedVideo} 
@@ -93,26 +96,19 @@ const AppContent: React.FC = () => {
         />
       )}
 
-      {/* Price Alert Modal */}
       {alertModalProduct && <PriceAlertModal />}
 
-      {/* Cart Modal Drawer */}
       <CartModal />
 
-      {/* Video Thumbnail Editor Modal (YouTube Style) */}
       {editingThumbnailVideo && (
         <ThumbnailEditorModal 
           video={editingThumbnailVideo} 
           onClose={closeThumbnailEditor} 
         />
       )}
-      {/* Floating WhatsApp Consultation Button */}
+
       <WhatsAppButton />
-
-      {/* Floating Back To Top Button */}
       <ScrollToTop />
-
-      {/* Live Recent Purchase Toast Notification */}
       <RecentPurchaseToast />
     </div>
   );
