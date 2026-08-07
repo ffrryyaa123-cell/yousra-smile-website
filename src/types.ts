@@ -50,6 +50,7 @@ export interface Product {
   youtubeUrl?: string;
   tiktokUrl?: string;
   pinterestUrl?: string;
+  instagramUrl?: string;
   amazonUrl: string;
   aliexpressUrl?: string;
   originalPrice: number;
@@ -81,13 +82,15 @@ export interface Category {
   image: string;
 }
 
+export type SocialPlatform = 'youtube' | 'tiktok' | 'pinterest' | 'instagram' | 'x';
+
 export interface VideoReview {
   id: string;
   productId: string;
   productTitle: string;
   productImage: string;
   thumbnailUrl?: string;
-  platform: 'youtube' | 'tiktok' | 'pinterest';
+  platform: SocialPlatform;
   embedId: string;
   videoUrl: string;
   title: string;
@@ -134,6 +137,9 @@ export interface SiteSettings {
   pinterestUrl: string;
   youtubeUrl: string;
   tiktokUrl: string;
+  instagramUrl?: string;
+  xUrl?: string;
+  whatsappUrl?: string;
   amazonTag: string;
   aliexpressTag: string;
   contactEmail: string;
