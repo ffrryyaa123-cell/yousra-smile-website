@@ -8,6 +8,15 @@ interface AdminAuthGateProps {
   children: React.ReactNode;
 }
 
+const getAuthRedirectError = () => {
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const search = new URLSearchParams(window.location.search);
+  return {
+    code: hash.get('error_code') || search.get('error_code'),
+    description: hash.get('error_description') || search.get('error_description'),
+  };
+};
+
 export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({ children }) => {
   const [email, setEmail] = React.useState('info@yousrasmile.com');
   const [password, setPassword] = React.useState('');
@@ -70,6 +79,16 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({ children }) => {
   }, []);
 
   React.useEffect(() => {
+    const redirectError = getAuthRedirectError();
+    if (redirectError.code) {
+      if (redirectError.code === 'otp_expired') {
+        setError('رابط استعادة كلمة المرور انتهت صلاحيته أو تم استخدامه سابقًا. اطلبي رابطًا جديدًا.');
+      } else {
+        setError(redirectError.description || 'تعذر استخدام رابط تسجيل الدخول أو الاستعادة.');
+      }
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     if (!isSupabaseConfigured) {
       setLoading(false);
       return;
@@ -82,7 +101,7 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({ children }) => {
       if (event === 'PASSWORD_RECOVERY') {
         setRecoveryMode(true);
         setError(null);
-        setNotice('تم فتح رابط استعادة كلمة المرور. أدخلي كلمة مرور جديدة.');
+        setNotice('تم التحقق من رابط الاستعادة. أدخلي كلمة مرور جديدة.');
         setLoading(false);
         return;
       }
@@ -136,18 +155,27 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({ children }) => {
 
     try {
       const client = requireSupabase();
+      const redirectTo = `${window.location.origin}/?admin-recovery=1`;
       const { error: recoveryError } = await client.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: window.location.origin,
+        redirectTo,
       });
 
       if (recoveryError) {
-        setError('تعذر إرسال رابط استعادة كلمة المرور الآن.');
+        const message = `${recoveryError.message || ''}`.toLowerCase();
+        const status = (recoveryError as any).status;
+        if (status === 429 || message.includes('rate limit') || message.includes('email rate')) {
+          setError('تم بلوغ حد إرسال رسائل Supabase الحالي. بعد تفعيل بريد Hostinger كـ SMTP ستعمل الاستعادة بصورة مستقرة.');
+        } else if (message.includes('redirect')) {
+          setError('عنوان الرجوع غير مسموح في إعدادات Supabase. يجب إضافة رابط الموقع إلى Redirect URLs.');
+        } else {
+          setError(`تعذر إرسال رابط الاستعادة: ${recoveryError.message || 'خطأ غير معروف'}`);
+        }
         return;
       }
 
-      setNotice('تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني. افتحي الرسالة واضغطي الرابط.');
+      setNotice('تم إرسال رابط استعادة جديد إلى بريدك. استخدمي أحدث رسالة فقط لأن الروابط القديمة قد تصبح غير صالحة.');
     } catch {
-      setError('تعذر إرسال رسالة الاستعادة.');
+      setError('تعذر إرسال رسالة الاستعادة بسبب مشكلة اتصال.');
     } finally {
       setSendingRecovery(false);
     }
@@ -175,14 +203,15 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({ children }) => {
       const { error: updateError } = await client.auth.updateUser({ password: newPassword });
 
       if (updateError) {
-        setError('تعذر تحديث كلمة المرور. حاولي فتح رابط الاستعادة مرة أخرى.');
+        setError('تعذر تحديث كلمة المرور. استخدمي أحدث رابط استعادة تم إرساله.');
         return;
       }
 
       setNewPassword('');
       setConfirmNewPassword('');
       setRecoveryMode(false);
-      setNotice('تم تغيير كلمة المرور بنجاح. يمكنك الآن استخدام كلمة المرور الجديدة.');
+      setNotice('تم تغيير كلمة المرور بنجاح.');
+      window.history.replaceState({}, document.title, window.location.pathname);
       setLoading(true);
       await loadAccess();
     } catch {
