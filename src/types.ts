@@ -2,13 +2,9 @@ import { CurrencyCode } from './utils/currency';
 
 export type { CurrencyCode };
 
-export type CategoryId = 
-  | 'smart-home'
-  | 'smart-kitchen'
-  | 'furniture-decor'
-  | 'smart-gadgets'
-  | 'women-corner'
-  | 'health-fitness';
+// Category slugs are database-driven so the owner can add and reorder categories
+// without requiring a code change.
+export type CategoryId = string;
 
 export interface UserReview {
   id: string;
