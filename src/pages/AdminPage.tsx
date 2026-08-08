@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { CATEGORIES } from '../data/categories';
 import { Product, VideoReview } from '../types';
 import { 
   Settings, 
@@ -44,6 +43,20 @@ import {
 } from 'lucide-react';
 import { VideoImportModal } from '../components/VideoImportModal';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
+import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { sendContactReply } from '../lib/emailApi';
+
+interface ContactInboxMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  date: string;
+  status: string;
+  isRead: boolean;
+  isStarred: boolean;
+}
 
 export const AdminPage: React.FC = () => {
   const { 
@@ -60,7 +73,8 @@ export const AdminPage: React.FC = () => {
     formatPrice,
     setPage,
     siteSettings,
-    updateSiteSettings
+    updateSiteSettings,
+    categories
   } = useApp();
 
   const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
@@ -80,13 +94,14 @@ export const AdminPage: React.FC = () => {
   const [newBrandInput, setNewBrandInput] = useState<string>('');
 
   // Messages State
-  const [messagesList, setMessagesList] = useState([
-    { id: '1', name: 'أحمد العتيبي', email: 'ahmed@example.com', subject: 'استفسار عن مكنسة Roborock S8', message: 'مرحباً، هل يتوفر ضمان محلي مع رابط أمازون؟', date: '2026-08-02', isRead: false, isStarred: true },
-    { id: '2', name: 'نورة الشمري', email: 'noura@example.com', subject: 'طلب استشارة جهاز القلاية', message: 'ما هي أفضل قلاية هوائية لعائلة مكونة من 5 أفراد؟', date: '2026-08-01', isRead: true, isStarred: false },
-    { id: '3', name: 'سارة خالد', email: 'sara@example.com', subject: 'شكر وتقدير للموقع', message: 'شكراً لكم على المراجعة الممتازة لمصفف دايسون، اشتريته بخصم رائع!', date: '2026-07-30', isRead: true, isStarred: true }
-  ]);
-  const [selectedMessage, setSelectedMessage] = useState<typeof messagesList[0] | null>(null);
+  const [messagesList, setMessagesList] = useState<ContactInboxMessage[]>([]);
+  const [selectedMessage, setSelectedMessage] = useState<ContactInboxMessage | null>(null);
   const [replyText, setReplyText] = useState<string>('');
+  const [messagesLoading, setMessagesLoading] = useState(false);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
+  const [replySending, setReplySending] = useState(false);
+  const [replyNotice, setReplyNotice] = useState<string | null>(null);
+  const [replyError, setReplyError] = useState<string | null>(null);
 
   // General Settings State
   const [settingsForm, setSettingsForm] = useState({
@@ -123,6 +138,101 @@ export const AdminPage: React.FC = () => {
       contactEmail: siteSettings.contactEmail
     });
   }, [siteSettings]);
+
+  React.useEffect(() => {
+    if (activeTab !== 'overview' && activeTab !== 'messages') return;
+    if (!isSupabaseConfigured || !supabase) {
+      setMessagesError('إعدادات Supabase غير متاحة، لذلك لا يمكن تحميل الرسائل الحقيقية.');
+      return;
+    }
+
+    let cancelled = false;
+    setMessagesLoading(true);
+    setMessagesError(null);
+
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('contact_messages')
+          .select('id, name, email, subject, message, status, created_at')
+          .order('created_at', { ascending: false });
+
+        if (cancelled) return;
+        if (error) {
+          setMessagesError(`تعذر تحميل الرسائل: ${error.message}`);
+          return;
+        }
+
+        setMessagesList((data ?? []).map(row => ({
+          id: row.id,
+          name: row.name,
+          email: row.email,
+          subject: row.subject,
+          message: row.message,
+          date: new Date(row.created_at).toLocaleDateString('ar-JO'),
+          status: row.status,
+          isRead: row.status !== 'new',
+          isStarred: false,
+        })));
+      } finally {
+        if (!cancelled) setMessagesLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
+
+  const handleSelectMessage = async (message: ContactInboxMessage) => {
+    setSelectedMessage(message);
+    setReplyNotice(null);
+    setReplyError(null);
+    if (message.isRead || !supabase) return;
+
+    const { error } = await supabase
+      .from('contact_messages')
+      .update({ status: 'read' })
+      .eq('id', message.id);
+
+    if (!error) {
+      setMessagesList(current => current.map(item =>
+        item.id === message.id ? { ...item, isRead: true, status: 'read' } : item
+      ));
+    }
+  };
+
+  const handleSendContactReply = async () => {
+    if (!selectedMessage || !replyText.trim() || !supabase) return;
+    setReplySending(true);
+    setReplyNotice(null);
+    setReplyError(null);
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error('انتهت جلسة الإدارة. سجّلي الدخول من جديد.');
+
+      const result = await sendContactReply({
+        messageId: selectedMessage.id,
+        message: replyText.trim(),
+      }, token);
+
+      setReplyText('');
+      setReplyNotice(
+        result.statusUpdated
+          ? `تم إرسال الرد فعليًا إلى ${selectedMessage.email}`
+          : `تم إرسال الرد إلى ${selectedMessage.email}، لكن تعذر تحديث حالة الرسالة في الصندوق.`
+      );
+      setMessagesList(current => current.map(item =>
+        item.id === selectedMessage.id ? { ...item, status: 'replied', isRead: true } : item
+      ));
+    } catch (error) {
+      setReplyError(error instanceof Error ? error.message : 'تعذر إرسال الرد.');
+    } finally {
+      setReplySending(false);
+    }
+  };
 
   // Media Library Items
   const mediaItems = [
@@ -1308,10 +1418,15 @@ export const AdminPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-3 divide-y divide-slate-800">
+              {messagesLoading && <p className="py-6 text-center text-xs text-slate-400">جاري تحميل الرسائل...</p>}
+              {messagesError && <p className="rounded-xl bg-red-950/70 p-3 text-xs text-red-200">{messagesError}</p>}
+              {!messagesLoading && !messagesError && messagesList.length === 0 && (
+                <p className="py-6 text-center text-xs text-slate-500">لا توجد رسائل حتى الآن.</p>
+              )}
               {messagesList.map(msg => (
                 <button
                   key={msg.id}
-                  onClick={() => setSelectedMessage(msg)}
+                  onClick={() => void handleSelectMessage(msg)}
                   className={`w-full text-right p-3 rounded-2xl transition-colors cursor-pointer block ${
                     selectedMessage?.id === msg.id ? 'bg-purple-950/80 border border-purple-800' : 'bg-slate-950/50 hover:bg-slate-800/50'
                   }`}
@@ -1348,15 +1463,15 @@ export const AdminPage: React.FC = () => {
                       placeholder="أكتب ردك هنا وسيتم إرساله للعميل..." 
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white"
                     />
+                    {replyNotice && <p className="rounded-xl bg-emerald-950/70 p-3 text-xs text-emerald-200">{replyNotice}</p>}
+                    {replyError && <p className="rounded-xl bg-red-950/70 p-3 text-xs text-red-200">{replyError}</p>}
                     <button 
-                      onClick={() => {
-                        alert(`تم إرسال الرد بنجاح إلى ${selectedMessage.email}`);
-                        setReplyText('');
-                      }}
-                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer"
+                      onClick={() => void handleSendContactReply()}
+                      disabled={replySending || !replyText.trim()}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Send className="w-3.5 h-3.5" />
-                      إرسال الرد
+                      {replySending ? 'جاري إرسال الرد...' : 'إرسال الرد'}
                     </button>
                   </div>
                 </>
@@ -1946,7 +2061,7 @@ export const AdminPage: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
                   >
-                    {CATEGORIES.map(c => (
+                    {categories.map(c => (
                       <option key={c.id} value={c.id}>{c.nameAr}</option>
                     ))}
                   </select>

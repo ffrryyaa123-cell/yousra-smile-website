@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { ProductCard } from '../components/ProductCard';
 import { ProductFilters } from '../components/ProductFilters';
-import { CATEGORIES } from '../data/categories';
 import { FilterState } from '../types';
 import { Grid, List, SlidersHorizontal, Search, PackageX, ChevronRight, ChevronLeft } from 'lucide-react';
 
@@ -13,7 +12,9 @@ export const ProductsPage: React.FC = () => {
     selectedSubcategory, 
     searchQuery, 
     setSearchQuery,
-    setSelectedCategory 
+    setSelectedCategory,
+    categories,
+    language
   } = useApp();
 
   const [layout, setLayout] = useState<'grid' | 'list'>('grid');
@@ -114,7 +115,10 @@ export const ProductsPage: React.FC = () => {
     });
   }, [products, filters]);
 
-  const categoryTitle = CATEGORIES.find(c => c.id === filters.category)?.nameAr || 'جميع المنتجات';
+  const selectedCategoryDetails = categories.find(c => c.id === filters.category);
+  const categoryTitle = language === 'en'
+    ? selectedCategoryDetails?.nameEn || 'All Products'
+    : selectedCategoryDetails?.nameAr || 'جميع المنتجات';
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = useMemo(() => {

@@ -17,6 +17,11 @@ const getAuthRedirectError = () => {
   };
 };
 
+const isInvalidSupabaseKeyError = (error: { message?: string; status?: number } | null | undefined) => {
+  const message = `${error?.message || ''}`.toLowerCase();
+  return message.includes('invalid api key') || message.includes('invalid jwt') || error?.status === 401;
+};
+
 export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({ children }) => {
   const [email, setEmail] = React.useState('info@yousrasmile.com');
   const [password, setPassword] = React.useState('');
@@ -58,6 +63,13 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({ children }) => {
       .select('role, is_active')
       .eq('id', user.id)
       .single();
+
+    if (isInvalidSupabaseKeyError(profileError)) {
+      setRole(null);
+      setError('مفتاح Supabase في إعدادات الموقع غير صالح أو لا يخص هذا المشروع. يجب تحديث VITE_SUPABASE_PUBLISHABLE_KEY في بيئة النشر.');
+      setLoading(false);
+      return;
+    }
 
     if (profileError || !profile || profile.is_active === false) {
       setRole(null);
@@ -129,7 +141,11 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({ children }) => {
       });
 
       if (signInError) {
-        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+        if (isInvalidSupabaseKeyError(signInError)) {
+          setError('مفتاح Supabase غير صالح أو لا يخص رابط المشروع الحالي. هذه مشكلة إعدادات وليست خطأ في البريد أو كلمة المرور.');
+        } else {
+          setError('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
+        }
         return;
       }
 
@@ -163,7 +179,9 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({ children }) => {
       if (recoveryError) {
         const message = `${recoveryError.message || ''}`.toLowerCase();
         const status = (recoveryError as any).status;
-        if (status === 429 || message.includes('rate limit') || message.includes('email rate')) {
+        if (isInvalidSupabaseKeyError(recoveryError)) {
+          setError('تعذر إرسال رسالة الاستعادة لأن مفتاح Supabase غير صالح أو مرتبط بمشروع آخر.');
+        } else if (status === 429 || message.includes('rate limit') || message.includes('email rate')) {
           setError('تم بلوغ حد إرسال رسائل Supabase الحالي. بعد تفعيل بريد Hostinger كـ SMTP ستعمل الاستعادة بصورة مستقرة.');
         } else if (message.includes('redirect')) {
           setError('عنوان الرجوع غير مسموح في إعدادات Supabase. يجب إضافة رابط الموقع إلى Redirect URLs.');

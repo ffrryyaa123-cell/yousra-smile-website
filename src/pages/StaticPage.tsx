@@ -15,6 +15,7 @@ import {
   Instagram
 } from 'lucide-react';
 import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
+import { submitContactMessage } from '../lib/emailApi';
 
 interface StaticPageProps {
   type: 'about' | 'contact' | 'privacy' | 'terms' | 'cookies' | 'disclosure';
@@ -29,16 +30,36 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
   const [contactEmail, setContactEmail] = useState('');
   const [contactSubject, setContactSubject] = useState('');
   const [contactMessage, setContactMessage] = useState('');
+  const [contactWebsite, setContactWebsite] = useState('');
   const [formSent, setFormSent] = useState(false);
+  const [formSending, setFormSending] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormSent(true);
-    setContactName('');
-    setContactEmail('');
-    setContactSubject('');
-    setContactMessage('');
-    setTimeout(() => setFormSent(false), 5000);
+    setFormSending(true);
+    setFormError(null);
+    setFormSent(false);
+
+    try {
+      await submitContactMessage({
+        name: contactName,
+        email: contactEmail,
+        subject: contactSubject,
+        message: contactMessage,
+        website: contactWebsite,
+      });
+      setFormSent(true);
+      setContactName('');
+      setContactEmail('');
+      setContactSubject('');
+      setContactMessage('');
+      setContactWebsite('');
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'تعذر إرسال الرسالة الآن.');
+    } finally {
+      setFormSending(false);
+    }
   };
 
   return (
@@ -160,12 +181,31 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
                     ✓ تم إرسال رسالتك بنجاح! وسوف تقوم يسرى بالرد عليكِ في أقرب وقت.
                   </div>
                 )}
+                {formError && (
+                  <div className="bg-red-950/70 text-red-200 font-bold p-3 rounded-xl text-center">
+                    {formError}
+                  </div>
+                )}
+
+                <div className="hidden" aria-hidden="true">
+                  <label>
+                    Website
+                    <input
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={contactWebsite}
+                      onChange={(e) => setContactWebsite(e.target.value)}
+                    />
+                  </label>
+                </div>
 
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">الاسم الكامل *</label>
                   <input 
                     type="text" 
                     required
+                    maxLength={120}
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     placeholder="ادخلي اسمك..."
@@ -178,6 +218,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
                   <input 
                     type="email" 
                     required
+                    maxLength={320}
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
                     placeholder="name@example.com"
@@ -190,6 +231,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
                   <input 
                     type="text" 
                     required
+                    maxLength={200}
                     value={contactSubject}
                     onChange={(e) => setContactSubject(e.target.value)}
                     placeholder="مثال: استفسار عن منتج، طلب مراجعة، تعاون..."
@@ -202,6 +244,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
                   <textarea 
                     rows={4}
                     required
+                    maxLength={5000}
                     value={contactMessage}
                     onChange={(e) => setContactMessage(e.target.value)}
                     placeholder="اكتبي نص الرسالة هنا..."
@@ -211,10 +254,11 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
+                  disabled={formSending}
+                  className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 disabled:cursor-wait disabled:opacity-60"
                 >
                   <Send className="w-4 h-4" />
-                  إرسال الرسالة الآن
+                  {formSending ? 'جاري إرسال الرسالة...' : 'إرسال الرسالة الآن'}
                 </button>
               </form>
 

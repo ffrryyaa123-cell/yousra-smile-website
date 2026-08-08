@@ -12,25 +12,36 @@ import {
   Settings
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { CATEGORIES } from '../data/categories';
 import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
+import { subscribeToNewsletter } from '../lib/emailApi';
 
 export const Footer: React.FC = () => {
-  const { setPage, setSelectedCategory, language, t, siteSettings } = useApp();
+  const { categories, setPage, setSelectedCategory, language, t, siteSettings } = useApp();
   const [emailInput, setEmailInput] = React.useState('');
   const [subscribed, setSubscribed] = React.useState(false);
+  const [subscribing, setSubscribing] = React.useState(false);
+  const [subscribeError, setSubscribeError] = React.useState<string | null>(null);
 
   const contactEmail =
     !siteSettings.contactEmail || siteSettings.contactEmail === 'contact@yousrasmile.com'
       ? 'info@yousrasmile.com'
       : siteSettings.contactEmail;
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (emailInput.trim()) {
+    if (!emailInput.trim()) return;
+
+    setSubscribing(true);
+    setSubscribeError(null);
+    setSubscribed(false);
+    try {
+      await subscribeToNewsletter(emailInput.trim());
       setSubscribed(true);
       setEmailInput('');
-      setTimeout(() => setSubscribed(false), 5000);
+    } catch (error) {
+      setSubscribeError(error instanceof Error ? error.message : 'تعذر تسجيل الاشتراك الآن.');
+    } finally {
+      setSubscribing(false);
     }
   };
 
@@ -130,7 +141,7 @@ export const Footer: React.FC = () => {
           <div className="space-y-4">
             <h3 className="text-sm font-bold text-white uppercase tracking-wider font-['Tajawal']">{t.categories}</h3>
             <ul className="space-y-2.5 text-sm">
-              {CATEGORIES.map(cat => (
+              {categories.map(cat => (
                 <li key={cat.id}>
                   <button
                     onClick={() => {
@@ -215,6 +226,7 @@ export const Footer: React.FC = () => {
                 <input
                   type="email"
                   required
+                  maxLength={320}
                   placeholder={t.newsletterPlaceholder}
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
@@ -222,7 +234,8 @@ export const Footer: React.FC = () => {
                 />
                 <button
                   type="submit"
-                  className="absolute left-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 rounded-lg transition-colors font-bold flex items-center justify-center"
+                  disabled={subscribing}
+                  className="absolute left-1 top-1/2 -translate-y-1/2 w-9 h-9 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 rounded-lg transition-colors font-bold flex items-center justify-center disabled:cursor-wait disabled:opacity-60"
                   aria-label={language === 'ar' ? 'اشتراك' : 'Subscribe'}
                 >
                   <Mail className="w-4 h-4" />
@@ -231,6 +244,11 @@ export const Footer: React.FC = () => {
               {subscribed && (
                 <p className="text-xs text-emerald-300 font-semibold">
                   {t.newsletterSuccess}
+                </p>
+              )}
+              {subscribeError && (
+                <p className="text-xs text-red-300 font-semibold">
+                  {subscribeError}
                 </p>
               )}
             </form>

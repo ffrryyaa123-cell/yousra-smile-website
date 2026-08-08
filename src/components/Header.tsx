@@ -26,7 +26,6 @@ import {
   FileText
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { CATEGORIES } from '../data/categories';
 import { CURRENCIES, CurrencyCode } from '../utils/currency';
 import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
 
@@ -53,7 +52,8 @@ export const Header: React.FC = () => {
     products,
     openProductDetail,
     formatPrice,
-    siteSettings
+    siteSettings,
+    categories
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -422,7 +422,7 @@ export const Header: React.FC = () => {
                           {language === 'ar' ? 'أقسام المنتجات' : 'Product Categories'}
                         </span>
                         <span className="text-[10px] bg-purple-950 text-amber-300 px-2 py-0.5 rounded-full border border-purple-800">
-                          {CATEGORIES.length} {language === 'ar' ? 'أقسام' : 'Categories'}
+                          {categories.length} {language === 'ar' ? 'أقسام' : 'Categories'}
                         </span>
                       </div>
 
@@ -443,7 +443,7 @@ export const Header: React.FC = () => {
                       </button>
                       <hr className="my-1.5 border-purple-500/20" />
                       
-                      {CATEGORIES.map(cat => (
+                      {categories.map(cat => (
                         <button
                           key={cat.id}
                           type="button"
@@ -657,7 +657,7 @@ export const Header: React.FC = () => {
                   {language === 'ar' ? 'تصفح الأقسام الرئيسية:' : 'Main Categories:'}
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {CATEGORIES.map(cat => (
+                  {categories.map(cat => (
                     <button
                       key={cat.id}
                       onClick={() => { handleCategorySelect(cat.id); setMobileMenuOpen(false); }}

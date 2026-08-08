@@ -1,6 +1,5 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { CATEGORIES } from '../data/categories';
 import { SlidersHorizontal, RotateCcw, Search, Tag, Filter } from 'lucide-react';
 import { FilterState } from '../types';
 
@@ -15,12 +14,12 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   onFilterChange,
   onReset
 }) => {
-  const { products } = useApp();
+  const { products, categories, language } = useApp();
 
   // Extract unique brands
   const brands = Array.from(new Set(products.map(p => p.brand))).filter(Boolean);
 
-  const currentCategoryObj = CATEGORIES.find(c => c.id === filters.category);
+  const currentCategoryObj = categories.find(c => c.id === filters.category);
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 space-y-6 shadow-sm">
@@ -49,8 +48,8 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-purple-500"
         >
           <option value="all">جميع الأقسام</option>
-          {CATEGORIES.map(cat => (
-            <option key={cat.id} value={cat.id}>{cat.nameAr}</option>
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.id}>{language === 'en' ? cat.nameEn : cat.nameAr}</option>
           ))}
         </select>
       </div>

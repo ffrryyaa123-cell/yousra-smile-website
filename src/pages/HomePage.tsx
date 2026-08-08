@@ -3,7 +3,6 @@ import smartHomeBanner from '../assets/images/smart_home_banner_1785693287624.jp
 import { useApp } from '../context/AppContext';
 import { HeroBanner } from '../components/HeroBanner';
 import { ProductCard } from '../components/ProductCard';
-import { CATEGORIES } from '../data/categories';
 import { SAMPLE_VIDEOS } from '../data/sampleVideos';
 import { 
   Flame, 
@@ -45,12 +44,14 @@ export const HomePage: React.FC = () => {
     openProductDetail,
     language,
     formatPrice,
-    t
+    t,
+    categories
   } = useApp();
 
   const featuredProducts = products.filter(p => p.isFeatured || p.discountPercent >= 25).slice(0, 8);
   const editorialStripProducts = products.slice(0, 4);
   const topSellingProducts = products.filter(p => p.isTopSelling).slice(0, 6);
+  const homeCategories = categories.filter(category => category.showOnHome !== false);
 
   const dealsCarouselRef = React.useRef<HTMLDivElement>(null);
   const topSellingCarouselRef = React.useRef<HTMLDivElement>(null);
@@ -253,13 +254,13 @@ export const HomePage: React.FC = () => {
             onClick={() => { setSelectedCategory('all'); setPage('products'); }}
             className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
           >
-            {t.allCategories} ({CATEGORIES.length})
+            {t.allCategories} ({categories.length})
             <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-0 ltr:rotate-180" />
           </button>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-          {CATEGORIES.map(cat => {
+          {homeCategories.map(cat => {
             const count = products.filter(p => p.category === cat.id).length;
             const catName = language === 'en' ? cat.nameEn : cat.nameAr;
             return (

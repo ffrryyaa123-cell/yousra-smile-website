@@ -1,13 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Product, PageView, VideoReview, PriceAlert, CartItem, SiteSettings, BlogPost } from '../types';
+import { Product, PageView, VideoReview, PriceAlert, CartItem, SiteSettings, BlogPost, Category } from '../types';
 import { INITIAL_PRODUCTS } from '../data/initialProducts';
 import { SAMPLE_VIDEOS } from '../data/sampleVideos';
 import { SAMPLE_BLOG_POSTS } from '../data/blogPosts';
+import { CATEGORIES as FALLBACK_CATEGORIES } from '../data/categories';
+import { fetchCatalogCategories } from '../lib/catalogCategories';
 import { translations, Language } from '../utils/i18n';
 import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../utils/currency';
 
 interface AppContextType {
   products: Product[];
+  categories: Category[];
   blogPosts: BlogPost[];
   addBlogPost: (newPost: Omit<BlogPost, 'id' | 'publishedDate'>) => void;
   updateBlogPost: (updatedPost: BlogPost) => void;
@@ -118,6 +121,8 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [categories, setCategories] = useState<Category[]>(FALLBACK_CATEGORIES);
+
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_PRODUCTS_KEY);
@@ -150,6 +155,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [editingThumbnailVideo, setEditingThumbnailVideo] = useState<VideoReview | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetchCatalogCategories()
+      .then(databaseCategories => {
+        if (isMounted) setCategories(databaseCategories);
+      })
+      .catch(error => {
+        console.warn('Unable to load categories from Supabase; using local defaults.', error);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const [favorites, setFavorites] = useState<string[]>(() => {
     try {
@@ -670,6 +691,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider
       value={{
         products,
+        categories,
         favorites,
         cart,
         cartModalOpen,

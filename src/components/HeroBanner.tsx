@@ -1,6 +1,5 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { CATEGORIES } from '../data/categories';
 import { 
   Sparkles, 
   PlaySquare, 
@@ -14,7 +13,7 @@ import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.jpg';
 import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
 
 export const HeroBanner: React.FC = () => {
-  const { setPage, setSelectedCategory, searchQuery, setSearchQuery, language, t } = useApp();
+  const { categories, setPage, setSelectedCategory, searchQuery, setSearchQuery, language, t } = useApp();
 
   return (
     <div className="relative w-full overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 text-white rounded-3xl my-4 sm:my-6 border border-purple-800/60 shadow-2xl">
@@ -140,7 +139,7 @@ export const HeroBanner: React.FC = () => {
             <div className="space-y-1.5">
               <span className="text-[11px] text-slate-400 font-bold block">{t.quickJumpCategories}</span>
               <div className="flex flex-wrap gap-1.5">
-                {CATEGORIES.slice(0, 4).map(cat => (
+                {categories.filter(cat => cat.showOnHome !== false).slice(0, 4).map(cat => (
                   <button
                     key={cat.id}
                     onClick={() => { setSelectedCategory(cat.id); setPage('products'); }}

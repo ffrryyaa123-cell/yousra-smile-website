@@ -3,10 +3,15 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import {
+  handleContactSubmission,
+  handleNewsletterSubscription,
+  handleStaffReply,
+} from "./server/emailApi";
 
 dotenv.config();
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 
 async function startServer() {
   const app = express();
@@ -25,6 +30,36 @@ async function startServer() {
   // API Route: Health Check
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", time: new Date().toISOString() });
+  });
+
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const result = await handleContactSubmission(req.body || {});
+      return res.status(result.status).json(result.body);
+    } catch (error) {
+      console.error("Contact email error:", error);
+      return res.status(500).json({ error: "تعذر إرسال الرسالة الآن. حاولي مرة أخرى لاحقًا." });
+    }
+  });
+
+  app.post("/api/newsletter", async (req, res) => {
+    try {
+      const result = await handleNewsletterSubscription(req.body || {});
+      return res.status(result.status).json(result.body);
+    } catch (error) {
+      console.error("Newsletter email error:", error);
+      return res.status(500).json({ error: "تعذر تسجيل الاشتراك الآن. حاولي مرة أخرى لاحقًا." });
+    }
+  });
+
+  app.post("/api/admin/reply", async (req, res) => {
+    try {
+      const result = await handleStaffReply(req.body || {}, req.header("authorization"));
+      return res.status(result.status).json(result.body);
+    } catch (error) {
+      console.error("Admin reply email error:", error);
+      return res.status(500).json({ error: "تعذر إرسال الرد الآن." });
+    }
   });
 
   // API Route: AI Product Copywriter & SEO Assistant

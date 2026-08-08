@@ -74,8 +74,11 @@ export interface Category {
   nameEn: string;
   icon: string;
   description: string;
+  descriptionAr?: string;
+  descriptionEn?: string;
   subcategories: string[];
   image: string;
+  showOnHome?: boolean;
 }
 
 export type SocialPlatform = 'youtube' | 'tiktok' | 'pinterest' | 'instagram' | 'x';
