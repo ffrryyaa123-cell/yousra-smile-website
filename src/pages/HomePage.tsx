@@ -101,7 +101,7 @@ export const HomePage: React.FC = () => {
         <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-purple-400/35 rounded-full blur-3xl pointer-events-none"></div>
 
         {/* Top Smart Home Visual Banner Image */}
-        <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-xl overflow-hidden mb-3 border border-[#D4AF37]/60 shadow-xl group">
+        <div className="relative w-full h-32 sm:h-40 md:h-48 rounded-xl overflow-hidden mb-3 border border-[#D4AF37]/60 shadow-xl group">
           <img 
             src={smartHomeBanner} 
             alt="Smart Home & Modern Appliances" 

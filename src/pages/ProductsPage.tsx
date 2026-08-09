@@ -157,7 +157,7 @@ export const ProductsPage: React.FC = () => {
           <h1 className="text-2xl sm:text-3xl font-black font-['Tajawal'] mt-2">
             {categoryTitle}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+          <p className="text-sm sm:text-base text-slate-100 font-medium mt-1">
             {language === 'ar'
               ? `تم العثور على ${filteredProducts.length} منتج متاح بخصومات وروابط مباشرة`
               : `${filteredProducts.length} products available with deals and direct links`}
@@ -224,26 +224,26 @@ export const ProductsPage: React.FC = () => {
           </div>
 
           {/* Top Control Bar */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-white rounded-2xl border border-slate-300 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
             
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setDesktopFilterOpen(open => !open)}
-                className="hidden lg:flex shrink-0 items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-black text-purple-700 transition-colors hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950/50 dark:text-purple-200"
+                className="hidden lg:flex shrink-0 items-center gap-1.5 rounded-xl border border-purple-300 bg-purple-50 px-3 py-2 text-sm font-black text-purple-800 transition-colors hover:bg-purple-100"
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 {desktopFilterOpen
                   ? (language === 'ar' ? 'إخفاء التصفية' : 'Hide filters')
                   : (language === 'ar' ? 'إظهار التصفية' : 'Show filters')}
               </button>
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">
+              <span className="text-sm font-black text-[#4A2C15] shrink-0">
                 {language === 'ar' ? 'الترتيب حسب:' : 'Sort by:'}
               </span>
               <select
                 value={filters.sortBy}
                 onChange={(e) => handleFilterChange({ sortBy: e.target.value as any })}
-                className="w-full sm:w-auto bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-purple-500 font-semibold"
+                className="w-full sm:w-auto bg-white border border-slate-400 rounded-xl px-3 py-2 text-sm text-slate-950 focus:outline-none focus:border-purple-700 font-bold"
               >
                 <option value="latest">{language === 'ar' ? 'الأحدث نزوَلاً' : 'Newest'}</option>
                 <option value="rating">{language === 'ar' ? 'الأعلى تقييمًا (★ 5.0)' : 'Highest rated (★ 5.0)'}</option>
@@ -254,9 +254,9 @@ export const ProductsPage: React.FC = () => {
               </select>
             </div>
 
-            <div className="text-xs text-slate-400">
+            <div className="text-sm font-bold text-[#4A2C15]">
               {language === 'ar' ? 'يعرض' : 'Showing'}{' '}
-              <strong className="text-purple-600 dark:text-purple-400">{filteredProducts.length}</strong>{' '}
+              <strong className="text-purple-800">{filteredProducts.length}</strong>{' '}
               {language === 'ar' ? `من إجمالي ${products.length} منتجات` : `of ${products.length} products`}
             </div>
           </div>

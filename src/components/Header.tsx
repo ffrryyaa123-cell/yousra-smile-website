@@ -81,6 +81,19 @@ export const Header: React.FC = () => {
     setPage('products');
   };
 
+  React.useEffect(() => {
+    const closeOpenMenus = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setCurrencyDropdownOpen(false);
+      setCategoriesDropdownOpen(false);
+      setMobileMenuOpen(false);
+      setSearchFocused(false);
+    };
+
+    window.addEventListener('keydown', closeOpenMenus);
+    return () => window.removeEventListener('keydown', closeOpenMenus);
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 w-full shadow-2xl bg-[#111113]/90 backdrop-blur-xl border-b border-[#FDFCFB]/10">
       {/* Editorial Header Bar */}
@@ -130,9 +143,22 @@ export const Header: React.FC = () => {
                   className="absolute left-0 sm:left-auto right-0 mt-1.5 w-52 bg-slate-900 border border-[#D4AF37]/40 rounded-xl shadow-2xl py-1.5 z-50 text-white animate-in fade-in zoom-in-95 font-['Tajawal']"
                   onClick={() => setCurrencyDropdownOpen(false)}
                 >
-                  <div className="px-3 py-1.5 text-xs text-[#D4AF37] font-bold border-b border-slate-800 flex items-center gap-1.5">
-                    <Coins className="w-3.5 h-3.5" />
-                    <span>{language === 'ar' ? 'اختر عملة العرض' : 'Select Currency'}</span>
+                  <div className="px-3 py-1.5 text-xs text-[#D4AF37] font-bold border-b border-slate-800 flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5">
+                      <Coins className="w-3.5 h-3.5" />
+                      <span>{language === 'ar' ? 'اختر عملة العرض' : 'Select Currency'}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setCurrencyDropdownOpen(false);
+                      }}
+                      className="rounded-lg bg-purple-950 p-1 text-amber-200 hover:bg-purple-900 hover:text-white"
+                      aria-label={language === 'ar' ? 'إغلاق قائمة العملات' : 'Close currency menu'}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
                   {Object.values(CURRENCIES).map((c) => (
                     <button
@@ -186,8 +212,12 @@ export const Header: React.FC = () => {
               <img 
                 src={siteSettings.siteLogo || logoImg} 
                 alt="Yousra Smile Logo" 
-                className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 border-amber-400/80 shadow-[0_0_12px_rgba(212,175,55,0.4)] group-hover:scale-105 transition-transform object-cover" 
+                className="w-11 h-11 sm:w-14 sm:h-14 rounded-full border-2 border-amber-400/80 shadow-[0_0_12px_rgba(212,175,55,0.4)] group-hover:scale-105 transition-transform object-cover"
                 referrerPolicy="no-referrer"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = logoImg;
+                }}
               />
               <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 p-0.5 rounded-full border border-slate-900 shadow-md flex items-center justify-center" title={language === 'ar' ? 'حساب موثوق ومعتمد' : 'Verified Brand'}>
                 <ShieldCheck className="w-3.5 h-3.5 text-white" />
@@ -195,11 +225,11 @@ export const Header: React.FC = () => {
             </div>
             <div className={`hidden sm:block font-['Cairo'] ${language === 'ar' ? 'text-right' : 'text-left'}`}>
               <div className="flex items-center gap-1.5">
-                <span className="font-black text-amber-300 text-base sm:text-lg leading-none block">
+                <span className={`font-black text-amber-300 leading-none block ${language === 'en' ? 'text-xl sm:text-2xl' : 'text-base sm:text-lg'}`}>
                   {language === 'en' ? 'Yousra Smile' : (siteSettings.siteName || t.siteTitle)}
                 </span>
-                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full text-[10px] font-extrabold leading-none shadow-sm">
-                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 rounded-full text-xs sm:text-sm font-extrabold leading-none shadow-sm">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
                   {language === 'ar' ? 'نعم - موثوق' : 'Yes - Verified'}
                 </span>
               </div>
@@ -406,12 +436,22 @@ export const Header: React.FC = () => {
                     <div 
                       className={`absolute ${language === 'ar' ? 'right-0 sm:-right-2' : 'left-0 sm:-left-2'} top-full mt-2 w-72 max-w-[calc(100vw-1.5rem)] bg-[#120A21] rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.9)] border-2 border-purple-500/50 py-2.5 z-50 animate-in fade-in slide-in-from-top-2 duration-200`}
                     >
-                      <div className="px-3 pb-2 mb-1 border-b border-purple-500/20 flex items-center justify-between">
+                      <div className="px-3 pb-2 mb-1 border-b border-purple-500/20 flex items-center justify-between gap-2">
                         <span className="text-xs font-black text-amber-300 font-['Cairo']">
                           {language === 'ar' ? 'أقسام المنتجات' : 'Product Categories'}
                         </span>
-                        <span className="text-[10px] bg-purple-950 text-amber-300 px-2 py-0.5 rounded-full border border-purple-800">
-                          {categories.length} {language === 'ar' ? 'أقسام' : 'Categories'}
+                        <span className="flex items-center gap-2">
+                          <span className="text-[10px] bg-purple-950 text-amber-300 px-2 py-0.5 rounded-full border border-purple-800">
+                            {categories.length} {language === 'ar' ? 'أقسام' : 'Categories'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setCategoriesDropdownOpen(false)}
+                            className="rounded-lg border border-purple-600/60 bg-purple-950 p-1 text-white hover:bg-purple-800"
+                            aria-label={language === 'ar' ? 'إغلاق قائمة الأقسام' : 'Close categories menu'}
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
                         </span>
                       </div>
 
@@ -506,13 +546,28 @@ export const Header: React.FC = () => {
 
       {/* Universal Top Dropdown Menu Panel (In Front of Screen, Drops Downward) */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-start justify-center pt-14 sm:pt-20 px-3 sm:px-6 animate-in fade-in duration-200">
-          <div className="bg-[#110A1F] w-full max-w-xl max-h-[82vh] border-2 border-amber-400/50 rounded-3xl flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-top-6 duration-300">
+        <div
+          className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-start justify-center pt-14 sm:pt-20 px-3 sm:px-6 animate-in fade-in duration-200"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          <div
+            className="bg-[#110A1F] w-full max-w-xl max-h-[82vh] border-2 border-amber-400/50 rounded-3xl flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-top-6 duration-300"
+            onClick={(event) => event.stopPropagation()}
+          >
             
             {/* Modal Dropdown Header */}
             <div className="bg-[#190F2E] p-4 border-b border-purple-500/30 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src={siteSettings.siteLogo || logoImg} alt="Yousra Smile" className="w-10 h-10 rounded-xl border border-amber-400/50 shadow" referrerPolicy="no-referrer" />
+                <img
+                  src={siteSettings.siteLogo || logoImg}
+                  alt="Yousra Smile"
+                  className="w-12 h-12 rounded-xl border border-amber-400/50 shadow object-cover"
+                  referrerPolicy="no-referrer"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = logoImg;
+                  }}
+                />
                 <div>
                   <span className="font-extrabold text-white text-base block font-['Cairo']">
                     {language === 'en' ? 'Yousra Smile' : (siteSettings.siteName || t.siteTitle)}
@@ -625,9 +680,19 @@ export const Header: React.FC = () => {
 
               {/* Categories Section in Dropdown */}
               <div className="space-y-2">
-                <span className="text-xs font-black text-amber-300 uppercase block px-1">
-                  {language === 'ar' ? 'تصفح الأقسام الرئيسية:' : 'Main Categories:'}
-                </span>
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <span className="text-xs font-black text-amber-300 uppercase block">
+                    {language === 'ar' ? 'تصفح الأقسام الرئيسية:' : 'Main Categories:'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="rounded-lg border border-purple-600/60 bg-purple-950 p-1.5 text-white hover:bg-purple-800"
+                    aria-label={language === 'ar' ? 'إغلاق الأقسام الرئيسية' : 'Close main categories'}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {categories.map(cat => (
                     <button
