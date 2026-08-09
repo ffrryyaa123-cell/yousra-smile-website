@@ -65,7 +65,7 @@ function generatePriceHistoryData(product: Product) {
 }
 
 export const PriceHistoryChart: React.FC<PriceHistoryChartProps> = ({ product }) => {
-  const { language, formatPrice } = useApp();
+  const { language, formatPrice, formatPriceObject, currencyConfig } = useApp();
   const [timeframe, setTimeframe] = useState<'6m' | '3m' | '1m'>('6m');
 
   const {
@@ -79,6 +79,16 @@ export const PriceHistoryChart: React.FC<PriceHistoryChartProps> = ({ product })
   } = generatePriceHistoryData(product);
 
   const filteredData = timeframe === '1m' ? chartData.slice(3) : timeframe === '3m' ? chartData.slice(2) : chartData;
+  const displayChartData = filteredData.map(dataPoint => ({
+    ...dataPoint,
+    displayPrice: formatPriceObject(dataPoint.price).amount
+  }));
+  const formatAxisPrice = (value: number) => {
+    const formattedAmount = value.toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US');
+    const symbol = language === 'ar' ? currencyConfig.symbolAr : currencyConfig.symbolEn;
+    const prefixSymbols = ['$', '€', '£', '¥', 'CA$', 'A$', '₺'];
+    return prefixSymbols.includes(symbol) ? `${symbol}${formattedAmount}` : `${formattedAmount} ${symbol}`;
+  };
 
   // Custom Recharts Tooltip
   const CustomTooltip = ({ active, payload }: any) => {
@@ -233,7 +243,7 @@ export const PriceHistoryChart: React.FC<PriceHistoryChartProps> = ({ product })
       {/* Recharts Area Chart */}
       <div className="h-56 w-full pt-2">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={filteredData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <AreaChart data={displayChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#A855F7" stopOpacity={0.5} />
@@ -251,12 +261,13 @@ export const PriceHistoryChart: React.FC<PriceHistoryChartProps> = ({ product })
               stroke="#94A3B8" 
               fontSize={11} 
               tickLine={false}
+              tickFormatter={formatAxisPrice}
               domain={['dataMin - 10', 'dataMax + 10']}
             />
             <Tooltip content={<CustomTooltip />} />
             <Area 
               type="monotone" 
-              dataKey="price" 
+              dataKey="displayPrice"
               stroke="#C084FC" 
               strokeWidth={3} 
               fillOpacity={1} 

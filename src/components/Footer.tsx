@@ -26,6 +26,9 @@ export const Footer: React.FC = () => {
     !siteSettings.contactEmail || siteSettings.contactEmail === 'contact@yousrasmile.com'
       ? 'info@yousrasmile.com'
       : siteSettings.contactEmail;
+  const localizedSiteName = language === 'en'
+    ? 'Yousra Smile'
+    : (siteSettings.siteName || t.siteTitle);
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +63,7 @@ export const Footer: React.FC = () => {
               />
               <div>
                 <span className="text-xl font-extrabold text-white font-['Tajawal'] tracking-wide">
-                  {siteSettings.siteName || t.siteTitle}
+                  {localizedSiteName}
                 </span>
                 <p className="text-xs text-slate-300">{t.footerBrandBio}</p>
               </div>
@@ -269,9 +272,9 @@ export const Footer: React.FC = () => {
 
         {/* Copyright Notice */}
         <div className="pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-400 text-center sm:text-start">
-          <p>© {new Date().getFullYear()} {siteSettings.siteName || 'Yousra Smile'}. {t.allRightsReserved}.</p>
+          <p>© {new Date().getFullYear()} {localizedSiteName}. {t.allRightsReserved}.</p>
           <p className="flex items-center gap-1">
-            {t.craftedWith} <Heart className="w-3.5 h-3.5 text-red-400 fill-red-400" /> {siteSettings.siteName || 'Yousra Smile'} Reviews
+            {t.craftedWith} <Heart className="w-3.5 h-3.5 text-red-400 fill-red-400" /> {localizedSiteName} Reviews
           </p>
         </div>
       </div>
