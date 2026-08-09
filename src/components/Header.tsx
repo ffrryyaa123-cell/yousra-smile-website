@@ -457,6 +457,19 @@ export const Header: React.FC = () => {
 
                       <button
                         type="button"
+                        onClick={() => {
+                          setSelectedCategory('all');
+                          setPage('home');
+                          setCategoriesDropdownOpen(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-sm font-black flex items-center gap-2 text-white bg-purple-950/80 hover:bg-purple-900 border-b border-purple-500/20 transition-colors"
+                      >
+                        <Home className="h-4 w-4 text-amber-300" />
+                        <span>{language === 'ar' ? 'العودة إلى الصفحة الرئيسية' : 'Back to Home'}</span>
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => handleCategorySelect('all')}
                         className={`w-full text-right px-4 py-2.5 text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${
                           selectedCategory === 'all'
@@ -603,6 +616,18 @@ export const Header: React.FC = () => {
 
               {/* Core Navigation Links Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <button
+                  onClick={() => {
+                    setSelectedCategory('all');
+                    setPage('home');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full text-right py-2.5 px-3.5 rounded-xl text-white bg-purple-900/70 hover:bg-purple-800 border border-amber-400/40 font-black flex items-center gap-2.5 transition-colors text-sm"
+                >
+                  <Home className="w-4 h-4 text-amber-300 shrink-0" />
+                  <span>{language === 'ar' ? 'الصفحة الرئيسية' : 'Home Page'}</span>
+                </button>
+
                 <button
                   onClick={() => { setSelectedCategory('all'); setPage('products'); setMobileMenuOpen(false); }}
                   className="w-full text-right py-2.5 px-3.5 rounded-xl text-slate-200 bg-slate-900/80 hover:bg-purple-900/50 hover:text-amber-300 border border-slate-800 font-bold flex items-center gap-2.5 transition-colors text-xs"

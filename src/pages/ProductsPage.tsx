@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { ProductCard } from '../components/ProductCard';
 import { ProductFilters } from '../components/ProductFilters';
 import { FilterState } from '../types';
-import { Grid, List, SlidersHorizontal, Search, PackageX, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Grid, List, SlidersHorizontal, Search, PackageX, ChevronRight, ChevronLeft, Home } from 'lucide-react';
 
 export const ProductsPage: React.FC = () => {
   const { 
@@ -14,7 +14,8 @@ export const ProductsPage: React.FC = () => {
     setSearchQuery,
     setSelectedCategory,
     categories,
-    language
+    language,
+    setPage
   } = useApp();
 
   const [layout, setLayout] = useState<'grid' | 'list'>('grid');
@@ -166,6 +167,18 @@ export const ProductsPage: React.FC = () => {
 
         {/* Layout Switch & Mobile Filter Button */}
         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedCategory('all');
+              setPage('home');
+            }}
+            className="inline-flex items-center gap-2 rounded-xl border border-amber-400/50 bg-purple-950/80 px-4 py-2 text-sm font-black text-white hover:bg-purple-900"
+          >
+            <Home className="h-4 w-4 text-amber-300" />
+            <span>{language === 'ar' ? 'الصفحة الرئيسية' : 'Home'}</span>
+          </button>
+
           <button
             onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
             className="lg:hidden px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs flex items-center gap-2"
