@@ -25,10 +25,13 @@ export interface BlogPost {
   contentAr: string;
   contentEn: string;
   category: string;
+  categoryEn?: string;
   image: string;
   readTime: string;
+  readTimeEn?: string;
   publishedDate: string;
   authorName: string;
+  authorNameEn?: string;
   relatedProductIds: string[];
 }
 
@@ -37,9 +40,12 @@ export interface Product {
   titleAr: string;
   titleEn: string;
   description: string;
+  descriptionEn?: string;
   longDescription: string;
+  longDescriptionEn?: string;
   category: CategoryId;
   subcategory: string;
+  subcategoryEn?: string;
   brand: string;
   image: string;
   images: string[];
@@ -57,8 +63,11 @@ export interface Product {
   reviewCount: number;
   reviews?: UserReview[];
   features: string[];
+  featuresEn?: string[];
   specs: Record<string, string>;
+  specsEn?: Record<string, string>;
   keywords: string[];
+  keywordsEn?: string[];
   isFeatured?: boolean;
   isTopSelling?: boolean;
   isLatest?: boolean;
@@ -87,14 +96,18 @@ export interface VideoReview {
   id: string;
   productId: string;
   productTitle: string;
+  productTitleEn?: string;
   productImage: string;
   thumbnailUrl?: string;
   platform: SocialPlatform;
   embedId: string;
   videoUrl: string;
   title: string;
+  titleEn?: string;
   views: string;
+  viewsEn?: string;
   date: string;
+  dateEn?: string;
   duration: string;
 }
 

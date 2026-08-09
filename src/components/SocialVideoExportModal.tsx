@@ -33,13 +33,17 @@ const TikTokIcon: React.FC<{ className?: string }> = ({ className = "w-5 h-5" })
 );
 
 export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ video, onClose }) => {
-  const { products, language, getAffiliateUrl } = useApp();
+  const { products, language, getAffiliateUrl, formatPrice } = useApp();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
 
   if (!video) return null;
 
   const linkedProduct = products.find(p => p.id === video.productId);
+  const displayVideoTitle = language === 'en' ? (video.titleEn || 'Product Video Review') : video.title;
+  const displayProductTitle = linkedProduct
+    ? (language === 'en' ? (linkedProduct.titleEn || linkedProduct.brand) : linkedProduct.titleAr)
+    : (language === 'en' ? (video.productTitleEn || 'Product') : video.productTitle);
   const targetUrl = video.videoUrl || `https://www.youtube.com/watch?v=${video.embedId}`;
   const thumbnail = video.thumbnailUrl || video.productImage;
 
@@ -47,25 +51,29 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
   const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(
     linkedProduct ? getAffiliateUrl(linkedProduct, 'amazon') : targetUrl
   )}&media=${encodeURIComponent(thumbnail)}&description=${encodeURIComponent(
-    `${video.title} - ${video.productTitle} | مراجعة شاملة وتجربة منتج`
+    language === 'ar'
+      ? `${displayVideoTitle} - ${displayProductTitle} | مراجعة شاملة وتجربة منتج`
+      : `${displayVideoTitle} - ${displayProductTitle} | Product review and hands-on test`
   )}`;
 
   // TikTok Share Studio URL
   const tiktokShareUrl = `https://www.tiktok.com/upload?caption=${encodeURIComponent(
-    `🔥 ${video.title} | ${video.productTitle} #تسوق_مع_يسرى #مراجعات #تيك_توك`
+    language === 'ar'
+      ? `🔥 ${displayVideoTitle} | ${displayProductTitle} #تسوق_مع_يسرى #مراجعات`
+      : `🔥 ${displayVideoTitle} | ${displayProductTitle} #YousraSmile #ProductReview`
   )}`;
 
   // YouTube Export / Shorts link
   const youtubeShareUrl = video.platform === 'youtube' 
     ? `https://www.youtube.com/watch?v=${video.embedId}`
-    : `https://www.youtube.com/results?search_query=${encodeURIComponent(video.title)}`;
+    : `https://www.youtube.com/results?search_query=${encodeURIComponent(displayVideoTitle)}`;
 
   // Embed Snippet
   const embedSnippet = `<iframe width="560" height="315" src="${
     video.platform === 'youtube'
       ? `https://www.youtube.com/embed/${video.embedId}`
       : video.videoUrl
-  }" title="${video.title}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+  }" title="${displayVideoTitle}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(targetUrl);
@@ -116,7 +124,7 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
           <div className="flex items-center gap-4 bg-slate-950 p-3.5 rounded-2xl border border-white/10">
             <img 
               src={thumbnail} 
-              alt={video.title} 
+              alt={displayVideoTitle}
               referrerPolicy="no-referrer"
               className="w-24 h-16 object-cover rounded-xl border border-amber-500/30 shrink-0"
             />
@@ -125,7 +133,7 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
                 {video.platform} • {video.duration}
               </span>
               <h4 className="text-xs font-bold text-white line-clamp-2 leading-snug">
-                {video.title}
+                {displayVideoTitle}
               </h4>
             </div>
           </div>
@@ -148,7 +156,7 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
                   <PinterestIcon className="w-5 h-5" />
                 </div>
                 <span className="text-xs font-black text-white">Pinterest</span>
-                <span className="text-[10px] text-red-300">نشر كـ Pin أو لوحة</span>
+                <span className="text-[10px] text-red-300">{language === 'ar' ? 'نشر كـ Pin أو لوحة' : 'Publish as a Pin'}</span>
               </a>
 
               {/* TikTok Export */}
@@ -162,7 +170,7 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
                   <TikTokIcon className="w-5 h-5" />
                 </div>
                 <span className="text-xs font-black text-white">TikTok</span>
-                <span className="text-[10px] text-cyan-300">مشاركة في تيك توك</span>
+                <span className="text-[10px] text-cyan-300">{language === 'ar' ? 'مشاركة في تيك توك' : 'Share on TikTok'}</span>
               </a>
 
               {/* YouTube Export */}
@@ -176,7 +184,7 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
                   <Youtube className="w-5 h-5" />
                 </div>
                 <span className="text-xs font-black text-white">YouTube</span>
-                <span className="text-[10px] text-red-300">تصدير ومشاهدة</span>
+                <span className="text-[10px] text-red-300">{language === 'ar' ? 'تصدير ومشاهدة' : 'Export and watch'}</span>
               </a>
             </div>
           </div>
@@ -203,12 +211,12 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
                   {copiedLink ? (
                     <>
                       <Check className="w-3.5 h-3.5" />
-                      <span>نسخ!</span>
+                      <span>{language === 'ar' ? 'نسخ!' : 'Copied!'}</span>
                     </>
                   ) : (
                     <>
                       <Copy className="w-3.5 h-3.5" />
-                      <span>نسخ الرابط</span>
+                      <span>{language === 'ar' ? 'نسخ الرابط' : 'Copy link'}</span>
                     </>
                   )}
                 </button>
@@ -235,12 +243,12 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
                   {copiedEmbed ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>تم النسخ!</span>
+                      <span>{language === 'ar' ? 'تم النسخ!' : 'Copied!'}</span>
                     </>
                   ) : (
                     <>
                       <Code className="w-3.5 h-3.5" />
-                      <span>نسخ الكود</span>
+                      <span>{language === 'ar' ? 'نسخ الكود' : 'Copy code'}</span>
                     </>
                   )}
                 </button>
@@ -253,13 +261,13 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
             <div className="bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-amber-500/10 p-4 rounded-2xl border border-amber-500/30 flex items-center justify-between gap-3">
               <div className="space-y-0.5">
                 <span className="text-[10px] text-amber-400 font-bold uppercase block">
-                  المنتج المرتبط بالفيديو
+                  {language === 'ar' ? 'المنتج المرتبط بالفيديو' : 'Linked Product'}
                 </span>
                 <h5 className="text-xs font-bold text-white line-clamp-1">
-                  {linkedProduct.titleAr}
+                  {displayProductTitle}
                 </h5>
                 <p className="text-[11px] text-emerald-400 font-bold">
-                  السعر: {linkedProduct.discountPrice} {linkedProduct.currency}
+                  {language === 'ar' ? 'السعر' : 'Price'}: {formatPrice(linkedProduct.discountPrice)}
                 </p>
               </div>
 
@@ -270,7 +278,7 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
                 className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl flex items-center gap-1.5 shadow-md shrink-0 cursor-pointer"
               >
                 <ShoppingBag className="w-3.5 h-3.5" />
-                <span>رابط أمازون</span>
+                <span>{language === 'ar' ? 'رابط أمازون' : 'Amazon Link'}</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>

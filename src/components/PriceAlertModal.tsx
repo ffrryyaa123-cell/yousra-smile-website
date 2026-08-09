@@ -21,7 +21,7 @@ export const PriceAlertModal: React.FC = () => {
 
   if (!alertModalProduct) return null;
 
-  const title = language === 'en' ? (alertModalProduct.titleEn || alertModalProduct.titleAr) : alertModalProduct.titleAr;
+  const title = language === 'en' ? (alertModalProduct.titleEn || alertModalProduct.brand) : alertModalProduct.titleAr;
   const isAlreadyAlerted = isSubscribedToAlert(alertModalProduct.id);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -114,8 +114,8 @@ export const PriceAlertModal: React.FC = () => {
                 </h4>
                 <p className="text-xs text-emerald-200/80 leading-relaxed">
                   {language === 'en' 
-                    ? `We will email ${email} immediately when the price drops below ${targetPrice} ${alertModalProduct.currency}.`
-                    : `سنقوم بإرسال إشعار فوري إلى ${email} بمجرد انخفاض السعر إلى أقل من ${targetPrice} ${alertModalProduct.currency}.`}
+                    ? `We will email ${email} immediately when the price drops below ${formatPrice(targetPrice)}.`
+                    : `سنقوم بإرسال إشعار فوري إلى ${email} بمجرد انخفاض السعر إلى أقل من ${formatPrice(targetPrice)}.`}
                 </p>
               </div>
               <div className="pt-2">

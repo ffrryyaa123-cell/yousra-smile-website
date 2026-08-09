@@ -66,3 +66,67 @@ export const STATIC_CONTENT = {
     text: 'ملفات تعريف الارتباط هي ملفات نصية صغيرة تُخزن في جهازك لمساعدتنا على تذكر تفضيلاتك (مثل حفظ المنتجات المفضلة وتفعيل الوضع الليلي) وتتبع نقرات روابط التسويق بالعمولة لضمان احتساب التخفيضات والعروض.'
   }
 };
+
+export const STATIC_CONTENT_EN = {
+  about: {
+    title: 'About Yousra Smile',
+    subtitle: 'Your guide to smart-home technology, modern living, and personal-care products',
+    bio: 'Welcome to Yousra Smile. I am Yousra, a content creator and reviewer of technology, smart-home, and personal-care products across YouTube, TikTok, and Pinterest. I created this website as a clear, trusted guide to products that can make everyday life easier, more comfortable, and more enjoyable.',
+    mission: 'Our mission is to review smart devices and home essentials transparently and independently, help you make informed purchase decisions, and highlight valuable offers from established partners such as Amazon and AliExpress.',
+    features: [
+      'Practical video reviews that show products before you buy',
+      'Careful recommendations focused on quality and reliability',
+      'Side-by-side price and specification comparisons',
+      'Regular updates on selected discounts and coupons'
+    ]
+  },
+  contact: {
+    title: 'Contact Yousra Smile',
+    subtitle: 'We welcome questions, suggestions, review requests, and business partnerships',
+    email: 'contact@yousrasmile.com',
+    socials: STATIC_CONTENT.contact.socials
+  },
+  disclosure: {
+    title: 'Affiliate Disclosure',
+    updatedAt: 'August 1, 2026',
+    text: `Yousra Smile is committed to transparency and honesty with every visitor.
+
+This website uses affiliate marketing. If you select a purchase link on our website, such as an Amazon or AliExpress affiliate link, and complete a purchase, we may receive a small commission at no additional cost to you.
+
+These commissions help us operate the website and create free videos and independent product reviews.
+
+We recommend only products we believe offer genuine value or have reviewed carefully. The final purchase decision is always yours.`
+  },
+  privacy: {
+    title: 'Privacy Policy',
+    updatedAt: 'August 1, 2026',
+    sections: [
+      {
+        heading: 'Information We Collect',
+        body: 'We do not collect personal information while you browse unless you submit the contact form or subscribe to an email service.'
+      },
+      {
+        heading: 'Cookies',
+        body: 'Our website and selected partners may use essential or analytics cookies to remember preferences, understand visits, and support affiliate-link attribution.'
+      },
+      {
+        heading: 'Data Protection',
+        body: 'We apply reasonable security measures and do not sell your personal information to third parties.'
+      }
+    ]
+  },
+  terms: {
+    title: 'Terms of Use',
+    updatedAt: 'August 1, 2026',
+    text: `By using Yousra Smile, you agree to the following terms:
+
+1. Videos, written content, and original reviews are owned by Yousra Smile and protected by applicable intellectual-property rights.
+2. Prices and specifications are obtained from retailers at the time of publication and may change without notice.
+3. Purchases, shipping, returns, and warranties are handled directly between the visitor and the final retailer, such as Amazon or AliExpress.`
+  },
+  cookies: {
+    title: 'Cookie Policy',
+    updatedAt: 'August 1, 2026',
+    text: 'Cookies are small text files stored on your device. We use them to remember preferences such as favorites and dark mode, understand website usage, and support attribution for affiliate purchase links.'
+  }
+};

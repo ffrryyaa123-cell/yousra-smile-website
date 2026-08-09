@@ -8,15 +8,32 @@ interface SEOHeadProps {
 }
 
 export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription }) => {
-  const { activePage, selectedProduct, language, activeStaticTab, siteSettings } = useApp();
+  const {
+    activePage,
+    selectedProduct,
+    language,
+    activeStaticTab,
+    siteSettings,
+    currency,
+    formatPrice,
+    formatPriceObject
+  } = useApp();
 
   useEffect(() => {
-    const siteName = siteSettings.siteName || 'ابتسامة يسرى (Yousra Smile)';
+    const siteName = language === 'en'
+      ? 'Yousra Smile'
+      : (siteSettings.siteName || 'يسرى سمايل (Yousra Smile)');
     const siteLogo = siteSettings.siteLogo || 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80';
     
-    let title = `${siteName} - مراجعات الأجهزة الذكية والمنزل العصري`;
-    let description = `موقع ${siteName} لمراجعات الأجهزة المنزلية الذكية والمطبخ العصري والجمال مع أفضل كوبونات وعروض أمازون وعلي إكسبريس.`;
-    let keywords = `${siteName}, مراجعات أجهزة, تسويق بالعمولة, أمازون, علي إكسبريس, مكانس روبوتية, قلاية هوائية, أجهزة منزلية ذكية`;
+    let title = language === 'en'
+      ? `${siteName} - Smart Products, Reviews & Modern Living`
+      : `${siteName} - مراجعات الأجهزة الذكية والمنزل العصري`;
+    let description = language === 'en'
+      ? `${siteName} reviews smart-home, kitchen, beauty, and modern-living products with selected Amazon and AliExpress deals.`
+      : `موقع ${siteName} لمراجعات الأجهزة المنزلية الذكية والمطبخ العصري والجمال مع أفضل كوبونات وعروض أمازون وعلي إكسبريس.`;
+    let keywords = language === 'en'
+      ? `${siteName}, product reviews, affiliate shopping, Amazon, AliExpress, robot vacuums, air fryers, smart home`
+      : `${siteName}, مراجعات أجهزة, تسويق بالعمولة, أمازون, علي إكسبريس, مكانس روبوتية, قلاية هوائية, أجهزة منزلية ذكية`;
     let ogType = 'website';
     let imageUrl = siteLogo;
     let currentUrl = window.location.href;
@@ -24,10 +41,20 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
     const currentProduct: Product | null = selectedProduct;
 
     if (currentProduct) {
-      const prodName = language === 'en' ? (currentProduct.titleEn || currentProduct.titleAr) : currentProduct.titleAr;
-      title = `${prodName} | سعر ومراجعة Yousra Smile`;
-      description = `${currentProduct.description} • السعر الأصلي: ${currentProduct.originalPrice} ${currentProduct.currency} | السعر بعد الخصم: ${currentProduct.discountPrice} ${currentProduct.currency} (${currentProduct.discountPercent}% خصم). تقييم ${currentProduct.rating}/5 من ${currentProduct.reviewCount} تقييم.`;
-      keywords = `${currentProduct.keywords.join(', ')}, ${currentProduct.brand}, سعر ${prodName}, مراجعة ${prodName}, خصم أمازون`;
+      const prodName = language === 'en' ? (currentProduct.titleEn || currentProduct.brand) : currentProduct.titleAr;
+      const prodDescription = language === 'en'
+        ? (currentProduct.descriptionEn || 'English product details are being prepared.')
+        : currentProduct.description;
+      const prodKeywords = language === 'en' ? (currentProduct.keywordsEn || []) : currentProduct.keywords;
+      title = language === 'en'
+        ? `${prodName} | Price & Review | Yousra Smile`
+        : `${prodName} | السعر والمراجعة | Yousra Smile`;
+      description = language === 'en'
+        ? `${prodDescription} • Original price: ${formatPrice(currentProduct.originalPrice)} | Sale price: ${formatPrice(currentProduct.discountPrice)} (${currentProduct.discountPercent}% off). Rated ${currentProduct.rating}/5 from ${currentProduct.reviewCount} reviews.`
+        : `${prodDescription} • السعر الأصلي: ${formatPrice(currentProduct.originalPrice)} | السعر بعد الخصم: ${formatPrice(currentProduct.discountPrice)} (${currentProduct.discountPercent}% خصم). تقييم ${currentProduct.rating}/5 من ${currentProduct.reviewCount} تقييم.`;
+      keywords = language === 'en'
+        ? `${prodKeywords.join(', ')}, ${currentProduct.brand}, ${prodName} price, ${prodName} review, Amazon deal`
+        : `${prodKeywords.join(', ')}, ${currentProduct.brand}, سعر ${prodName}, مراجعة ${prodName}, خصم أمازون`;
       ogType = 'og:product';
       imageUrl = currentProduct.image;
     } else {
@@ -53,7 +80,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
           description = language === 'en' ? 'Your saved list of recommended smart home gadgets and kitchen tools.' : 'قائمتك المحفوظة من أفضل الأجهزة والأدوات الذكية لمتابعة أسعارها وعروضها.';
           break;
         case 'admin':
-          title = 'لوحة التحكم | يسرى سمايل Admin';
+          title = language === 'en' ? 'Admin Dashboard | Yousra Smile' : 'لوحة التحكم | يسرى سمايل';
           break;
         case 'about':
         case 'contact':
@@ -61,12 +88,12 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
         case 'terms':
         case 'cookies':
         case 'disclosure':
-          if (activeStaticTab === 'about') title = 'قصة يسرى سمايل | من نحن';
-          else if (activeStaticTab === 'contact') title = 'اتصل بنا والتعاون التجاري | يسرى سمايل';
-          else if (activeStaticTab === 'disclosure') title = 'إفصاح روابط الأفلييت والتسويق بالعمولة | يسرى سمايل';
-          else if (activeStaticTab === 'privacy') title = 'سياسة الخصوصية | يسرى سمايل';
-          else if (activeStaticTab === 'terms') title = 'شروط الاستخدام | يسرى سمايل';
-          else if (activeStaticTab === 'cookies') title = 'سياسة الكوكيز | يسرى سمايل';
+          if (activeStaticTab === 'about') title = language === 'en' ? 'About Yousra Smile' : 'قصة يسرى سمايل | من نحن';
+          else if (activeStaticTab === 'contact') title = language === 'en' ? 'Contact & Partnerships | Yousra Smile' : 'اتصل بنا والتعاون التجاري | يسرى سمايل';
+          else if (activeStaticTab === 'disclosure') title = language === 'en' ? 'Affiliate Disclosure | Yousra Smile' : 'إفصاح روابط الأفلييت والتسويق بالعمولة | يسرى سمايل';
+          else if (activeStaticTab === 'privacy') title = language === 'en' ? 'Privacy Policy | Yousra Smile' : 'سياسة الخصوصية | يسرى سمايل';
+          else if (activeStaticTab === 'terms') title = language === 'en' ? 'Terms of Use | Yousra Smile' : 'شروط الاستخدام | يسرى سمايل';
+          else if (activeStaticTab === 'cookies') title = language === 'en' ? 'Cookie Policy | Yousra Smile' : 'سياسة الكوكيز | يسرى سمايل';
           break;
         default:
           break;
@@ -123,13 +150,18 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
     let schemaObj: any = null;
 
     if (currentProduct) {
-      const prodName = language === 'en' ? (currentProduct.titleEn || currentProduct.titleAr) : currentProduct.titleAr;
+      const prodName = language === 'en' ? (currentProduct.titleEn || currentProduct.brand) : currentProduct.titleAr;
+      const prodDescription = language === 'en'
+        ? (currentProduct.descriptionEn || 'English product details are being prepared.')
+        : currentProduct.description;
+      const currentPrice = formatPriceObject(currentProduct.discountPrice);
+      const originalPrice = formatPriceObject(currentProduct.originalPrice);
       schemaObj = {
         "@context": "https://schema.org/",
         "@type": "Product",
         "name": prodName,
         "image": [currentProduct.image, ...(currentProduct.images || [])],
-        "description": currentProduct.description,
+        "description": prodDescription,
         "sku": currentProduct.id,
         "mpn": currentProduct.id,
         "brand": {
@@ -147,7 +179,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
             },
             "author": {
               "@type": "Person",
-              "name": "Yousra Smile (يسرى سمايل)"
+              "name": language === 'en' ? 'Yousra Smile' : 'يسرى سمايل (Yousra Smile)'
             },
             "datePublished": currentProduct.createdAt
           }
@@ -161,17 +193,17 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
         },
         "offers": {
           "@type": "AggregateOffer",
-          "priceCurrency": currentProduct.currency,
-          "lowPrice": currentProduct.discountPrice.toString(),
-          "highPrice": currentProduct.originalPrice.toString(),
+          "priceCurrency": currency,
+          "lowPrice": currentPrice.amount.toString(),
+          "highPrice": originalPrice.amount.toString(),
           "offerCount": currentProduct.aliexpressUrl ? "2" : "1",
           "offers": [
             {
               "@type": "Offer",
               "name": "Amazon Purchase Link",
               "url": currentProduct.amazonUrl,
-              "priceCurrency": currentProduct.currency,
-              "price": currentProduct.discountPrice.toString(),
+              "priceCurrency": currency,
+              "price": currentPrice.amount.toString(),
               "itemCondition": "https://schema.org/NewCondition",
               "availability": "https://schema.org/InStock",
               "seller": {
@@ -183,8 +215,8 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
               "@type": "Offer",
               "name": "AliExpress Purchase Link",
               "url": currentProduct.aliexpressUrl,
-              "priceCurrency": currentProduct.currency,
-              "price": currentProduct.discountPrice.toString(),
+              "priceCurrency": currency,
+              "price": currentPrice.amount.toString(),
               "itemCondition": "https://schema.org/NewCondition",
               "availability": "https://schema.org/InStock",
               "seller": {
@@ -252,7 +284,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
     }
     scriptTag.textContent = JSON.stringify(schemaObj, null, 2);
 
-  }, [activePage, selectedProduct, language, activeStaticTab, customTitle, customDescription]);
+  }, [activePage, selectedProduct, language, activeStaticTab, customTitle, customDescription, currency, siteSettings, formatPrice, formatPriceObject]);
 
   return null;
 };

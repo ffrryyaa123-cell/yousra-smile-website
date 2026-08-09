@@ -47,8 +47,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
   const isAlerted = isSubscribedToAlert(product.id);
   const inCart = isInCart(product.id);
 
-  const displayTitle = language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr;
-  const displayDesc = language === 'en' ? (product.descriptionEn || product.description) : product.description;
+  const displayTitle = language === 'en' ? (product.titleEn || product.brand) : product.titleAr;
+  const displayDesc = language === 'en'
+    ? (product.descriptionEn || 'English product details are being prepared.')
+    : product.description;
+  const displayFeatures = language === 'en' ? (product.featuresEn || []) : product.features;
 
   const handleBuyAmazon = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -138,7 +141,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
             </p>
 
             <div className="flex flex-wrap gap-1.5 mb-2">
-              {product.features.slice(0, 2).map((feat, idx) => (
+              {displayFeatures.slice(0, 2).map((feat, idx) => (
                 <span key={idx} className="text-[11px] text-slate-200 flex items-center gap-1 bg-slate-900/90 px-2 py-0.5 rounded-md border border-purple-500/20">
                   <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                   {feat}
@@ -257,7 +260,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
               e.stopPropagation(); 
               if (navigator.share) {
                 navigator.share({
-                  title: language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr,
+                  title: displayTitle,
                   url: window.location.href,
                 }).catch(() => {});
               } else {
@@ -347,7 +350,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
             <button
               onClick={handleBuyAmazon}
               className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[11px] py-1.5 px-1.5 rounded-lg flex items-center justify-center gap-0.5 shadow-xs transition-all hover:shadow-md"
-              title="رابط التسويق بالعمولة لأمازون"
+              title={language === 'ar' ? 'رابط التسويق بالعمولة لأمازون' : 'Amazon affiliate link'}
             >
               <ShoppingBag className="w-3 h-3" />
               {t.buyNowAmazon}
@@ -358,7 +361,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
               <button
                 onClick={handleBuyAliExpress}
                 className="w-full bg-red-600 hover:bg-red-500 text-white font-extrabold text-[11px] py-1.5 px-1.5 rounded-lg flex items-center justify-center gap-0.5 shadow-xs transition-all hover:shadow-md"
-                title="رابط التسويق بالعمولة لعلي إكسبريس"
+                title={language === 'ar' ? 'رابط التسويق بالعمولة لعلي إكسبريس' : 'AliExpress affiliate link'}
               >
                 {t.buyNowAliExpress}
                 <ExternalLink className="w-2.5 h-2.5 text-white opacity-70" />

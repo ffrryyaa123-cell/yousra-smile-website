@@ -8,11 +8,14 @@ export const SAMPLE_BLOG_POSTS: BlogPost[] = [
     summaryAr: 'دليل شراء تفصيلي يقارن بينRoborock S8 Pro Ultra و Dreame L20 Ultra و Ecovacs Deebot مع نقاط القوة والضعف والأسعار الحقيقية عبر أمازون وعلي إكسبرس.',
     summaryEn: 'Detailed buying guide comparing top robot vacuums with pros, cons, and real pricing across Amazon & AliExpress.',
     category: 'المكانس الروبوتية',
+    categoryEn: 'Robot Vacuums',
     image: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80',
     readTime: '5 دقائق قراءة',
+    readTimeEn: '5 min read',
     publishedDate: '2026-08-01',
     authorName: 'يسرى — خبيرة المنزل الذكي',
-    relatedProductIds: ['p1', 'p8'],
+    authorNameEn: 'Yousra — Smart Home Expert',
+    relatedProductIds: ['prod-1', 'prod-8'],
     contentAr: `
 ### مقدمة عن أجهزة التنظيف الذكية لعام 2026
 
@@ -48,11 +51,14 @@ Robot vacuums in 2026 come with auto-emptying, auto-mop washing, and warm air dr
     summaryAr: 'كل ما تحتاج معرفته عن القلايات الهوائية ذات الحوضين والتحكم عبر التطبيقات الذكية وشاشات اللمس المزدوجة.',
     summaryEn: 'Everything you need to know about dual-basket air fryers and app control features.',
     category: 'أدوات المطبخ',
+    categoryEn: 'Kitchen Tools',
     image: 'https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=800&q=80',
     readTime: '4 دقائق قراءة',
+    readTimeEn: '4 min read',
     publishedDate: '2026-07-28',
     authorName: 'فريق يسرى سمايل',
-    relatedProductIds: ['p2'],
+    authorNameEn: 'Yousra Smile Team',
+    relatedProductIds: ['prod-2'],
     contentAr: `
 ### كيف تختار القلاية الهوائية المثالية؟
 
@@ -80,11 +86,14 @@ Air fryers reduce oil consumption by up to 85% while saving valuable cooking tim
     summaryAr: 'كيف يمكن للمقابس الذكية وحساسات الحركة وأجهزة التكييف الذكية تخفيض فاتورة الكهرباء الشهرية بنسبة تصل إلى 30%.',
     summaryEn: 'How smart plugs, sensors, and thermostats reduce your monthly electricity bills by up to 30%.',
     category: 'حلول إلكترونية',
+    categoryEn: 'Smart Solutions',
     image: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80',
     readTime: '6 دقائق قراءة',
+    readTimeEn: '6 min read',
     publishedDate: '2026-07-20',
     authorName: 'مهندس المنزل العصري',
-    relatedProductIds: ['p3', 'p4'],
+    authorNameEn: 'Modern Home Editor',
+    relatedProductIds: ['prod-3', 'prod-4'],
     contentAr: `
 ### توفير الطاقة الذكي بأساليب بسيطة
 

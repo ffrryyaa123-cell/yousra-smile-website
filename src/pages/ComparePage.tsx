@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Scale, Trash2, ShoppingBag, ExternalLink, Star, ArrowLeft } from 'lucide-react';
 
 export const ComparePage: React.FC = () => {
-  const { products, compareList, toggleCompare, clearCompare, setPage, logAffiliateClick, formatPrice, getAffiliateUrl } = useApp();
+  const { products, compareList, toggleCompare, clearCompare, setPage, logAffiliateClick, formatPrice, getAffiliateUrl, language } = useApp();
 
   const comparedProducts = products.filter(p => compareList.includes(p.id));
 
@@ -15,13 +15,15 @@ export const ComparePage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-purple-600 text-xs font-bold mb-1">
             <Scale className="w-4 h-4" />
-            أداة المقارنة الذكية
+            {language === 'ar' ? 'أداة المقارنة الذكية' : 'Smart Comparison Tool'}
           </div>
           <h1 className="text-2xl sm:text-3xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-            مقارنة المنتجات والمواصفات ({comparedProducts.length}/4)
+            {language === 'ar' ? 'مقارنة المنتجات والمواصفات' : 'Compare Products & Specifications'} ({comparedProducts.length}/4)
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            قارني بين الأسعار، الخصومات، التقييمات والمواصفات التقنية جنبًا إلى جنب لاتخاذ القرار الأنسب.
+            {language === 'ar'
+              ? 'قارن بين الأسعار، الخصومات، التقييمات والمواصفات التقنية جنبًا إلى جنب لاتخاذ القرار الأنسب.'
+              : 'Compare prices, discounts, ratings, and technical specifications side by side.'}
           </p>
         </div>
 
@@ -31,31 +33,33 @@ export const ComparePage: React.FC = () => {
             className="px-4 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 font-bold text-xs flex items-center gap-1.5 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
-            تفريغ المقارنة
+            {language === 'ar' ? 'تفريغ المقارنة' : 'Clear comparison'}
           </button>
         )}
       </div>
 
       {comparedProducts.length > 0 ? (
         <div className="overflow-x-auto rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-          <table className="w-full text-right text-xs">
+          <table className={`w-full text-xs ${language === 'ar' ? 'text-right' : 'text-left'}`}>
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 divide-x divide-x-reverse divide-slate-200 dark:divide-slate-800">
-                <th className="p-4 text-slate-400 font-bold w-48">خاصية المقارنة</th>
+                <th className="p-4 text-slate-400 font-bold w-48">
+                  {language === 'ar' ? 'خاصية المقارنة' : 'Comparison item'}
+                </th>
                 {comparedProducts.map(prod => (
                   <th key={prod.id} className="p-4 w-72 min-w-[240px] align-top">
                     <div className="relative space-y-2">
                       <button
                         onClick={() => toggleCompare(prod.id)}
                         className="absolute -top-2 -left-2 p-1.5 bg-slate-200 dark:bg-slate-700 rounded-full text-slate-500 hover:text-red-500 transition-colors"
-                        title="إزالة من المقارنة"
+                        title={language === 'ar' ? 'إزالة من المقارنة' : 'Remove from comparison'}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
 
                       <img 
                         src={prod.image} 
-                        alt={prod.titleAr}
+                        alt={language === 'en' ? (prod.titleEn || prod.brand) : prod.titleAr}
                         referrerPolicy="no-referrer"
                         className="w-full h-36 object-cover rounded-xl border border-slate-200 dark:border-slate-800"
                       />
@@ -64,7 +68,7 @@ export const ComparePage: React.FC = () => {
                         {prod.brand}
                       </span>
                       <h3 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 font-['Tajawal']">
-                        {prod.titleAr}
+                        {language === 'en' ? (prod.titleEn || prod.brand) : prod.titleAr}
                       </h3>
                     </div>
                   </th>
@@ -75,7 +79,9 @@ export const ComparePage: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {/* Row 1: Price */}
               <tr className="divide-x divide-x-reverse divide-slate-100 dark:divide-slate-800">
-                <td className="p-4 font-bold text-slate-900 dark:text-white bg-slate-50/50 dark:bg-slate-800/30">السعر والتوفير</td>
+                <td className="p-4 font-bold text-slate-900 dark:text-white bg-slate-50/50 dark:bg-slate-800/30">
+                  {language === 'ar' ? 'السعر والتوفير' : 'Price & Savings'}
+                </td>
                 {comparedProducts.map(prod => (
                   <td key={prod.id} className="p-4">
                     <div className="space-y-1">
@@ -89,7 +95,7 @@ export const ComparePage: React.FC = () => {
                       )}
                       {prod.discountPercent > 0 && (
                         <span className="inline-block bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400 text-[10px] font-bold px-2 py-0.5 rounded-md">
-                          خصم {prod.discountPercent}%
+                          {language === 'ar' ? 'خصم' : 'Save'} {prod.discountPercent}%
                         </span>
                       )}
                     </div>
@@ -99,13 +105,15 @@ export const ComparePage: React.FC = () => {
 
               {/* Row 2: Rating */}
               <tr className="divide-x divide-x-reverse divide-slate-100 dark:divide-slate-800">
-                <td className="p-4 font-bold text-slate-900 dark:text-white bg-slate-50/50 dark:bg-slate-800/30">التقييم وسرعة الطلب</td>
+                <td className="p-4 font-bold text-slate-900 dark:text-white bg-slate-50/50 dark:bg-slate-800/30">
+                  {language === 'ar' ? 'التقييم' : 'Rating'}
+                </td>
                 {comparedProducts.map(prod => (
                   <td key={prod.id} className="p-4">
                     <div className="flex items-center gap-1 text-amber-500 font-bold">
                       <Star className="w-4 h-4 fill-amber-400" />
                       <span>{prod.rating}</span>
-                      <span className="text-slate-400 font-normal">({prod.reviewCount} تقييم)</span>
+                      <span className="text-slate-400 font-normal">({prod.reviewCount} {language === 'ar' ? 'تقييم' : 'reviews'})</span>
                     </div>
                   </td>
                 ))}
@@ -113,21 +121,25 @@ export const ComparePage: React.FC = () => {
 
               {/* Row 3: Category */}
               <tr className="divide-x divide-x-reverse divide-slate-100 dark:divide-slate-800">
-                <td className="p-4 font-bold text-slate-900 dark:text-white bg-slate-50/50 dark:bg-slate-800/30">القسم والتخصص</td>
+                <td className="p-4 font-bold text-slate-900 dark:text-white bg-slate-50/50 dark:bg-slate-800/30">
+                  {language === 'ar' ? 'القسم والتخصص' : 'Category'}
+                </td>
                 {comparedProducts.map(prod => (
                   <td key={prod.id} className="p-4 font-semibold text-slate-700 dark:text-slate-300">
-                    {prod.subcategory}
+                    {language === 'en' ? (prod.subcategoryEn || 'Product') : prod.subcategory}
                   </td>
                 ))}
               </tr>
 
               {/* Row 4: Key Features */}
               <tr className="divide-x divide-x-reverse divide-slate-100 dark:divide-slate-800">
-                <td className="p-4 font-bold text-slate-900 dark:text-white bg-slate-50/50 dark:bg-slate-800/30">أبرز المميزات</td>
+                <td className="p-4 font-bold text-slate-900 dark:text-white bg-slate-50/50 dark:bg-slate-800/30">
+                  {language === 'ar' ? 'أبرز المميزات' : 'Key Features'}
+                </td>
                 {comparedProducts.map(prod => (
                   <td key={prod.id} className="p-4 align-top">
                     <ul className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-                      {prod.features.slice(0, 3).map((feat, i) => (
+                      {(language === 'en' ? (prod.featuresEn || []) : prod.features).slice(0, 3).map((feat, i) => (
                         <li key={i} className="flex items-start gap-1">
                           <span className="text-purple-500 font-bold">•</span>
                           <span>{feat}</span>
@@ -140,7 +152,9 @@ export const ComparePage: React.FC = () => {
 
               {/* Row 5: Action Buy CTAs */}
               <tr className="divide-x divide-x-reverse divide-slate-100 dark:divide-slate-800 bg-slate-50/80 dark:bg-slate-800/50">
-                <td className="p-4 font-bold text-slate-900 dark:text-white">الانتقال للشراء Direct</td>
+                <td className="p-4 font-bold text-slate-900 dark:text-white">
+                  {language === 'ar' ? 'الانتقال للشراء المباشر' : 'Direct Purchase'}
+                </td>
                 {comparedProducts.map(prod => (
                   <td key={prod.id} className="p-4">
                     <button
@@ -152,7 +166,7 @@ export const ComparePage: React.FC = () => {
                       className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-1 shadow-md"
                     >
                       <ShoppingBag className="w-3.5 h-3.5" />
-                      اشترِ من أمازون
+                      {language === 'ar' ? 'اشترِ من أمازون' : 'Buy on Amazon'}
                       <ExternalLink className="w-3 h-3 opacity-70" />
                     </button>
                   </td>
@@ -165,16 +179,18 @@ export const ComparePage: React.FC = () => {
         <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-4">
           <Scale className="w-16 h-16 text-slate-300 dark:text-slate-700 mx-auto" />
           <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 font-['Tajawal']">
-            لم تقومي بإضافة أي منتجات للمقارنة بعد!
+            {language === 'ar' ? 'لم تضف أي منتجات للمقارنة بعد!' : 'You have not added any products to compare yet.'}
           </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            انقري على رمز الميزان في بطاقات المنتجات لإضافتها لمصفوفة المقارنة المباشرة.
+            {language === 'ar'
+              ? 'انقر على رمز الميزان في بطاقات المنتجات لإضافتها للمقارنة.'
+              : 'Select the scale icon on product cards to add items here.'}
           </p>
           <button
             onClick={() => setPage('products')}
             className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md transition-colors inline-flex items-center gap-2"
           >
-            تصفحي المنتجات الآن
+            {language === 'ar' ? 'تصفح المنتجات الآن' : 'Browse Products'}
             <ArrowLeft className="w-4 h-4" />
           </button>
         </div>

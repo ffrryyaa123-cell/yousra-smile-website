@@ -42,11 +42,11 @@ export const BlogSection: React.FC = () => {
               <div className="relative h-48 overflow-hidden">
                 <img
                   src={post.image}
-                  alt={post.titleAr}
+                  alt={language === 'ar' ? post.titleAr : post.titleEn}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <span className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md text-amber-300 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-amber-500/30">
-                  {post.category}
+                  {language === 'en' ? (post.categoryEn || 'Guide') : post.category}
                 </span>
               </div>
 
@@ -55,11 +55,11 @@ export const BlogSection: React.FC = () => {
                   <div className="flex items-center gap-3 text-[11px] text-slate-400 mb-2">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3 text-amber-400" />
-                      <span>{post.readTime}</span>
+                      <span>{language === 'en' ? (post.readTimeEn || 'Read') : post.readTime}</span>
                     </span>
                     <span className="flex items-center gap-1">
                       <User className="w-3 h-3 text-amber-400" />
-                      <span>{post.authorName}</span>
+                      <span>{language === 'en' ? (post.authorNameEn || 'Yousra Smile') : post.authorName}</span>
                     </span>
                   </div>
 

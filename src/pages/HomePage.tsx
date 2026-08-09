@@ -190,7 +190,7 @@ export const HomePage: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-purple-900/30 border border-purple-500/20 rounded-2xl overflow-hidden shadow-lg">
           {editorialStripProducts.map((prod, idx) => {
-            const title = language === 'en' ? (prod.titleEn || prod.titleAr) : prod.titleAr;
+            const title = language === 'en' ? (prod.titleEn || prod.brand) : prod.titleAr;
             return (
               <div 
                 key={prod.id}
@@ -263,6 +263,14 @@ export const HomePage: React.FC = () => {
           {homeCategories.map(cat => {
             const count = products.filter(p => p.category === cat.id).length;
             const catName = language === 'en' ? cat.nameEn : cat.nameAr;
+            const subcategorySummary = language === 'en'
+              ? Array.from(new Set(
+                  products
+                    .filter(product => product.category === cat.id)
+                    .map(product => product.subcategoryEn)
+                    .filter((subcategory): subcategory is string => Boolean(subcategory))
+                )).slice(0, 2).join(' • ')
+              : cat.subcategories.slice(0, 2).join(' • ');
             return (
               <div
                 key={cat.id}
@@ -286,7 +294,7 @@ export const HomePage: React.FC = () => {
                   {catName}
                 </h3>
                 <p className="text-[10px] text-slate-300 line-clamp-1">
-                  {cat.subcategories.slice(0, 2).join(' • ')}
+                  {subcategorySummary || (language === 'en' ? 'Featured products' : 'منتجات مميزة')}
                 </p>
               </div>
             );
@@ -392,7 +400,7 @@ export const HomePage: React.FC = () => {
               <div className="relative h-40 bg-slate-950 overflow-hidden">
                 <img 
                   src={video.productImage} 
-                  alt={video.title}
+                  alt={language === 'en' ? (video.titleEn || 'Product video review') : video.title}
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
                 />
@@ -411,14 +419,14 @@ export const HomePage: React.FC = () => {
 
               <div className="p-3 space-y-1.5">
                 <span className="text-[11px] font-bold text-amber-300">
-                  {video.productTitle}
+                  {language === 'en' ? (video.productTitleEn || 'Product') : video.productTitle}
                 </span>
                 <h3 className="text-xs font-bold text-white line-clamp-2 group-hover:text-amber-400 transition-colors font-['Tajawal']">
-                  {video.title}
+                  {language === 'en' ? (video.titleEn || 'Product Video Review') : video.title}
                 </h3>
                 <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1.5 border-t border-slate-800">
-                  <span>{video.views}</span>
-                  <span>{video.date}</span>
+                  <span>{language === 'en' ? (video.viewsEn || 'Views') : video.views}</span>
+                  <span>{language === 'en' ? (video.dateEn || '') : video.date}</span>
                 </div>
               </div>
             </div>

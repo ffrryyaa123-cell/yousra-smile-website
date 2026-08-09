@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { STATIC_CONTENT } from '../data/staticContent';
+import { STATIC_CONTENT, STATIC_CONTENT_EN } from '../data/staticContent';
 import { 
   ShieldCheck, 
   Info, 
@@ -22,8 +22,9 @@ interface StaticPageProps {
 }
 
 export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
-  const { activeStaticTab, setPage } = useApp();
+  const { activeStaticTab, setPage, language } = useApp();
   const currentTab = type || activeStaticTab;
+  const content = language === 'en' ? STATIC_CONTENT_EN : STATIC_CONTENT;
 
   // Contact form state
   const [contactName, setContactName] = useState('');
@@ -56,7 +57,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
       setContactMessage('');
       setContactWebsite('');
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'تعذر إرسال الرسالة الآن.');
+      setFormError(error instanceof Error ? error.message : (language === 'ar' ? 'تعذر إرسال الرسالة الآن.' : 'Unable to send your message right now.'));
     } finally {
       setFormSending(false);
     }
@@ -73,7 +74,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             currentTab === 'about' ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          من نحن
+          {language === 'ar' ? 'من نحن' : 'About'}
         </button>
         <button
           onClick={() => setPage('contact', 'contact')}
@@ -81,7 +82,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             currentTab === 'contact' ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          اتصل بنا
+          {language === 'ar' ? 'اتصل بنا' : 'Contact'}
         </button>
         <button
           onClick={() => setPage('disclosure', 'disclosure')}
@@ -89,7 +90,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             currentTab === 'disclosure' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          إفصاح الأفلييت
+          {language === 'ar' ? 'إفصاح الأفلييت' : 'Affiliate Disclosure'}
         </button>
         <button
           onClick={() => setPage('privacy', 'privacy')}
@@ -97,7 +98,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             currentTab === 'privacy' ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          سياسة الخصوصية
+          {language === 'ar' ? 'سياسة الخصوصية' : 'Privacy'}
         </button>
         <button
           onClick={() => setPage('terms', 'terms')}
@@ -105,7 +106,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             currentTab === 'terms' ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          شروط الاستخدام
+          {language === 'ar' ? 'شروط الاستخدام' : 'Terms'}
         </button>
         <button
           onClick={() => setPage('cookies', 'cookies')}
@@ -113,7 +114,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             currentTab === 'cookies' ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          سياسة ملفات الكوكيز
+          {language === 'ar' ? 'سياسة ملفات الكوكيز' : 'Cookies'}
         </button>
       </div>
 
@@ -127,29 +128,33 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
               <img src={logoImg} alt="Yousra Smile" className="w-16 h-16 rounded-2xl object-cover border-2 border-purple-500/40" />
               <div>
                 <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-                  {STATIC_CONTENT.about.title}
+                  {content.about.title}
                 </h1>
                 <p className="text-xs text-purple-600 dark:text-purple-400 font-bold mt-1">
-                  {STATIC_CONTENT.about.subtitle}
+                  {content.about.subtitle}
                 </p>
               </div>
             </div>
 
             <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-              {STATIC_CONTENT.about.bio}
+              {content.about.bio}
             </p>
 
             <div className="bg-purple-50 dark:bg-purple-950/40 p-5 rounded-2xl border border-purple-100 dark:border-purple-900">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">رسالتنا وهدفنا الرئيسي:</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">
+                {language === 'ar' ? 'رسالتنا وهدفنا الرئيسي:' : 'Our Mission:'}
+              </h3>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                {STATIC_CONTENT.about.mission}
+                {content.about.mission}
               </p>
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">ما الذي يميّز يسرى سمايل؟</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                {language === 'ar' ? 'ما الذي يميّز يسرى سمايل؟' : 'Why Yousra Smile?'}
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {STATIC_CONTENT.about.features.map((item, i) => (
+                {content.about.features.map((item, i) => (
                   <div key={i} className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>{item}</span>
@@ -165,10 +170,10 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
           <div className="space-y-6">
             <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
               <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-                {STATIC_CONTENT.contact.title}
+                {content.contact.title}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {STATIC_CONTENT.contact.subtitle}
+                {content.contact.subtitle}
               </p>
             </div>
 
@@ -178,7 +183,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
               <form onSubmit={handleContactSubmit} className="space-y-4 text-xs">
                 {formSent && (
                   <div className="bg-emerald-500 text-white font-bold p-3 rounded-xl text-center">
-                    ✓ تم إرسال رسالتك بنجاح! وسوف تقوم يسرى بالرد عليكِ في أقرب وقت.
+                    {language === 'ar' ? '✓ تم إرسال رسالتك بنجاح! وسوف نرد عليك في أقرب وقت.' : '✓ Your message was sent successfully. We will reply as soon as possible.'}
                   </div>
                 )}
                 {formError && (
@@ -201,20 +206,24 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">الاسم الكامل *</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    {language === 'ar' ? 'الاسم الكامل *' : 'Full name *'}
+                  </label>
                   <input 
                     type="text" 
                     required
                     maxLength={120}
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
-                    placeholder="ادخلي اسمك..."
+                    placeholder={language === 'ar' ? 'أدخل اسمك...' : 'Enter your name...'}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">البريد الإلكتروني *</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    {language === 'ar' ? 'البريد الإلكتروني *' : 'Email address *'}
+                  </label>
                   <input 
                     type="email" 
                     required
@@ -227,27 +236,31 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">موضوع الرسالة *</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    {language === 'ar' ? 'موضوع الرسالة *' : 'Subject *'}
+                  </label>
                   <input 
                     type="text" 
                     required
                     maxLength={200}
                     value={contactSubject}
                     onChange={(e) => setContactSubject(e.target.value)}
-                    placeholder="مثال: استفسار عن منتج، طلب مراجعة، تعاون..."
+                    placeholder={language === 'ar' ? 'مثال: استفسار عن منتج، طلب مراجعة، تعاون...' : 'Example: Product question, review request, partnership...'}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">تفاصيل الرسالة *</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                    {language === 'ar' ? 'تفاصيل الرسالة *' : 'Message *'}
+                  </label>
                   <textarea 
                     rows={4}
                     required
                     maxLength={5000}
                     value={contactMessage}
                     onChange={(e) => setContactMessage(e.target.value)}
-                    placeholder="اكتبي نص الرسالة هنا..."
+                    placeholder={language === 'ar' ? 'اكتب نص الرسالة هنا...' : 'Type your message here...'}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3"
                   />
                 </div>
@@ -258,13 +271,17 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
                   className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 disabled:cursor-wait disabled:opacity-60"
                 >
                   <Send className="w-4 h-4" />
-                  {formSending ? 'جاري إرسال الرسالة...' : 'إرسال الرسالة الآن'}
+                  {formSending
+                    ? (language === 'ar' ? 'جاري إرسال الرسالة...' : 'Sending...')
+                    : (language === 'ar' ? 'إرسال الرسالة الآن' : 'Send Message')}
                 </button>
               </form>
 
               {/* Social Channels List */}
               <div className="space-y-4 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">قنوات التواصل الاجتماعية الرسمية:</h3>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  {language === 'ar' ? 'قنوات التواصل الاجتماعية الرسمية:' : 'Official Social Channels:'}
+                </h3>
                 
                 <div className="space-y-3 text-xs">
                   <a href="https://youtube.com" target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white dark:bg-slate-900 rounded-xl hover:border-red-500 border border-transparent transition-all">
@@ -312,14 +329,16 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
               <ShieldCheck className="w-8 h-8 text-amber-500" />
               <div>
                 <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-                  {STATIC_CONTENT.disclosure.title}
+                  {content.disclosure.title}
                 </h1>
-                <span className="text-xs text-slate-400">آخر تحديث: {STATIC_CONTENT.disclosure.updatedAt}</span>
+                <span className="text-xs text-slate-400">
+                  {language === 'ar' ? 'آخر تحديث' : 'Last updated'}: {content.disclosure.updatedAt}
+                </span>
               </div>
             </div>
 
             <div className="whitespace-pre-line text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-amber-50/60 dark:bg-amber-950/30 p-6 rounded-2xl border border-amber-200 dark:border-amber-900">
-              {STATIC_CONTENT.disclosure.text}
+              {content.disclosure.text}
             </div>
           </div>
         )}
@@ -329,13 +348,13 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
           <div className="space-y-6">
             <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
               <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-                {STATIC_CONTENT.privacy.title}
+                {content.privacy.title}
               </h1>
-              <span className="text-xs text-slate-400">آخر تحديث: {STATIC_CONTENT.privacy.updatedAt}</span>
+              <span className="text-xs text-slate-400">{language === 'ar' ? 'آخر تحديث' : 'Last updated'}: {content.privacy.updatedAt}</span>
             </div>
 
             <div className="space-y-4">
-              {STATIC_CONTENT.privacy.sections.map((sec, i) => (
+              {content.privacy.sections.map((sec, i) => (
                 <div key={i} className="space-y-1">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">{sec.heading}</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{sec.body}</p>
@@ -350,13 +369,13 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
           <div className="space-y-6">
             <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
               <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-                {STATIC_CONTENT.terms.title}
+                {content.terms.title}
               </h1>
-              <span className="text-xs text-slate-400">آخر تحديث: {STATIC_CONTENT.terms.updatedAt}</span>
+              <span className="text-xs text-slate-400">{language === 'ar' ? 'آخر تحديث' : 'Last updated'}: {content.terms.updatedAt}</span>
             </div>
 
             <div className="whitespace-pre-line text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-              {STATIC_CONTENT.terms.text}
+              {content.terms.text}
             </div>
           </div>
         )}
@@ -368,14 +387,14 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
               <Cookie className="w-7 h-7 text-amber-500" />
               <div>
                 <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-                  {STATIC_CONTENT.cookies.title}
+                  {content.cookies.title}
                 </h1>
-                <span className="text-xs text-slate-400">آخر تحديث: {STATIC_CONTENT.cookies.updatedAt}</span>
+                <span className="text-xs text-slate-400">{language === 'ar' ? 'آخر تحديث' : 'Last updated'}: {content.cookies.updatedAt}</span>
               </div>
             </div>
 
             <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-              {STATIC_CONTENT.cookies.text}
+              {content.cookies.text}
             </p>
           </div>
         )}

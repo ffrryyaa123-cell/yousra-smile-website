@@ -106,7 +106,7 @@ export const Header: React.FC = () => {
                 target="_blank" 
                 rel="noreferrer"
                 className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
-                title="قناة يوتيوب"
+                title={language === 'ar' ? 'قناة يوتيوب' : 'YouTube channel'}
               >
                 <Youtube className="w-3 h-3 text-red-500" />
                 <span>{language === 'ar' ? 'يوتيوب' : 'YouTube'}</span>
@@ -116,7 +116,7 @@ export const Header: React.FC = () => {
                 target="_blank" 
                 rel="noreferrer"
                 className="bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 border border-pink-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
-                title="حساب تيك توك"
+                title={language === 'ar' ? 'حساب تيك توك' : 'TikTok account'}
               >
                 <Video className="w-3 h-3 text-pink-400" />
                 <span>{language === 'ar' ? 'تيك توك' : 'TikTok'}</span>
@@ -207,7 +207,9 @@ export const Header: React.FC = () => {
             </div>
             <div className={`hidden sm:block font-['Cairo'] ${language === 'ar' ? 'text-right' : 'text-left'}`}>
               <div className="flex items-center gap-1.5">
-                <span className="font-black text-amber-300 text-sm sm:text-base leading-none block">{siteSettings.siteName || t.siteTitle}</span>
+                <span className="font-black text-amber-300 text-sm sm:text-base leading-none block">
+                  {language === 'en' ? 'Yousra Smile' : (siteSettings.siteName || t.siteTitle)}
+                </span>
                 <span className="inline-flex items-center gap-0.5 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full text-[10px] font-extrabold leading-none shadow-sm">
                   <ShieldCheck className="w-3 h-3 text-emerald-400" />
                   {language === 'ar' ? 'نعم - موثوق' : 'Yes - Verified'}
@@ -265,13 +267,13 @@ export const Header: React.FC = () => {
                     >
                       <img 
                         src={product.image} 
-                        alt={product.titleAr} 
+                        alt={language === 'en' ? (product.titleEn || product.brand) : product.titleAr}
                         referrerPolicy="no-referrer"
                         className="w-10 h-10 rounded-lg object-cover bg-slate-800 shrink-0 border border-slate-700" 
                       />
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-bold truncate text-slate-100 font-['Tajawal']">
-                          {language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr}
+                          {language === 'en' ? (product.titleEn || product.brand) : product.titleAr}
                         </div>
                         <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
                           <span className="text-amber-400 font-bold">{product.brand}</span>
@@ -536,14 +538,16 @@ export const Header: React.FC = () => {
               <div className="flex items-center gap-3">
                 <img src={siteSettings.siteLogo || logoImg} alt="Yousra Smile" className="w-10 h-10 rounded-xl border border-amber-400/50 shadow" referrerPolicy="no-referrer" />
                 <div>
-                  <span className="font-extrabold text-white text-base block font-['Cairo']">{siteSettings.siteName || t.siteTitle}</span>
+                  <span className="font-extrabold text-white text-base block font-['Cairo']">
+                    {language === 'en' ? 'Yousra Smile' : (siteSettings.siteName || t.siteTitle)}
+                  </span>
                   <span className="text-[11px] text-amber-300 font-['Tajawal']">{language === 'ar' ? 'التصفح المنسدل والتسهيلات' : 'Dropdown Navigation & Services'}</span>
                 </div>
               </div>
               <button 
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2 text-slate-300 hover:text-white bg-slate-800/80 rounded-xl transition-colors cursor-pointer border border-amber-400/30"
-                title="إغلاق"
+                title={language === 'ar' ? 'إغلاق' : 'Close'}
               >
                 <X className="w-6 h-6 text-amber-300" />
               </button>

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Product, PageView, VideoReview, PriceAlert, CartItem, SiteSettings, BlogPost, Category } from '../types';
 import { INITIAL_PRODUCTS } from '../data/initialProducts';
+import { applyEnglishProductContent } from '../data/productEnglishContent';
 import { SAMPLE_VIDEOS } from '../data/sampleVideos';
 import { SAMPLE_BLOG_POSTS } from '../data/blogPosts';
 import { CATEGORIES as FALLBACK_CATEGORIES } from '../data/categories';
@@ -120,6 +121,10 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   contactEmail: 'contact@yousrasmile.com'
 };
 
+const LOCALIZED_INITIAL_PRODUCTS = INITIAL_PRODUCTS.map(applyEnglishProductContent);
+const INITIAL_PRODUCTS_BY_ID = new Map(LOCALIZED_INITIAL_PRODUCTS.map(product => [product.id, product]));
+const SAMPLE_VIDEOS_BY_ID = new Map(SAMPLE_VIDEOS.map(video => [video.id, video]));
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [categories, setCategories] = useState<Category[]>(FALLBACK_CATEGORIES);
 
@@ -129,16 +134,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((p: Product) => ({
-            ...p,
-            amazonUrl: p.amazonUrl ? p.amazonUrl.replace('amazon.sa', 'amazon.com') : p.amazonUrl
-          }));
+          return parsed.map((p: Product) => {
+            const fallback = INITIAL_PRODUCTS_BY_ID.get(p.id);
+            return applyEnglishProductContent({
+              ...fallback,
+              ...p,
+              currency: 'SAR',
+              amazonUrl: p.amazonUrl ? p.amazonUrl.replace('amazon.sa', 'amazon.com') : p.amazonUrl
+            } as Product);
+          });
         }
       }
     } catch (e) {
       console.error('Error loading products from localStorage:', e);
     }
-    return INITIAL_PRODUCTS;
+    return LOCALIZED_INITIAL_PRODUCTS;
   });
 
   const [videos, setVideos] = useState<VideoReview[]>(() => {
@@ -146,7 +156,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = localStorage.getItem(LOCAL_STORAGE_VIDEOS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((video: VideoReview) => ({
+            ...SAMPLE_VIDEOS_BY_ID.get(video.id),
+            ...video
+          }));
+        }
       }
     } catch (e) {
       console.error('Error loading videos from localStorage:', e);
@@ -559,7 +574,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const closePriceAlertModal = () => setAlertModalProduct(null);
 
   const addPriceAlert = (product: Product, email: string, targetPrice?: number) => {
-    const title = language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr;
+    const title = language === 'en' ? (product.titleEn || product.brand) : product.titleAr;
     const newAlert: PriceAlert = {
       id: `alert-${Date.now()}`,
       productId: product.id,
@@ -567,7 +582,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       productImage: product.image,
       currentPrice: product.discountPrice,
       targetPrice: targetPrice || Math.round(product.discountPrice * 0.9),
-      currency: product.currency,
+      currency,
       email: email,
       createdAt: new Date().toISOString().split('T')[0],
       isActive: true
@@ -593,7 +608,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...videoData,
       id: `v-${Date.now()}`,
       views: '1.2K',
-      date: 'اليوم'
+      viewsEn: '1.2K views',
+      date: 'اليوم',
+      dateEn: 'Today'
     };
     setVideos(prev => [newVideo, ...prev]);
   };

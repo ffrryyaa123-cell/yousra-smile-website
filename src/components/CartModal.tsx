@@ -119,7 +119,7 @@ export const CartModal: React.FC = () => {
               </div>
 
               {cartItems.map(({ productId, quantity, product }) => {
-                const title = language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr;
+                const title = language === 'en' ? (product.titleEn || product.brand) : product.titleAr;
                 const priceObj = formatPriceObject(product.discountPrice * quantity);
                 const unitPriceObj = formatPriceObject(product.discountPrice);
 

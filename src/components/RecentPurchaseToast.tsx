@@ -3,11 +3,11 @@ import { ShoppingBag, Eye, X, CheckCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const NOTIFICATIONS = [
-  { name: 'أحمد ن.', city: 'الرياض', action: 'تحقق من سعر', item: 'Roborock S8 Pro Ultra', time: 'قبل 3 دقائق' },
-  { name: 'سارة م.', city: 'جدة', action: 'اشترت من أمازون', item: 'Dyson Airwrap Multi-Styler', time: 'قبل 7 دقائق' },
-  { name: 'فهد ع.', city: 'الدمام', action: 'قارن أسعار', item: 'Tineco Floor One S5', time: 'قبل 12 دقيقة' },
-  { name: 'ريم ك.', city: 'دبي', action: 'شاهدت مراجعة', item: 'Cosori Dual Blaze 6.8L', time: 'قبل 15 دقيقة' },
-  { name: 'محمد ح.', city: 'الكويت', action: 'أضاف للسلة', item: 'Dreame L20 Ultra', time: 'قبل 20 دقيقة' },
+  { nameAr: 'أحمد ن.', nameEn: 'Ahmed N.', cityAr: 'الرياض', cityEn: 'Riyadh', actionAr: 'تحقق من سعر', actionEn: 'checked the price of', item: 'Roborock S8 Pro Ultra', timeAr: 'قبل 3 دقائق', timeEn: '3 minutes ago' },
+  { nameAr: 'سارة م.', nameEn: 'Sarah M.', cityAr: 'جدة', cityEn: 'Jeddah', actionAr: 'اشترت من أمازون', actionEn: 'bought on Amazon', item: 'Dyson Airwrap Multi-Styler', timeAr: 'قبل 7 دقائق', timeEn: '7 minutes ago' },
+  { nameAr: 'فهد ع.', nameEn: 'Fahad A.', cityAr: 'الدمام', cityEn: 'Dammam', actionAr: 'قارن أسعار', actionEn: 'compared prices for', item: 'Tineco Floor One S5', timeAr: 'قبل 12 دقيقة', timeEn: '12 minutes ago' },
+  { nameAr: 'ريم ك.', nameEn: 'Reem K.', cityAr: 'دبي', cityEn: 'Dubai', actionAr: 'شاهدت مراجعة', actionEn: 'watched a review of', item: 'Cosori Dual Blaze 6.8L', timeAr: 'قبل 15 دقيقة', timeEn: '15 minutes ago' },
+  { nameAr: 'محمد ح.', nameEn: 'Mohammed H.', cityAr: 'الكويت', cityEn: 'Kuwait', actionAr: 'أضاف للسلة', actionEn: 'added to cart', item: 'Dreame L20 Ultra', timeAr: 'قبل 20 دقيقة', timeEn: '20 minutes ago' },
 ];
 
 export const RecentPurchaseToast: React.FC = () => {
@@ -52,19 +52,19 @@ export const RecentPurchaseToast: React.FC = () => {
       <div className="flex-1 min-w-0 text-xs">
         <div className="flex items-center justify-between gap-1">
           <span className="font-bold text-amber-300 truncate">
-            {current.name} ({current.city})
+            {language === 'ar' ? current.nameAr : current.nameEn} ({language === 'ar' ? current.cityAr : current.cityEn})
           </span>
-          <span className="text-[10px] text-slate-400 shrink-0">{current.time}</span>
+          <span className="text-[10px] text-slate-400 shrink-0">{language === 'ar' ? current.timeAr : current.timeEn}</span>
         </div>
         <p className="text-slate-300 truncate mt-0.5 font-['Cairo']">
-          {current.action} <span className="font-semibold text-white">{current.item}</span>
+          {language === 'ar' ? current.actionAr : current.actionEn} <span className="font-semibold text-white">{current.item}</span>
         </p>
       </div>
 
       <button
         onClick={() => setDismissed(true)}
         className="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition-colors"
-        title="إغلاق الإشعار"
+        title={language === 'ar' ? 'إغلاق الإشعار' : 'Close notification'}
       >
         <X className="w-3.5 h-3.5" />
       </button>

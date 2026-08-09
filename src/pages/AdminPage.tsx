@@ -248,9 +248,12 @@ export const AdminPage: React.FC = () => {
     titleAr: '',
     titleEn: '',
     description: '',
+    descriptionEn: '',
     longDescription: '',
+    longDescriptionEn: '',
     category: 'smart-home' as any,
     subcategory: 'المكانس الروبوتية',
+    subcategoryEn: 'Robot Vacuums',
     brand: '',
     image: '',
     imagesStr: '',
@@ -261,11 +264,15 @@ export const AdminPage: React.FC = () => {
     aliexpressUrl: '',
     originalPrice: 1000,
     discountPrice: 750,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.8,
     reviewCount: 150,
     featuresStr: '',
+    featuresEnStr: '',
     keywordsStr: '',
+    keywordsEnStr: '',
+    specsArStr: '',
+    specsEnStr: '',
     isFeatured: false,
     isTopSelling: false,
     isHidden: false
@@ -340,9 +347,12 @@ export const AdminPage: React.FC = () => {
       titleAr: aiGeneratedResult.seoTitle || '',
       titleEn: aiProductName || '',
       description: aiGeneratedResult.productDescription || '',
+      descriptionEn: '',
       longDescription: aiGeneratedResult.longDescription || '',
+      longDescriptionEn: '',
       category: (aiProductCategory as any) || 'smart-home',
       subcategory: 'منتجات ذكية مميزة',
+      subcategoryEn: 'Featured Smart Products',
       brand: 'يسرى سمايل الذكي',
       image: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80',
       imagesStr: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80',
@@ -357,7 +367,11 @@ export const AdminPage: React.FC = () => {
       rating: 5.0,
       reviewCount: 1,
       featuresStr: (aiGeneratedResult.tags || []).join(', '),
+      featuresEnStr: '',
       keywordsStr: (aiGeneratedResult.keywords || []).join(', '),
+      keywordsEnStr: '',
+      specsArStr: 'الضمان: سنتان شاملتان',
+      specsEnStr: 'Warranty: 2-year comprehensive warranty',
       isFeatured: true,
       isTopSelling: false,
       isHidden: false
@@ -373,9 +387,12 @@ export const AdminPage: React.FC = () => {
       titleAr: '',
       titleEn: '',
       description: '',
+      descriptionEn: '',
       longDescription: '',
+      longDescriptionEn: '',
       category: 'smart-home',
       subcategory: 'المكانس الروبوتية',
+      subcategoryEn: 'Robot Vacuums',
       brand: brandsList[0] || 'Roborock',
       image: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80',
       imagesStr: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80',
@@ -386,11 +403,15 @@ export const AdminPage: React.FC = () => {
       aliexpressUrl: '',
       originalPrice: 1200,
       discountPrice: 899,
-      currency: 'رس',
+      currency: 'SAR',
       rating: 4.9,
       reviewCount: 95,
       featuresStr: 'تحكم ذكي بالهاتف, تنظيف ذاتي متطور, محرك نفاث قوي',
+      featuresEnStr: 'Smart app control, Advanced self-cleaning, Powerful motor',
       keywordsStr: 'سمارت هوم, تنظيف, ذكي',
+      keywordsEnStr: 'smart home, cleaning, smart device',
+      specsArStr: 'الضمان: سنتان شاملتان',
+      specsEnStr: 'Warranty: 2-year comprehensive warranty',
       isFeatured: true,
       isTopSelling: false,
       isHidden: false
@@ -404,9 +425,12 @@ export const AdminPage: React.FC = () => {
       titleAr: prod.titleAr,
       titleEn: prod.titleEn,
       description: prod.description,
+      descriptionEn: prod.descriptionEn || '',
       longDescription: prod.longDescription || '',
+      longDescriptionEn: prod.longDescriptionEn || '',
       category: prod.category,
       subcategory: prod.subcategory,
+      subcategoryEn: prod.subcategoryEn || '',
       brand: prod.brand,
       image: prod.image,
       imagesStr: prod.images ? prod.images.join(', ') : prod.image,
@@ -417,11 +441,15 @@ export const AdminPage: React.FC = () => {
       aliexpressUrl: prod.aliexpressUrl || '',
       originalPrice: prod.originalPrice,
       discountPrice: prod.discountPrice,
-      currency: prod.currency || 'رس',
+      currency: 'SAR',
       rating: prod.rating,
       reviewCount: prod.reviewCount,
       featuresStr: prod.features ? prod.features.join(', ') : '',
+      featuresEnStr: prod.featuresEn ? prod.featuresEn.join(', ') : '',
       keywordsStr: prod.keywords ? prod.keywords.join(', ') : '',
+      keywordsEnStr: prod.keywordsEn ? prod.keywordsEn.join(', ') : '',
+      specsArStr: prod.specs ? Object.entries(prod.specs).map(([key, value]) => `${key}: ${value}`).join('\n') : '',
+      specsEnStr: prod.specsEn ? Object.entries(prod.specsEn).map(([key, value]) => `${key}: ${value}`).join('\n') : '',
       isFeatured: !!prod.isFeatured,
       isTopSelling: !!prod.isTopSelling,
       isHidden: !!prod.isHidden
@@ -457,6 +485,7 @@ export const AdminPage: React.FC = () => {
     setTimeout(() => {
       const brand = formData.brand || 'Dyson';
       const sub = formData.subcategory || 'المكانس الذكية';
+      const subEn = formData.subcategoryEn || 'Smart Products';
       
       const generatedTitleAr = formData.titleAr || `جهاز ${brand} ${sub} الفاخر الإصدار المطور 2026`;
       const generatedTitleEn = formData.titleEn || `${brand} Premium ${sub} 2026 Edition`;
@@ -466,9 +495,13 @@ export const AdminPage: React.FC = () => {
         titleAr: generatedTitleAr,
         titleEn: generatedTitleEn,
         description: `أحدث جهاز ${brand} الذكي بتقنيات استشعار فائقة وتصميم عصري موفر للطاقة يمنحك نتائج احترافية في ثوانٍ.`,
+        descriptionEn: `A premium ${brand} smart product with advanced sensing, an energy-efficient modern design, and reliable everyday performance.`,
         longDescription: `يُعد جهاز ${brand} في فئة ${sub} الخيار الأول للباحثين عن الراحة والرفاهية المنزلية. تم تصميمه بتكنولوجيا متقدمة تضمن أداءً استثنائياً مع تحكم كامل عبر التطبيق الذكي ونظام أمان متكامل. يضمن لك التوفير في استهلاك الكهرباء والمحافظة على البيئة.`,
+        longDescriptionEn: `This ${brand} ${subEn} product is designed for comfort and dependable daily use. Advanced technology, intuitive controls, and integrated safety features provide consistent performance while supporting efficient energy use.`,
         featuresStr: `تقنية ذكية فائقة الأداء, موفر للطاقة بضمان سنتين, تصميم مريح وسهل الاستخدام, متوافق مع المساعد الصوتي, تنظيف وصيانة آلية`,
+        featuresEnStr: `High-performance smart technology, Energy efficient with a 2-year warranty, Comfortable and easy to use, Voice-assistant compatible, Automated cleaning and maintenance`,
         keywordsStr: `${brand}, ${sub}, عروض_أمازون, أجهزة_منزلية, تسويق_أفلييت, يسرى_سمايل`,
+        keywordsEnStr: `${brand}, ${subEn}, Amazon deals, smart devices, affiliate shopping, Yousra Smile`,
         rating: 4.9,
         reviewCount: 185
       }));
@@ -493,9 +526,34 @@ export const AdminPage: React.FC = () => {
       ? formData.featuresStr.split(',').map(s => s.trim()).filter(Boolean) 
       : [];
 
+    const featuresEnArray = formData.featuresEnStr
+      ? formData.featuresEnStr.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
     const keywordsArray = formData.keywordsStr 
       ? formData.keywordsStr.split(',').map(s => s.trim()).filter(Boolean) 
       : [];
+
+    const keywordsEnArray = formData.keywordsEnStr
+      ? formData.keywordsEnStr.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
+    const parseSpecs = (raw: string): Record<string, string> => raw
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+      .reduce<Record<string, string>>((result, line) => {
+        const separatorIndex = line.indexOf(':');
+        if (separatorIndex > 0) {
+          const key = line.slice(0, separatorIndex).trim();
+          const value = line.slice(separatorIndex + 1).trim();
+          if (key && value) result[key] = value;
+        }
+        return result;
+      }, {});
+
+    const specsAr = parseSpecs(formData.specsArStr);
+    const specsEn = parseSpecs(formData.specsEnStr);
 
     if (editingProduct) {
       updateProduct({
@@ -503,9 +561,12 @@ export const AdminPage: React.FC = () => {
         titleAr: formData.titleAr,
         titleEn: formData.titleEn,
         description: formData.description,
+        descriptionEn: formData.descriptionEn,
         longDescription: formData.longDescription,
+        longDescriptionEn: formData.longDescriptionEn,
         category: formData.category,
         subcategory: formData.subcategory,
+        subcategoryEn: formData.subcategoryEn,
         brand: formData.brand,
         image: formData.image,
         images: imagesArray,
@@ -521,8 +582,11 @@ export const AdminPage: React.FC = () => {
         rating: Number(formData.rating),
         reviewCount: Number(formData.reviewCount),
         features: featuresArray,
-        specs: editingProduct.specs || { 'الضمان': 'سنتان' },
+        featuresEn: featuresEnArray,
+        specs: Object.keys(specsAr).length ? specsAr : (editingProduct.specs || { 'الضمان': 'سنتان' }),
+        specsEn: Object.keys(specsEn).length ? specsEn : (editingProduct.specsEn || { 'Warranty': '2 years' }),
         keywords: keywordsArray,
+        keywordsEn: keywordsEnArray,
         isFeatured: formData.isFeatured,
         isTopSelling: formData.isTopSelling,
         isHidden: formData.isHidden
@@ -532,9 +596,12 @@ export const AdminPage: React.FC = () => {
         titleAr: formData.titleAr,
         titleEn: formData.titleEn,
         description: formData.description,
+        descriptionEn: formData.descriptionEn,
         longDescription: formData.longDescription,
+        longDescriptionEn: formData.longDescriptionEn,
         category: formData.category,
         subcategory: formData.subcategory,
+        subcategoryEn: formData.subcategoryEn,
         brand: formData.brand,
         image: formData.image,
         images: imagesArray,
@@ -550,8 +617,11 @@ export const AdminPage: React.FC = () => {
         rating: Number(formData.rating),
         reviewCount: Number(formData.reviewCount),
         features: featuresArray,
-        specs: { 'الضمان': 'سنتان شاملتان' },
+        featuresEn: featuresEnArray,
+        specs: Object.keys(specsAr).length ? specsAr : { 'الضمان': 'سنتان شاملتان' },
+        specsEn: Object.keys(specsEn).length ? specsEn : { 'Warranty': '2-year comprehensive warranty' },
         keywords: keywordsArray,
+        keywordsEn: keywordsEnArray,
         isFeatured: formData.isFeatured,
         isTopSelling: formData.isTopSelling,
         isHidden: formData.isHidden
@@ -2043,9 +2113,10 @@ export const AdminPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">الاسم بالإنجليزية</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">الاسم بالإنجليزية *</label>
                   <input 
                     type="text" 
+                    required
                     value={formData.titleEn}
                     onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
@@ -2053,7 +2124,7 @@ export const AdminPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">القسم الرئيسي *</label>
                   <select 
@@ -2074,6 +2145,18 @@ export const AdminPage: React.FC = () => {
                     value={formData.subcategory}
                     onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">الفرع بالإنجليزية *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.subcategoryEn}
+                    onChange={(e) => setFormData({ ...formData, subcategoryEn: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+                    dir="ltr"
                   />
                 </div>
 
@@ -2103,12 +2186,36 @@ export const AdminPage: React.FC = () => {
               </div>
 
               <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">الوصف التسويقي المختصر بالإنجليزية *</label>
+                <textarea
+                  rows={2}
+                  required
+                  value={formData.descriptionEn}
+                  onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+                  dir="ltr"
+                />
+              </div>
+
+              <div>
                 <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">الوصف التفصيلي (Long Description)</label>
                 <textarea 
                   rows={3}
                   value={formData.longDescription}
                   onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">الوصف التفصيلي بالإنجليزية *</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={formData.longDescriptionEn}
+                  onChange={(e) => setFormData({ ...formData, longDescriptionEn: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+                  dir="ltr"
                 />
               </div>
 
@@ -2137,11 +2244,11 @@ export const AdminPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">العملة</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">عملة السعر الأساسية</label>
                   <input 
                     type="text" 
                     value={formData.currency}
-                    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                    readOnly
                     className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
                   />
                 </div>
@@ -2205,6 +2312,45 @@ export const AdminPage: React.FC = () => {
                   placeholder="مثال: شفط عالي 6000Pa, مسح بالاهتزاز, بطارية قوية"
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
                 />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">المميزات بالإنجليزية * (مفصولة بفواصل ,)</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.featuresEnStr}
+                  onChange={(e) => setFormData({ ...formData, featuresEnStr: e.target.value })}
+                  placeholder="Example: Smart app control, Self-cleaning, Powerful motor"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">المواصفات بالعربية (كل سطر: الاسم: القيمة)</label>
+                  <textarea
+                    rows={4}
+                    value={formData.specsArStr}
+                    onChange={(e) => setFormData({ ...formData, specsArStr: e.target.value })}
+                    placeholder={'الوزن: 6.3 كجم\nالسعة: 6.4 لتر'}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">المواصفات بالإنجليزية * (Name: Value)</label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={formData.specsEnStr}
+                    onChange={(e) => setFormData({ ...formData, specsEnStr: e.target.value })}
+                    placeholder={'Weight: 6.3 kg\nCapacity: 6.4 L'}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5"
+                    dir="ltr"
+                  />
+                </div>
               </div>
 
               {/* Toggles */}

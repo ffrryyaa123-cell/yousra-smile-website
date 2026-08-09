@@ -24,7 +24,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 4899,
     discountPrice: 3699,
     discountPercent: 24,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.9,
     reviewCount: 342,
     features: [
@@ -69,7 +69,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 899,
     discountPrice: 599,
     discountPercent: 33,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.8,
     reviewCount: 890,
     features: [
@@ -112,7 +112,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 6200,
     discountPrice: 4999,
     discountPercent: 19,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.9,
     reviewCount: 412,
     features: [
@@ -156,7 +156,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 4500,
     discountPrice: 3290,
     discountPercent: 27,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.7,
     reviewCount: 156,
     features: [
@@ -198,7 +198,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 1699,
     discountPrice: 1299,
     discountPercent: 24,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.9,
     reviewCount: 1240,
     features: [
@@ -243,7 +243,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 2699,
     discountPrice: 2249,
     discountPercent: 17,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.9,
     reviewCount: 978,
     features: [
@@ -284,7 +284,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 480,
     discountPrice: 350,
     discountPercent: 27,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.8,
     reviewCount: 310,
     features: [
@@ -325,7 +325,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 850,
     discountPrice: 599,
     discountPercent: 30,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.8,
     reviewCount: 520,
     features: [
@@ -365,7 +365,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 1999,
     discountPrice: 1649,
     discountPercent: 18,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.9,
     reviewCount: 2100,
     features: [
@@ -406,7 +406,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 1150,
     discountPrice: 799,
     discountPercent: 30,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.8,
     reviewCount: 1650,
     features: [
@@ -446,7 +446,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 240,
     discountPrice: 149,
     discountPercent: 38,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.7,
     reviewCount: 420,
     features: [
@@ -486,7 +486,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     originalPrice: 2499,
     discountPrice: 1999,
     discountPercent: 20,
-    currency: 'رس',
+    currency: 'SAR',
     rating: 4.9,
     reviewCount: 380,
     features: [

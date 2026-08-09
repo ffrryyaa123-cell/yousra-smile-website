@@ -39,7 +39,7 @@ export const Footer: React.FC = () => {
       setSubscribed(true);
       setEmailInput('');
     } catch (error) {
-      setSubscribeError(error instanceof Error ? error.message : 'تعذر تسجيل الاشتراك الآن.');
+      setSubscribeError(error instanceof Error ? error.message : (language === 'ar' ? 'تعذر تسجيل الاشتراك الآن.' : 'Unable to subscribe right now.'));
     } finally {
       setSubscribing(false);
     }

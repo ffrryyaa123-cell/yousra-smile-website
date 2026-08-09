@@ -73,9 +73,11 @@ export const ProductsPage: React.FC = () => {
         const titleArMatch = product.titleAr.toLowerCase().includes(query);
         const titleEnMatch = product.titleEn.toLowerCase().includes(query);
         const descMatch = product.description.toLowerCase().includes(query);
+        const descEnMatch = product.descriptionEn?.toLowerCase().includes(query) || false;
         const brandMatch = product.brand.toLowerCase().includes(query);
         const keywordMatch = product.keywords && product.keywords.some(k => k.toLowerCase().includes(query));
-        if (!titleArMatch && !titleEnMatch && !descMatch && !brandMatch && !keywordMatch) return false;
+        const keywordEnMatch = product.keywordsEn?.some(k => k.toLowerCase().includes(query)) || false;
+        if (!titleArMatch && !titleEnMatch && !descMatch && !descEnMatch && !brandMatch && !keywordMatch && !keywordEnMatch) return false;
       }
 
       // Category
@@ -133,13 +135,15 @@ export const ProductsPage: React.FC = () => {
       <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <span className="text-xs font-bold text-purple-400 bg-purple-950/80 px-3 py-1 rounded-lg">
-            دليل التسويق بالعمولة
+            {language === 'ar' ? 'دليل التسويق بالعمولة' : 'Affiliate Shopping Guide'}
           </span>
           <h1 className="text-2xl sm:text-3xl font-black font-['Tajawal'] mt-2">
             {categoryTitle}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            تم العثور على {filteredProducts.length} منتج متاح بخصومات وروابط مباشرة
+            {language === 'ar'
+              ? `تم العثور على ${filteredProducts.length} منتج متاح بخصومات وروابط مباشرة`
+              : `${filteredProducts.length} products available with deals and direct links`}
           </p>
         </div>
 
@@ -150,7 +154,7 @@ export const ProductsPage: React.FC = () => {
             className="lg:hidden px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs flex items-center gap-2"
           >
             <SlidersHorizontal className="w-4 h-4" />
-            التصفية والفلترة
+            {language === 'ar' ? 'التصفية والفلترة' : 'Filters'}
           </button>
 
           <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl">
@@ -159,7 +163,7 @@ export const ProductsPage: React.FC = () => {
               className={`p-2 rounded-lg transition-colors ${
                 layout === 'grid' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
-              title="عرض الشبكة"
+              title={language === 'ar' ? 'عرض الشبكة' : 'Grid view'}
             >
               <Grid className="w-4 h-4" />
             </button>
@@ -168,7 +172,7 @@ export const ProductsPage: React.FC = () => {
               className={`p-2 rounded-lg transition-colors ${
                 layout === 'list' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
-              title="عرض القائمة"
+              title={language === 'ar' ? 'عرض القائمة' : 'List view'}
             >
               <List className="w-4 h-4" />
             </button>
@@ -195,7 +199,9 @@ export const ProductsPage: React.FC = () => {
           <div className="bg-gradient-to-r from-amber-500/15 via-purple-950/80 to-amber-500/15 border border-amber-500/40 rounded-2xl p-3.5 text-center text-xs sm:text-sm font-bold text-amber-200 font-['Tajawal'] flex items-center justify-center gap-2 shadow-xl backdrop-blur-md">
             <span className="text-amber-400 text-base">🔥</span>
             <span>
-              يتم تحديث أفضل العروض يوميًا من Amazon وAliExpress، وقد تتغير الأسعار حسب التوفر.
+              {language === 'ar'
+                ? 'يتم تحديث أفضل العروض يوميًا من Amazon وAliExpress، وقد تتغير الأسعار حسب التوفر.'
+                : 'Top deals are updated daily from Amazon and AliExpress; prices may change based on availability.'}
             </span>
           </div>
 
@@ -203,23 +209,27 @@ export const ProductsPage: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">الترتيب حسب:</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">
+                {language === 'ar' ? 'الترتيب حسب:' : 'Sort by:'}
+              </span>
               <select
                 value={filters.sortBy}
                 onChange={(e) => handleFilterChange({ sortBy: e.target.value as any })}
                 className="w-full sm:w-auto bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-purple-500 font-semibold"
               >
-                <option value="latest">الأحدث نزوَلاً</option>
-                <option value="rating">الأعلى تقييمًا (★ 5.0)</option>
-                <option value="best-selling">الأكثر مبيعًا وطلباً</option>
-                <option value="highest-discount">الأعلى نسبة خصم</option>
-                <option value="price-low">السعر: من الأرخص للأغلى</option>
-                <option value="price-high">السعر: من الأغلى للأرخص</option>
+                <option value="latest">{language === 'ar' ? 'الأحدث نزوَلاً' : 'Newest'}</option>
+                <option value="rating">{language === 'ar' ? 'الأعلى تقييمًا (★ 5.0)' : 'Highest rated (★ 5.0)'}</option>
+                <option value="best-selling">{language === 'ar' ? 'الأكثر مبيعًا وطلباً' : 'Best selling'}</option>
+                <option value="highest-discount">{language === 'ar' ? 'الأعلى نسبة خصم' : 'Biggest discount'}</option>
+                <option value="price-low">{language === 'ar' ? 'السعر: من الأرخص للأغلى' : 'Price: Low to high'}</option>
+                <option value="price-high">{language === 'ar' ? 'السعر: من الأغلى للأرخص' : 'Price: High to low'}</option>
               </select>
             </div>
 
             <div className="text-xs text-slate-400">
-              يعرض <strong className="text-purple-600 dark:text-purple-400">{filteredProducts.length}</strong> من إجمالي {products.length} منتجات
+              {language === 'ar' ? 'يعرض' : 'Showing'}{' '}
+              <strong className="text-purple-600 dark:text-purple-400">{filteredProducts.length}</strong>{' '}
+              {language === 'ar' ? `من إجمالي ${products.length} منتجات` : `of ${products.length} products`}
             </div>
           </div>
 
@@ -260,15 +270,15 @@ export const ProductsPage: React.FC = () => {
                     }`}
                   >
                     <ChevronRight className="w-4 h-4" />
-                    <span>السابق</span>
+                    <span>{language === 'ar' ? 'السابق' : 'Previous'}</span>
                   </button>
 
                   <div className="flex items-center gap-1.5 font-['Tajawal'] text-xs font-bold text-slate-700 dark:text-slate-300">
-                    <span>الصفحة</span>
+                    <span>{language === 'ar' ? 'الصفحة' : 'Page'}</span>
                     <span className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center font-mono">
                       {currentPage}
                     </span>
-                    <span>من</span>
+                    <span>{language === 'ar' ? 'من' : 'of'}</span>
                     <span className="font-mono">{totalPages}</span>
                   </div>
 
@@ -281,7 +291,7 @@ export const ProductsPage: React.FC = () => {
                         : 'bg-purple-600 hover:bg-purple-700 text-white shadow-md cursor-pointer'
                     }`}
                   >
-                    <span>التالي</span>
+                    <span>{language === 'ar' ? 'التالي' : 'Next'}</span>
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                 </div>
@@ -291,16 +301,18 @@ export const ProductsPage: React.FC = () => {
             <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-4">
               <PackageX className="w-16 h-16 text-slate-400 mx-auto" />
               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 font-['Tajawal']">
-                لم نجد أي منتجات تطابق معايير البحث الحالية!
+                {language === 'ar' ? 'لم نجد أي منتجات تطابق معايير البحث الحالية!' : 'No products match your current search.'}
               </h3>
               <p className="text-xs text-slate-500 max-w-md mx-auto">
-                جرّبي تغيير كلمات البحث أو إعادة ضبط خيارات تصفية الأسعار والأقسام لنتائج أفضل.
+                {language === 'ar'
+                  ? 'جرّب تغيير كلمات البحث أو إعادة ضبط خيارات تصفية الأسعار والأقسام لنتائج أفضل.'
+                  : 'Try different search terms or reset the price and category filters.'}
               </p>
               <button
                 onClick={handleResetFilters}
                 className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition-colors"
               >
-                إعادة ضبط جميع الفلاتر
+                {language === 'ar' ? 'إعادة ضبط جميع الفلاتر' : 'Reset all filters'}
               </button>
             </div>
           )}

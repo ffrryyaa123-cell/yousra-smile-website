@@ -16,7 +16,7 @@ interface VideoImportModalProps {
 }
 
 export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onClose }) => {
-  const { products, addVideo, language } = useApp();
+  const { products, addVideo, language, formatPrice } = useApp();
 
   const [videoUrl, setVideoUrl] = useState('');
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id || '');
@@ -65,12 +65,18 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
     addVideo({
       productId: linkedProd.id,
       productTitle: linkedProd.titleAr,
+      productTitleEn: linkedProd.titleEn || linkedProd.brand,
       productImage: linkedProd.image,
       thumbnailUrl: linkedProd.image,
       platform,
       embedId,
       videoUrl: videoUrl.trim(),
-      title: customTitle.trim() || `مراجعة شاملة لمنتج ${linkedProd.titleAr}`,
+      title: language === 'ar' && customTitle.trim()
+        ? customTitle.trim()
+        : `مراجعة شاملة لمنتج ${linkedProd.titleAr}`,
+      titleEn: language === 'en' && customTitle.trim()
+        ? customTitle.trim()
+        : `Product Review: ${linkedProd.titleEn || linkedProd.brand}`,
       duration: customDuration || '03:15'
     });
 
@@ -187,7 +193,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
               >
                 {products.map(p => (
                   <option key={p.id} value={p.id}>
-                    {p.titleAr} ({p.brand}) - {p.discountPrice} {p.currency}
+                    {language === 'en' ? (p.titleEn || p.brand) : p.titleAr} ({p.brand}) - {formatPrice(p.discountPrice)}
                   </option>
                 ))}
               </select>
@@ -202,7 +208,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
                 type="text" 
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
-                placeholder="مثال: تجربة عملية واستعراض لأهم مميزات الجهاز"
+                placeholder={language === 'ar' ? 'مثال: تجربة عملية واستعراض لأهم مميزات الجهاز' : 'Example: Hands-on test and key features'}
                 className="w-full bg-slate-950 border border-white/15 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 font-['Tajawal']"
               />
             </div>
@@ -235,7 +241,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
               onClick={onClose}
               className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-300 transition-colors cursor-pointer"
             >
-              إلغاء
+              {language === 'ar' ? 'إلغاء' : 'Cancel'}
             </button>
 
             <button
@@ -246,12 +252,12 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
               {isSuccess ? (
                 <>
                   <CheckCircle2 className="w-4 h-4 text-slate-950" />
-                  <span>تمت إضافته بنجاح!</span>
+                  <span>{language === 'ar' ? 'تمت إضافته بنجاح!' : 'Added successfully!'}</span>
                 </>
               ) : (
                 <>
                   <Plus className="w-4 h-4 text-slate-950" />
-                  <span>استيراد وربط الفيديو 🚀</span>
+                  <span>{language === 'ar' ? 'استيراد وربط الفيديو 🚀' : 'Import & Link Video 🚀'}</span>
                 </>
               )}
             </button>

@@ -95,7 +95,7 @@ export const PriceHistoryChart: React.FC<PriceHistoryChartProps> = ({ product })
           </div>
           {data.isCurrent && (
             <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-md inline-block font-bold">
-              🔥 السعر الأفضل حالياً!
+              {language === 'en' ? '🔥 Best price right now!' : '🔥 السعر الأفضل حالياً!'}
             </span>
           )}
         </div>
@@ -189,7 +189,7 @@ export const PriceHistoryChart: React.FC<PriceHistoryChartProps> = ({ product })
             {language === 'en' ? 'Your Savings' : 'مجموع توفيرك الآن'}
           </span>
           <div className="text-base font-black text-emerald-400">
-            {totalSaved > 0 ? formatPrice(totalSaved) : 'أفضل سعر!'}
+            {totalSaved > 0 ? formatPrice(totalSaved) : (language === 'en' ? 'Best price!' : 'أفضل سعر!')}
           </div>
         </div>
       </div>
