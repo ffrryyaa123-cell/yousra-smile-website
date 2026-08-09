@@ -39,7 +39,9 @@ import {
   Wand2,
   Heart,
   MousePointerClick,
-  DollarSign
+  DollarSign,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { VideoImportModal } from '../components/VideoImportModal';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
@@ -80,6 +82,15 @@ export const AdminPage: React.FC = () => {
   const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
   const [passcode, setPasscode] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'messages' | 'analytics' | 'settings'>('overview');
+  const adminTabsRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollAdminTabs = (direction: 'left' | 'right') => {
+    if (!adminTabsRef.current) return;
+    const isRtl = document.documentElement.dir === 'rtl' || language === 'ar';
+    let offset = direction === 'left' ? -280 : 280;
+    if (isRtl) offset = -offset;
+    adminTabsRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+  };
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
@@ -910,7 +921,8 @@ export const AdminPage: React.FC = () => {
       </div>
 
       {/* Navigation Tabs Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200 dark:border-slate-800">
+      <div className="relative">
+      <div ref={adminTabsRef} className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto px-11 pb-2 border-b border-slate-200 dark:border-slate-800 lg:flex-wrap lg:justify-center lg:overflow-visible lg:px-0">
         <button
           onClick={() => setActiveTab('overview')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
@@ -1031,6 +1043,23 @@ export const AdminPage: React.FC = () => {
           <Sparkles className="w-4 h-4 text-purple-500 animate-pulse" />
           <span>🤖 مساعد الذكاء الاصطناعي</span>
         </button>
+      </div>
+      <button
+        type="button"
+        onClick={() => scrollAdminTabs('left')}
+        className="absolute left-0 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-purple-500/40 bg-slate-950/95 text-amber-300 shadow-lg lg:hidden"
+        aria-label="الخيارات السابقة"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => scrollAdminTabs('right')}
+        className="absolute right-0 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-purple-500/40 bg-slate-950/95 text-amber-300 shadow-lg lg:hidden"
+        aria-label="الخيارات التالية"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
       </div>
 
       {/* TAB 1: OVERVIEW & INSTRUCTIONS */}
@@ -1478,12 +1507,23 @@ export const AdminPage: React.FC = () => {
       {/* TAB 7: MESSAGES INBOX */}
       {activeTab === 'messages' && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-6">
-          <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
-            <h3 className="text-lg font-black text-slate-900 dark:text-white font-['Tajawal'] flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-amber-500" />
-              <span>صندوق رسائل نموذج "اتصل بنا" والاستشارات</span>
-            </h3>
-            <p className="text-xs text-slate-400">متابعة رسائل واستفسارات الزوار والرد المباشر عليهم</p>
+          <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white font-['Tajawal'] flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-amber-500" />
+                <span>صندوق رسائل نموذج "اتصل بنا" والاستشارات</span>
+              </h3>
+              <p className="text-xs text-slate-400">يعرض الرسائل المرسلة من نموذج الموقع فقط، وليس البريد الوارد الكامل لحساب Hostinger.</p>
+            </div>
+            <a
+              href="https://mail.hostinger.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-black text-slate-950 transition-colors hover:bg-amber-400"
+            >
+              <ExternalLink className="h-4 w-4" />
+              فتح بريد info في Hostinger
+            </a>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

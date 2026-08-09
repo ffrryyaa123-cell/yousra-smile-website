@@ -325,7 +325,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
             </div>
           </div>
 
-          <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 font-['Tajawal'] leading-tight">
+          <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 font-['Tajawal'] leading-snug">
             {displayTitle}
           </h3>
         </div>

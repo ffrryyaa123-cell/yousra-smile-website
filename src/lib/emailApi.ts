@@ -1,3 +1,5 @@
+import { requireSupabase } from './supabase';
+
 const postJson = async <T>(url: string, body: Record<string, unknown>, token?: string): Promise<T> => {
   const response = await fetch(url, {
     method: 'POST',
@@ -15,16 +17,39 @@ const postJson = async <T>(url: string, body: Record<string, unknown>, token?: s
   return payload as T;
 };
 
-export const submitContactMessage = (body: {
+export const submitContactMessage = async (body: {
   name: string;
   email: string;
   subject: string;
   message: string;
   website?: string;
-}) => postJson<{ success: true; saved?: boolean; emailed?: boolean }>('/api/contact', body);
+}) => {
+  const database = requireSupabase();
+  const { error } = await database.from('contact_messages').insert({
+    name: body.name.trim(),
+    email: body.email.trim().toLowerCase(),
+    subject: body.subject.trim(),
+    message: body.message.trim(),
+    status: 'new',
+  });
 
-export const subscribeToNewsletter = (email: string, website = '') =>
-  postJson<{ success: true; saved?: boolean; emailed?: boolean }>('/api/newsletter', { email, website });
+  if (error) throw new Error(error.message || 'تعذر حفظ الرسالة.');
+  return { success: true as const, saved: true, emailed: false };
+};
+
+export const subscribeToNewsletter = async (email: string, website = '') => {
+  if (website.trim()) return { success: true as const, saved: false, emailed: false };
+
+  const database = requireSupabase();
+  const { error } = await database.from('newsletter_subscribers').insert({
+    email: email.trim().toLowerCase(),
+    status: 'active',
+    source: 'website',
+  });
+
+  if (error && error.code !== '23505') throw new Error(error.message || 'تعذر تسجيل الاشتراك.');
+  return { success: true as const, saved: !error, emailed: false };
+};
 
 export const sendContactReply = (
   body: { messageId: string; message: string },

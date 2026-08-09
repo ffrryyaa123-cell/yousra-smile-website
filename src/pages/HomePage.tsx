@@ -54,6 +54,7 @@ export const HomePage: React.FC = () => {
   const homeCategories = categories.filter(category => category.showOnHome !== false);
 
   const dealsCarouselRef = React.useRef<HTMLDivElement>(null);
+  const videosCarouselRef = React.useRef<HTMLDivElement>(null);
   const topSellingCarouselRef = React.useRef<HTMLDivElement>(null);
 
   const scrollDeals = (direction: 'left' | 'right') => {
@@ -79,6 +80,15 @@ export const HomePage: React.FC = () => {
         offset = -offset;
       }
       container.scrollBy({ left: offset, behavior: 'smooth' });
+    }
+  };
+
+  const scrollVideos = (direction: 'left' | 'right') => {
+    if (videosCarouselRef.current) {
+      const isRtl = document.documentElement.dir === 'rtl' || language === 'ar';
+      let offset = direction === 'left' ? -320 : 320;
+      if (isRtl) offset = -offset;
+      videosCarouselRef.current.scrollBy({ left: offset, behavior: 'smooth' });
     }
   };
 
@@ -290,7 +300,7 @@ export const HomePage: React.FC = () => {
                   </span>
                 </div>
 
-                <h3 className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors font-['Tajawal']">
+                <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors font-['Tajawal']">
                   {catName}
                 </h3>
                 <p className="text-[10px] text-slate-300 line-clamp-1">
@@ -390,13 +400,18 @@ export const HomePage: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-          {SAMPLE_VIDEOS.slice(0, 3).map(video => (
-            <div
-              key={video.id}
-              onClick={() => openVideoModal(video)}
-              className="group bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden hover:shadow-xl hover:border-purple-600 transition-all duration-300 cursor-pointer flex flex-col justify-between"
-            >
+        <div className="relative group/video-carousel">
+          <div
+            ref={videosCarouselRef}
+            className="flex snap-x snap-mandatory gap-3.5 overflow-x-auto scroll-smooth pb-2 md:grid md:grid-cols-3 md:overflow-visible"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {SAMPLE_VIDEOS.slice(0, 3).map(video => (
+              <div
+                key={video.id}
+                onClick={() => openVideoModal(video)}
+                className="group flex w-[84vw] max-w-[360px] shrink-0 snap-start cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 transition-all duration-300 hover:border-purple-600 hover:shadow-xl md:w-auto md:max-w-none"
+              >
               <div className="relative h-40 bg-slate-950 overflow-hidden">
                 <img 
                   src={video.productImage} 
@@ -421,7 +436,7 @@ export const HomePage: React.FC = () => {
                 <span className="text-[11px] font-bold text-amber-300">
                   {language === 'en' ? (video.productTitleEn || 'Product') : video.productTitle}
                 </span>
-                <h3 className="text-xs font-bold text-white line-clamp-2 group-hover:text-amber-400 transition-colors font-['Tajawal']">
+                <h3 className="text-sm font-bold text-white line-clamp-2 group-hover:text-amber-400 transition-colors font-['Tajawal'] leading-snug">
                   {language === 'en' ? (video.titleEn || 'Product Video Review') : video.title}
                 </h3>
                 <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1.5 border-t border-slate-800">
@@ -429,8 +444,25 @@ export const HomePage: React.FC = () => {
                   <span>{language === 'en' ? (video.dateEn || '') : video.date}</span>
                 </div>
               </div>
-            </div>
-          ))}
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => scrollVideos('left')}
+            className="absolute left-2 top-1/2 z-20 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-purple-500/40 bg-slate-950/90 text-amber-300 shadow-lg md:hidden"
+            aria-label={language === 'ar' ? 'الفيديو السابق' : 'Previous video'}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollVideos('right')}
+            className="absolute right-2 top-1/2 z-20 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full border border-purple-500/40 bg-slate-950/90 text-amber-300 shadow-lg md:hidden"
+            aria-label={language === 'ar' ? 'الفيديو التالي' : 'Next video'}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { PlaySquare, Youtube, Video, Sparkles, ExternalLink, ShoppingBag, Pencil, Share2, Plus } from 'lucide-react';
+import { PlaySquare, Youtube, Video, Sparkles, ExternalLink, ShoppingBag, Share2, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { VideoReview } from '../types';
 import { VideoImportModal } from '../components/VideoImportModal';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
@@ -10,6 +10,15 @@ export const VideosPage: React.FC = () => {
   const [platformFilter, setPlatformFilter] = useState<'all' | 'youtube' | 'tiktok' | 'pinterest'>('all');
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedExportVideo, setSelectedExportVideo] = useState<VideoReview | null>(null);
+  const videosScrollerRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollVideos = (direction: 'left' | 'right') => {
+    if (!videosScrollerRef.current) return;
+    const isRtl = document.documentElement.dir === 'rtl' || language === 'ar';
+    let offset = direction === 'left' ? -360 : 360;
+    if (isRtl) offset = -offset;
+    videosScrollerRef.current.scrollBy({ left: offset, behavior: 'smooth' });
+  };
 
   const filteredVideos = videos.filter(vid => {
     if (platformFilter !== 'all' && vid.platform !== platformFilter) return false;
@@ -100,13 +109,18 @@ export const VideosPage: React.FC = () => {
       </div>
 
       {/* Videos Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="relative group/videos-page-carousel">
+        <div
+          ref={videosScrollerRef}
+          className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-3 lg:grid lg:grid-cols-3 lg:overflow-visible"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
         {filteredVideos.map(video => {
           const linkedProd = products.find(p => p.id === video.productId);
           return (
             <div
               key={video.id}
-              className="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+              className="group flex w-[86vw] max-w-[430px] shrink-0 snap-start flex-col justify-between overflow-hidden rounded-3xl border border-slate-200 bg-white transition-all duration-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900 sm:w-[420px] lg:w-auto lg:max-w-none"
             >
               {/* Thumbnail Container */}
               <div 
@@ -204,6 +218,27 @@ export const VideosPage: React.FC = () => {
             </div>
           );
         })}
+        </div>
+        {filteredVideos.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => scrollVideos('left')}
+              className="absolute left-2 top-1/2 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-purple-500/40 bg-slate-950/90 text-amber-300 shadow-xl lg:hidden"
+              aria-label={language === 'ar' ? 'الفيديو السابق' : 'Previous video'}
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollVideos('right')}
+              className="absolute right-2 top-1/2 z-20 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-purple-500/40 bg-slate-950/90 text-amber-300 shadow-xl lg:hidden"
+              aria-label={language === 'ar' ? 'الفيديو التالي' : 'Next video'}
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Import Modal */}

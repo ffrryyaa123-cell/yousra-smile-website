@@ -1,18 +1,20 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { SlidersHorizontal, RotateCcw, Search, Tag, Filter } from 'lucide-react';
+import { Check, RotateCcw, Filter, X } from 'lucide-react';
 import { FilterState } from '../types';
 
 interface ProductFiltersProps {
   filters: FilterState;
   onFilterChange: (newFilters: Partial<FilterState>) => void;
   onReset: () => void;
+  onClose?: () => void;
 }
 
 export const ProductFilters: React.FC<ProductFiltersProps> = ({
   filters,
   onFilterChange,
-  onReset
+  onReset,
+  onClose
 }) => {
   const { products, categories, language, formatPrice } = useApp();
 
@@ -42,13 +44,29 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
             {language === 'ar' ? 'تصفية المنتجات' : 'Product Filters'}
           </h3>
         </div>
-        <button
-          onClick={onReset}
-          className="text-xs text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 flex items-center gap-1 transition-colors"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          {language === 'ar' ? 'إعادة ضبط' : 'Reset'}
-        </button>
+        <div className="flex items-center gap-1.5">
+          {!onClose && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="rounded-lg px-2 py-1.5 text-xs font-bold text-purple-600 hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-950/50 flex items-center gap-1 transition-colors"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              {language === 'ar' ? 'إعادة ضبط' : 'Reset'}
+            </button>
+          )}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={language === 'ar' ? 'إغلاق التصفية' : 'Close filters'}
+              title={language === 'ar' ? 'إغلاق' : 'Close'}
+              className="grid h-9 w-9 place-items-center rounded-xl bg-slate-100 text-slate-600 transition-colors hover:bg-red-50 hover:text-red-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-red-950/50"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Category Filter */}
@@ -146,6 +164,27 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
           <span>{formatPrice(10000)}</span>
         </div>
       </div>
+
+      {onClose && (
+        <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+          <button
+            type="button"
+            onClick={onReset}
+            className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-black text-slate-700 transition-colors hover:border-purple-300 hover:text-purple-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          >
+            <RotateCcw className="h-4 w-4" />
+            {language === 'ar' ? 'إعادة ضبط' : 'Reset'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-purple-600 px-3 py-2.5 text-xs font-black text-white shadow-md transition-colors hover:bg-purple-700"
+          >
+            <Check className="h-4 w-4" />
+            {language === 'ar' ? 'موافق' : 'Apply'}
+          </button>
+        </div>
+      )}
 
     </div>
   );

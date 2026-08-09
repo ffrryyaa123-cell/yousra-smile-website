@@ -19,6 +19,7 @@ export const ProductsPage: React.FC = () => {
 
   const [layout, setLayout] = useState<'grid' | 'list'>('grid');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [desktopFilterOpen, setDesktopFilterOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
 
@@ -43,6 +44,22 @@ export const ProductsPage: React.FC = () => {
     }));
     setCurrentPage(1);
   }, [selectedCategory, selectedSubcategory, searchQuery]);
+
+  React.useEffect(() => {
+    if (!mobileFilterOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileFilterOpen(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [mobileFilterOpen]);
 
   const handleFilterChange = (newFilters: Partial<FilterState>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
@@ -181,19 +198,20 @@ export const ProductsPage: React.FC = () => {
       </div>
 
       {/* Main Catalog Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className={`grid grid-cols-1 gap-8 ${desktopFilterOpen ? 'lg:grid-cols-4' : 'lg:grid-cols-1'}`}>
         
         {/* Sidebar Filters (Desktop) */}
-        <div className="hidden lg:block space-y-6">
+        {desktopFilterOpen && <div className="hidden lg:block space-y-6">
           <ProductFilters 
             filters={filters} 
             onFilterChange={handleFilterChange}
             onReset={handleResetFilters}
+            onClose={() => setDesktopFilterOpen(false)}
           />
-        </div>
+        </div>}
 
         {/* Products Grid & Sorting Controls */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className={`${desktopFilterOpen ? 'lg:col-span-3' : 'lg:col-span-1'} space-y-6`}>
           
           {/* Daily Deals Notice Line above Product Cards */}
           <div className="bg-gradient-to-r from-amber-500/15 via-purple-950/80 to-amber-500/15 border border-amber-500/40 rounded-2xl p-3.5 text-center text-xs sm:text-sm font-bold text-amber-200 font-['Tajawal'] flex items-center justify-center gap-2 shadow-xl backdrop-blur-md">
@@ -209,6 +227,16 @@ export const ProductsPage: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             
             <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setDesktopFilterOpen(open => !open)}
+                className="hidden lg:flex shrink-0 items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-black text-purple-700 transition-colors hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950/50 dark:text-purple-200"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                {desktopFilterOpen
+                  ? (language === 'ar' ? 'إخفاء التصفية' : 'Hide filters')
+                  : (language === 'ar' ? 'إظهار التصفية' : 'Show filters')}
+              </button>
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">
                 {language === 'ar' ? 'الترتيب حسب:' : 'Sort by:'}
               </span>
@@ -235,12 +263,21 @@ export const ProductsPage: React.FC = () => {
 
           {/* Filter Drawer for Mobile */}
           {mobileFilterOpen && (
-            <div className="lg:hidden">
-              <ProductFilters 
-                filters={filters} 
-                onFilterChange={handleFilterChange}
-                onReset={handleResetFilters}
+            <div className="fixed inset-0 z-[120] lg:hidden" role="dialog" aria-modal="true" aria-label={language === 'ar' ? 'تصفية المنتجات' : 'Product filters'}>
+              <button
+                type="button"
+                onClick={() => setMobileFilterOpen(false)}
+                className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+                aria-label={language === 'ar' ? 'إغلاق التصفية' : 'Close filters'}
               />
+              <div className={`absolute inset-y-0 w-[min(92vw,380px)] overflow-y-auto p-3 sm:p-5 ${language === 'ar' ? 'right-0' : 'left-0'}`}>
+                <ProductFilters
+                  filters={filters}
+                  onFilterChange={handleFilterChange}
+                  onReset={handleResetFilters}
+                  onClose={() => setMobileFilterOpen(false)}
+                />
+              </div>
             </div>
           )}
 
