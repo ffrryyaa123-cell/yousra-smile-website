@@ -207,16 +207,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
       <div 
-        className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden relative my-auto animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col"
+        className="bg-white text-slate-800 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative my-auto animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Close Bar */}
-        <div className="flex items-center justify-between p-4 sm:px-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
+        <div className="flex items-center justify-between p-4 sm:px-6 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/80 px-3 py-1 rounded-lg">
+            <span className="text-xs font-bold text-purple-700 bg-purple-100 px-3 py-1 rounded-lg">
               {product.brand}
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs font-medium text-slate-600">
               {language === 'ar' ? 'كود المنتج' : 'Product code'}: {product.id}
             </span>
           </div>
@@ -310,7 +310,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-200/60 dark:bg-slate-800 transition-colors cursor-pointer"
+              className="p-2 rounded-xl text-purple-700 hover:text-purple-900 bg-purple-100 hover:bg-purple-200 transition-colors cursor-pointer"
+              aria-label={language === 'ar' ? 'إغلاق تفاصيل المنتج' : 'Close product details'}
             >
               <X className="w-6 h-6" />
             </button>
@@ -326,7 +327,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
           )}
 
           {/* SEO Breadcrumbs Navigation Bar */}
-          <nav className="flex items-center gap-1.5 text-xs text-slate-400 overflow-x-auto pb-1 border-b border-slate-100 dark:border-slate-800">
+          <nav className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 overflow-x-auto pb-2 border-b border-slate-200">
             <button 
               onClick={() => { setPage('home'); onClose(); }}
               className="hover:text-amber-400 font-bold shrink-0"
@@ -348,7 +349,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               {language === 'ar' ? `علامة ${product.brand}` : `Brand ${product.brand}`}
             </button>
             <span>/</span>
-            <span className="text-slate-200 truncate max-w-xs">{displayTitle}</span>
+            <span className="text-slate-800 truncate max-w-xs">{displayTitle}</span>
           </nav>
 
           {/* Interactive Brand Models Pill / Chip */}
@@ -472,21 +473,21 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
             {/* Product Meta & Purchase Buttons */}
             <div className="flex flex-col justify-between space-y-4">
               <div>
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-['Tajawal'] leading-tight mb-2">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-950 font-['Tajawal'] leading-tight mb-2">
                   {displayTitle}
                 </h1>
-                <p className="text-xs text-slate-400 mb-3">{displaySubcategory}</p>
+                <p className="text-sm font-semibold text-purple-700 mb-3">{displaySubcategory}</p>
 
                 {/* Rating & Views */}
                 <div className="flex items-center gap-4 text-xs mb-3">
                   <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 text-amber-600 px-2.5 py-1 rounded-lg font-bold">
                     <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                     <span>{product.rating}</span>
-                    <span className="text-slate-400 font-normal">
+                    <span className="text-slate-600 font-medium">
                       ({product.reviewCount + (currentUserRating > 0 ? 1 : 0)} {language === 'ar' ? 'تقييم' : 'reviews'})
                     </span>
                   </div>
-                  <span className="text-slate-400">👁 {product.viewsCount} {language === 'ar' ? 'مشاهدة' : 'views'}</span>
+                  <span className="text-slate-600 font-medium">👁 {product.viewsCount} {language === 'ar' ? 'مشاهدة' : 'views'}</span>
                 </div>
 
                 {/* Interactive User Star Rating Picker */}
@@ -565,21 +566,21 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   </div>
                 </div>
 
-                <p className="text-sm sm:text-base text-slate-100 leading-relaxed mb-4 font-normal">
+                <p className="text-base text-slate-800 leading-7 mb-4 font-semibold">
                   {displayDescription}
                 </p>
 
                 {/* Price Drop Alert Card */}
-                <div className="bg-amber-950/20 border border-amber-500/30 p-3.5 rounded-2xl flex items-center justify-between gap-3 mb-2">
+                <div className="bg-purple-50 border border-purple-200 p-3.5 rounded-2xl flex items-center justify-between gap-3 mb-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
-                      <Bell className="w-5 h-5 text-amber-400 animate-bounce" />
+                    <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                      <Bell className="w-5 h-5 text-purple-700 animate-bounce" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-100">
+                      <h4 className="text-sm font-black text-slate-900">
                         {language === 'ar' ? 'تنبيه عند انخفاض السعر' : 'Price drop alert'}
                       </h4>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-xs font-medium text-slate-600">
                         {language === 'ar'
                           ? 'أدخل بريدك الإلكتروني ليصلك إشعار فوري عند هبوط السعر.'
                           : 'Enter your email to receive an alert when the price drops.'}
@@ -689,14 +690,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
           </div>
 
           {/* Navigation Tabs (Details / Price History / Video Reviews / Specs) */}
-          <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
-            <div className="flex border-b border-slate-200 dark:border-slate-800 gap-3 sm:gap-4 mb-6 overflow-x-auto pb-1">
+          <div className="border-t border-slate-200 pt-6">
+            <div className="flex border-b border-slate-200 gap-3 sm:gap-4 mb-6 overflow-x-auto pb-1">
               <button
                 onClick={() => setActiveTab('overview')}
                 className={`pb-3 text-sm font-bold border-b-2 transition-all shrink-0 ${
                   activeTab === 'overview'
-                    ? 'border-purple-600 text-purple-600 dark:text-purple-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+                    ? 'border-purple-700 text-purple-700'
+                    : 'border-transparent text-slate-600 hover:text-slate-950'
                 }`}
               >
                 {language === 'ar' ? 'المميزات والوصف' : 'Features & Description'}
@@ -706,8 +707,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 onClick={() => setActiveTab('history')}
                 className={`pb-3 text-sm font-bold border-b-2 flex items-center gap-1.5 transition-all shrink-0 ${
                   activeTab === 'history'
-                    ? 'border-purple-600 text-purple-600 dark:text-purple-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+                    ? 'border-purple-700 text-purple-700'
+                    : 'border-transparent text-slate-600 hover:text-slate-950'
                 }`}
               >
                 <TrendingDown className="w-4 h-4 text-emerald-500" />
@@ -721,8 +722,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 onClick={() => setActiveTab('videos')}
                 className={`pb-3 text-sm font-bold border-b-2 flex items-center gap-1.5 transition-all shrink-0 ${
                   activeTab === 'videos'
-                    ? 'border-purple-600 text-purple-600 dark:text-purple-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+                    ? 'border-purple-700 text-purple-700'
+                    : 'border-transparent text-slate-600 hover:text-slate-950'
                 }`}
               >
                 <PlaySquare className="w-4 h-4 text-red-500" />
@@ -733,8 +734,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 onClick={() => setActiveTab('specs')}
                 className={`pb-3 text-sm font-bold border-b-2 transition-all shrink-0 ${
                   activeTab === 'specs'
-                    ? 'border-purple-600 text-purple-600 dark:text-purple-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+                    ? 'border-purple-700 text-purple-700'
+                    : 'border-transparent text-slate-600 hover:text-slate-950'
                 }`}
               >
                 {language === 'ar' ? 'المواصفات التقنية' : 'Technical Specifications'}
@@ -744,8 +745,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 onClick={() => setActiveTab('reviews')}
                 className={`pb-3 text-sm font-bold border-b-2 flex items-center gap-1.5 transition-all shrink-0 ${
                   activeTab === 'reviews'
-                    ? 'border-amber-400 text-amber-300'
-                    : 'border-transparent text-slate-500 hover:text-slate-300'
+                    ? 'border-purple-700 text-purple-700'
+                    : 'border-transparent text-slate-600 hover:text-slate-950'
                 }`}
               >
                 <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
@@ -757,7 +758,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 className={`pb-3 text-sm font-bold border-b-2 flex items-center gap-1.5 transition-all shrink-0 ${
                   activeTab === 'seo'
                     ? 'border-amber-500 text-amber-500'
-                    : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+                    : 'border-transparent text-slate-600 hover:text-slate-950'
                 }`}
               >
                 <Code className="w-4 h-4 text-amber-400" />
@@ -769,24 +770,24 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
             {activeTab === 'overview' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-3">
+                  <h3 className="text-lg font-black text-slate-950 mb-3">
                     {language === 'ar' ? 'أهم المميزات الفريدة:' : 'Key Features:'}
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {displayFeatures.map((feat, i) => (
-                      <div key={i} className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
+                      <div key={i} className="flex items-start gap-2 bg-slate-50 border border-slate-200 p-3 rounded-xl">
                         <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{feat}</span>
+                        <span className="text-sm font-semibold text-slate-800">{feat}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-black text-slate-950 mb-2">
                     {language === 'ar' ? 'الوصف التفصيلي للمنتج:' : 'Detailed Product Description:'}
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <p className="text-sm sm:text-base font-medium text-slate-800 leading-7 bg-slate-50 p-4 rounded-2xl border border-slate-200">
                     {displayLongDescription}
                   </p>
                 </div>

@@ -10,10 +10,7 @@ import {
   PlaySquare, 
   ArrowLeft, 
   CheckCircle2, 
-  ShieldCheck, 
-  Award,
   TrendingUp,
-  Tag,
   ThumbsUp,
   SlidersHorizontal,
   Target,
@@ -251,18 +248,18 @@ export const HomePage: React.FC = () => {
 
       {/* Category Grid Section */}
       <section className="space-y-2.5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#180D2B] border border-purple-500/30 rounded-2xl p-4 shadow-lg">
           <div>
-            <h2 className="text-lg sm:text-xl font-black text-white font-['Tajawal'] tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-white font-['Tajawal'] tracking-tight">
               {t.categories}
             </h2>
-            <p className="text-xs text-slate-300 mt-0.5">
+            <p className="text-sm font-medium text-slate-200 mt-1 leading-6">
               {language === 'en' ? 'Explore top rated products in smart home, kitchen, and personal care' : 'اختر القسم لاستكشاف منتجات المنزل الذكي والديكور والعناية بالمطبخ والعناية الشخصية للجميع'}
             </p>
           </div>
           <button
             onClick={() => { setSelectedCategory('all'); setPage('products'); }}
-            className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+            className="text-sm font-black text-amber-300 hover:text-white flex items-center gap-1 transition-colors shrink-0"
           >
             {t.allCategories} ({categories.length})
             <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-0 ltr:rotate-180" />
@@ -535,7 +532,7 @@ export const HomePage: React.FC = () => {
           <h2 className="text-xl sm:text-2xl font-black text-white font-['Tajawal'] tracking-tight">
             {language === 'ar' ? 'رسالتنا، رؤيتنا وقيمنا الراسخة' : 'Our Mission, Vision & Values'}
           </h2>
-          <p className="text-xs text-slate-300 leading-relaxed">
+          <p className="text-sm text-slate-100 leading-7 font-medium">
             {language === 'ar' 
               ? 'نهدف إلى إحداث فارق حقيقي في عالم التسوق الإلكتروني من خلال توفير مراجعات ودراسات دقيقة للمنتجات قبل الشراء.' 
               : 'Empowering smart shoppers with transparent recommendations and honest affiliate device reviews.'}
@@ -552,7 +549,7 @@ export const HomePage: React.FC = () => {
               <span>🎯</span>
               <span>{language === 'ar' ? 'رسالتنا' : 'Our Mission'}</span>
             </h3>
-            <p style={{ color: '#f8f4e9' }} className="text-xs leading-relaxed">
+            <p style={{ color: '#ffffff' }} className="text-sm leading-7 font-medium">
               {language === 'ar' 
                 ? 'مساعدتك في اختيار أفضل الأجهزة والحلول المنزلية الذكية التي توفر وقتك ومالك وتلبي احتياجات منزلك وديكورك بدقة وسهولة.' 
                 : 'Helping you choose the best smart home appliances that save your time and budget.'}
@@ -568,7 +565,7 @@ export const HomePage: React.FC = () => {
               <span>⭐</span>
               <span>{language === 'ar' ? 'رؤيتنا' : 'Our Vision'}</span>
             </h3>
-            <p style={{ color: '#f8f4e9' }} className="text-xs leading-relaxed">
+            <p style={{ color: '#ffffff' }} className="text-sm leading-7 font-medium">
               {language === 'ar' 
                 ? 'تقديم مراجعات حقيقية وتجارب صادقة وشفافة بعيداً عن الإعلانات المضللة، لنكون مرجعك الموثوق الأول للتسوق الذكي.' 
                 : 'Delivering honest, unbiased reviews to become your #1 trusted smart shopping reference.'}
@@ -584,7 +581,7 @@ export const HomePage: React.FC = () => {
               <span>🤝</span>
               <span>{language === 'ar' ? 'قيمنا' : 'Our Values'}</span>
             </h3>
-            <ul style={{ color: '#f8f4e9' }} className="text-xs space-y-1.5">
+            <ul style={{ color: '#ffffff' }} className="text-sm space-y-2 leading-6 font-medium">
               <li className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span>{language === 'ar' ? 'الشفافية المطلقة والإفصاح عن روابط الأفلييت.' : 'Total Transparency & Affiliate Disclosure.'}</span>
@@ -616,80 +613,32 @@ export const HomePage: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-center">
           <div className="bg-slate-900/90 border border-purple-800/50 p-5 rounded-2xl space-y-1">
             <span className="text-3xl sm:text-5xl font-black text-amber-400 block font-heading">+100</span>
-            <span className="text-xs font-bold text-slate-200 block">{language === 'ar' ? 'مراجعة موثوقة' : 'Honest Reviews'}</span>
-            <span className="text-[11px] text-slate-400">{language === 'ar' ? 'تجارب حية وفيديوهات' : 'Hands-on video reviews'}</span>
+            <span className="text-sm font-bold text-white block">{language === 'ar' ? 'مراجعة موثوقة' : 'Honest Reviews'}</span>
+            <span className="text-xs font-medium text-slate-100">{language === 'ar' ? 'تجارب حية وفيديوهات' : 'Hands-on video reviews'}</span>
           </div>
 
           <div className="bg-slate-900/90 border border-purple-800/50 p-5 rounded-2xl space-y-1">
             <span className="text-3xl sm:text-5xl font-black text-purple-400 block font-heading">+500</span>
-            <span className="text-xs font-bold text-slate-200 block">{language === 'ar' ? 'منتج مفحوص ومصنف' : 'Curated Products'}</span>
-            <span className="text-[11px] text-slate-400">{language === 'ar' ? 'أجهزة ذكية ومنزلية' : 'Smart home & kitchen tech'}</span>
+            <span className="text-sm font-bold text-white block">{language === 'ar' ? 'منتج مفحوص ومصنف' : 'Curated Products'}</span>
+            <span className="text-xs font-medium text-slate-100">{language === 'ar' ? 'أجهزة ذكية ومنزلية' : 'Smart home & kitchen tech'}</span>
           </div>
 
           <div className="bg-slate-900/90 border border-purple-800/50 p-5 rounded-2xl space-y-1">
             <span className="text-3xl sm:text-5xl font-black text-amber-400 block font-heading">Amazon</span>
-            <span className="text-xs font-bold text-slate-200 block">{language === 'ar' ? '& AliExpress' : '& AliExpress'}</span>
-            <span className="text-[11px] text-slate-400">{language === 'ar' ? 'مقارنات وأفضل الأسعار' : 'Verified affiliate links'}</span>
+            <span className="text-sm font-bold text-white block">{language === 'ar' ? '& AliExpress' : '& AliExpress'}</span>
+            <span className="text-xs font-medium text-slate-100">{language === 'ar' ? 'مقارنات وأفضل الأسعار' : 'Verified affiliate links'}</span>
           </div>
 
           <div className="bg-slate-900/90 border border-purple-800/50 p-5 rounded-2xl space-y-1">
             <span className="text-3xl sm:text-5xl font-black text-red-500 block font-heading">Social</span>
-            <span className="text-xs font-bold text-slate-200 block">{language === 'ar' ? 'YouTube & TikTok' : 'YouTube & TikTok'}</span>
-            <span className="text-[11px] text-slate-400">{language === 'ar' ? 'محتوى متجدد يومياً' : 'Daily video releases'}</span>
+            <span className="text-sm font-bold text-white block">{language === 'ar' ? 'YouTube & TikTok' : 'YouTube & TikTok'}</span>
+            <span className="text-xs font-medium text-slate-100">{language === 'ar' ? 'محتوى متجدد يومياً' : 'Daily video releases'}</span>
           </div>
         </div>
       </section>
 
       {/* Buying Guides & Blog Articles Section */}
       <BlogSection />
-
-      {/* Why Trust Yousra Smile Affiliate Section */}
-      <section className="bg-slate-900/80 rounded-3xl p-6 sm:p-10 border border-slate-800 space-y-8">
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 bg-purple-950/80 text-amber-300 border border-purple-800/60 px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold">
-            <ShieldCheck className="w-4 h-4 text-amber-400" />
-            {t.whyTrustTag}
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-white font-['Tajawal'] tracking-tight">
-            {t.whyTrustTitle}
-          </h2>
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
-            {t.whyTrustSubtitle}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-          <div className="bg-slate-900/90 p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-4 shadow-md">
-            <div className="w-14 h-14 rounded-2xl bg-purple-950/90 text-purple-400 border border-purple-800/60 flex items-center justify-center font-bold">
-              <Award className="w-7 h-7" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-extrabold text-white font-['Tajawal']">{t.trustFeature1Title}</h3>
-            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-              {t.trustFeature1Desc}
-            </p>
-          </div>
-
-          <div className="bg-slate-900/90 p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-4 shadow-md">
-            <div className="w-14 h-14 rounded-2xl bg-amber-950/90 text-amber-400 border border-amber-800/60 flex items-center justify-center font-bold">
-              <Tag className="w-7 h-7" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-extrabold text-white font-['Tajawal']">{t.trustFeature2Title}</h3>
-            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-              {t.trustFeature2Desc}
-            </p>
-          </div>
-
-          <div className="bg-slate-900/90 p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-4 shadow-md">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-950/90 text-emerald-400 border border-emerald-800/60 flex items-center justify-center font-bold">
-              <ShieldCheck className="w-7 h-7" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-extrabold text-white font-['Tajawal']">{t.trustFeature3Title}</h3>
-            <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-              {t.trustFeature3Desc}
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* Recently Viewed Products Section */}
       <RecentlyViewedSection />
