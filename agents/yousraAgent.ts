@@ -1,7 +1,7 @@
 import { Agent, run } from '@openai/agents';
 import { z } from 'zod';
 
-const ProductPackage = z.object({
+export const ProductPackageSchema = z.object({
   productName: z.string(),
   shortDescription: z.string(),
   websiteCopy: z.string(),
@@ -28,10 +28,11 @@ Create realistic commercial video prompts with no fantasy behavior and preserve 
 Prepare three video formats: 16:9, 9:16, and 3:2.
 Keep thumbnail text short and readable.
 Every package MUST remain PENDING_OWNER_APPROVAL. Never claim anything has been published, uploaded, deleted, or approved.`,
-  outputType: ProductPackage,
+  outputType: ProductPackageSchema,
 });
 
 export async function prepareProductPackage(productFacts: string) {
   const result = await run(yousraSmileAgent, `Prepare the complete Yousra Smile pilot package from these verified facts:\n\n${productFacts}`);
-  return result.finalOutput;
+  return ProductPackageSchema.parse(result.finalOutput);
 }
+
