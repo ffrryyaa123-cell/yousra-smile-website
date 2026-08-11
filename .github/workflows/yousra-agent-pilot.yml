@@ -20,9 +20,17 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run approval-gated pilot
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npm run agent:pilot
+
+      - name: Upload pilot review files
+        uses: actions/upload-artifact@v4
+        with:
+          name: instant-pot-pilot-review
+          path: pilot-results/*
+          if-no-files-found: error
+
