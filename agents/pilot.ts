@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { relative, resolve } from 'node:path';
 import { prepareProductPackage } from './yousraAgent.js';
 
 if (!process.env.OPENAI_API_KEY) {
@@ -17,4 +19,40 @@ Affiliate URL: intentionally omitted from the pilot fixture; it must be supplied
 `;
 
 const output = await prepareProductPackage(instantPotPilotFacts);
-console.log(JSON.stringify(output, null, 2));
+const reviewOutput = {
+  pilot: 'instant-pot',
+  generatedAt: new Date().toISOString(),
+  publicationStatus: 'NOT_PUBLISHED',
+  approvalStatus: output.approvalStatus,
+  verifiedProductFacts: instantPotPilotFacts.trim(),
+  content: output,
+};
+
+const csvValue = (value: unknown) => {
+  const text = Array.isArray(value) ? value.join(' ') : String(value);
+  return `"${text.replaceAll('"', '""')}"`;
+};
+
+const csvFields = Object.keys(output) as Array<keyof typeof output>;
+const csv = [
+  csvFields.map(csvValue).join(','),
+  csvFields.map((field) => csvValue(output[field])).join(','),
+].join('\n');
+
+const outputDirectory = resolve(process.cwd(), 'pilot-results');
+const jsonPath = resolve(outputDirectory, 'instant-pot-pilot.json');
+const csvPath = resolve(outputDirectory, 'instant-pot-pilot.csv');
+
+await mkdir(outputDirectory, { recursive: true });
+await Promise.all([
+  writeFile(jsonPath, `${JSON.stringify(reviewOutput, null, 2)}\n`, 'utf8'),
+  writeFile(csvPath, `${csv}\n`, 'utf8'),
+]);
+
+console.log(JSON.stringify({
+  status: 'completed',
+  publicationStatus: reviewOutput.publicationStatus,
+  approvalStatus: reviewOutput.approvalStatus,
+  outputFiles: [relative(process.cwd(), jsonPath), relative(process.cwd(), csvPath)],
+}, null, 2));
+
