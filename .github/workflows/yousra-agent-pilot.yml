@@ -2,6 +2,14 @@ name: Yousra Smile Agent Pilot
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feat/yousra-smile-agents-pilot
+    paths:
+      - "agents/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/yousra-agent-pilot.yml"
 
 permissions:
   contents: read
