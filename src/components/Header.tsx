@@ -471,13 +471,16 @@ export const Header: React.FC = () => {
               {/* 3. جميع المنتجات */}
               <button
                 onClick={() => { setSelectedCategory('all'); setPage('products'); }}
-                className={`px-3.5 py-2 text-sm font-semibold rounded-xl transition-colors cursor-pointer shrink-0 ${
+                className={`px-3.5 py-2 text-sm font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
                   activePage === 'products' && selectedCategory === 'all'
                     ? 'text-amber-300 bg-purple-950/80 font-bold border border-amber-400/40'
                     : 'text-slate-200 hover:text-amber-300 hover:bg-slate-800'
                 }`}
               >
-                {t.allProducts}
+                <span>{t.allProducts}</span>
+                <span className="px-1.5 py-0.2 bg-purple-600 text-white rounded-full text-[10px] font-bold font-mono">
+                  {products.length}
+                </span>
               </button>
 
               {/* 4. الفيديوهات والمراجعات */}
@@ -516,6 +519,20 @@ export const Header: React.FC = () => {
                 }`}
               >
                 {t.aboutUs}
+              </button>
+
+              {/* 7. لوحة التحكم والإدارة (Admin) */}
+              <button
+                onClick={() => setPage('admin')}
+                className={`px-3.5 py-2 text-sm font-semibold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
+                  activePage === 'admin'
+                    ? 'text-amber-300 bg-purple-950/90 font-bold border border-amber-400'
+                    : 'text-amber-400 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-800/40'
+                }`}
+                title="لوحة تحكم وإحصائيات المتجر"
+              >
+                <Settings className="w-4 h-4 text-amber-400" />
+                <span>{t.adminPanel}</span>
               </button>
             </nav>
 

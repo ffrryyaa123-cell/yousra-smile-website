@@ -506,5 +506,337 @@ export const INITIAL_PRODUCTS: Product[] = [
     isLatest: true,
     viewsCount: 14200,
     createdAt: '2026-07-05'
+  },
+  {
+    id: 'prod-13',
+    titleAr: 'فرن وقلاية هوائية ذكية متعددة الوظائف Breville Smart Oven Air Fryer Pro',
+    titleEn: 'Breville Smart Oven Air Fryer Pro countertop Convection Oven',
+    description: '13 وظيفة طهي ذكية مع نظام Element iQ للتحكم الحراري الدقيق وشاشة LCD متطورة',
+    longDescription: 'يوفر فرن بريفيل الذكي أداءً احترافياً بفضل 6 عناصر تسخين كوارتز مستقلة توزع الحرارة بذكاء، مع مروحة حمل حراري فائقة السرعة لتحمير وقلي الأطعمة الهوائية بسرعة خيالية وسعة تتسع لـ 9 شرائح توست أو ديك رومي بوزن 6 كجم.',
+    category: 'smart-kitchen',
+    subcategory: 'الأفران الذكية',
+    brand: 'Breville',
+    image: 'https://images.unsplash.com/photo-1544233726-9f1d2b27be8b?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1544233726-9f1d2b27be8b?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    amazonUrl: 'https://www.amazon.com/dp/B01N5UPUYN?tag=yousrasmile-20',
+    aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkBREVILLE',
+    originalPrice: 2899,
+    discountPrice: 2299,
+    discountPercent: 21,
+    currency: 'رس',
+    rating: 4.9,
+    reviewCount: 760,
+    features: [
+      'نظام Element iQ الذكي لتوجيه الحرارة بدقة متناهية',
+      '13 برنامج طهي مسبق (قلي هوائي، خبز، تحميص، بيتزا، وتجفيف فواكه)',
+      'سعة كبيرة 28 لتر تتسع لصواني الخبز مقاس 30×40 سم',
+      'مروحة Super Convection مزدوجة السرعة لطهي أسرع بنسبة 30%'
+    ],
+    specs: {
+      'السعة': '28 لتر / 9 شرائح توست',
+      'القوة الكهربائية': '2400 واط',
+      'عناصر التسخين': '6 عناصر كوارتز ذكية',
+      'الهيكل': 'ستانلس ستيل مصقول عالي الجودة'
+    },
+    keywords: ['فرن بريفيل', 'قلاية هوائية', 'Breville Smart Oven', 'مطبخ ذكي', 'أفران كهربائية'],
+    isFeatured: true,
+    isTopSelling: true,
+    isLatest: true,
+    viewsCount: 16800,
+    createdAt: '2026-08-01'
+  },
+  {
+    id: 'prod-14',
+    titleAr: 'مكنسة وممسحة روبوتية ذكية Eufy Clean X9 Pro مع تقنية رفع الممسحة الذكي',
+    titleEn: 'Eufy Clean X9 Pro Robot Vacuum with Auto-Clean Station & MopMaster',
+    description: 'قوة شفط 5500Pa مع مماسح دوارة مزدوجة وترتفع تلقائياً 12 ملم لحماية السجاد',
+    longDescription: 'تتميز يوفي X9 Pro بنظام MopMaster بضغط 1 كجم ومماسح تدور 180 دورة في الدقيقة لإزالة البقع العنيدة عن الأرضيات، إضافة إلى محطة الغسيل والتجفيف الذاتي بالهواء الساخن بدرجة 40 مئوية لمنع تراكم البكتيريا والروائح.',
+    category: 'smart-home',
+    subcategory: 'المكانس الروبوتية',
+    brand: 'Eufy',
+    image: 'https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    amazonUrl: 'https://www.amazon.com/dp/B0BWJGH123?tag=yousrasmile-20',
+    originalPrice: 3899,
+    discountPrice: 2899,
+    discountPercent: 26,
+    currency: 'رس',
+    rating: 4.8,
+    reviewCount: 480,
+    features: [
+      'ممسحة مزدوجة ديناميكية تضغط 1 كجم وتدور 180 دورة/دقيقة',
+      'رفع تلقائي للممسحة 12 ملم بمجرد استشعار السجاد لمنع بلله',
+      'كاميرا AISee لتفادي الأسلاك والألعاب والعوائق بدقة متناهية',
+      'تجفيف آلي بالهواء الدافئ 40°C في المحطة الذكية'
+    ],
+    specs: {
+      'قوة الشفط': '5500 Pa',
+      'ارتفاع رفع الممسحة': '12 ملم',
+      'الملاحة': 'iPath Laser Navigation + AI.See',
+      'سعة الخزانين': '3.6 لتر نظيف / 3.6 لتر متسخ'
+    },
+    keywords: ['مكنسة يوفي', 'Eufy X9 Pro', 'ممسحة روبوتية', 'تنظيف ذكي', 'سمارت هوم'],
+    isFeatured: false,
+    isTopSelling: true,
+    isLatest: true,
+    viewsCount: 19400,
+    createdAt: '2026-08-02'
+  },
+  {
+    id: 'prod-15',
+    titleAr: 'مكنسة غسيل الأرضيات الرطبة والجافة Tineco Floor ONE S5 Smart Cordless',
+    titleEn: 'Tineco Floor ONE S5 Smart Cordless Wet Dry Vacuum Cleaner',
+    description: 'مكنسة وممسحة لاسلكية ذكية تمسح وتكنس وتغسل الأرضيات في خطوة واحدة بمستشعر iLoop',
+    longDescription: 'تجمع Tineco Floor ONE S5 بين الشفط وغسيل الأرضيات في آن واحد، ومزودة بتقنية iLoop الذكية التي تستشعر كمية الأوساخ تلقائياً وتعدل قوة الشفط وتدفق المياه مع شاشة دائرية تفاعلية توضح نظافة الأرضية بالألوان.',
+    category: 'smart-home',
+    subcategory: 'أجهزة غسيل الأرضيات',
+    brand: 'Tineco',
+    image: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    amazonUrl: 'https://www.amazon.com/dp/B08CDDV22B?tag=yousrasmile-20',
+    aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkTINECO',
+    originalPrice: 2199,
+    discountPrice: 1699,
+    discountPercent: 23,
+    currency: 'رس',
+    rating: 4.8,
+    reviewCount: 920,
+    features: [
+      'تنظيف وغسيل فوري للأرضيات الصلبة والباركيه والرخام',
+      'مستشعر ذكي iLoop يكتشف البقع ويعدل قوة المياه والشفط آلياً',
+      'تصميم حافة الفرشاة المحسّن للوصول الملاصق للزوايا والجدران',
+      'تنظيف ذاتي فوري للفرشاة والأنابيب بضغطة زر واحدة على القاعدة'
+    ],
+    specs: {
+      'عمر البطارية': 'حتى 35 دقيقة تشغيل مستمر',
+      'سعة خزان الماء النظيف': '0.8 لتر',
+      'سعة خزان الماء المتسخ': '0.7 لتر',
+      'الشاشة': 'شاشة LED دائرية تفاعلية مع موجه صوتي'
+    },
+    keywords: ['مكنسة تينيكو', 'Tineco Floor ONE S5', 'غسيل أرضيات', 'ممسحة لاسلكية', 'تنظيف سيراميك'],
+    isFeatured: true,
+    isTopSelling: true,
+    isLatest: true,
+    viewsCount: 28400,
+    createdAt: '2026-07-29'
+  },
+  {
+    id: 'prod-16',
+    titleAr: 'شواية وقلاية هوائية داخلية ذكية Ninja Foodi Smart XL 6-in-1',
+    titleEn: 'Ninja Foodi Smart XL 6-in-1 Indoor Grill & Air Fryer with Thermometer',
+    description: 'شواء داخلي خالي من الدخان بدرجة حرارة 260°C مع مجس حراري ذكي لطهي اللحوم المثالي',
+    longDescription: 'تمنحك شواية نينجا فودي الذكية نكهة الشواء الحقيقي على الفحم داخل مطبخك بدون دخان بفضل نظام تقليل الدخان وتقنية الإعصار الهوائي 500°F Cyclonic Grilling، مع مسبار طهي حراري مدمج يراقب درجة استواء الستيك والبرجر بدقة.',
+    category: 'smart-kitchen',
+    subcategory: 'الشوايات الذكية',
+    brand: 'Ninja',
+    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    amazonUrl: 'https://www.amazon.com/dp/B089TQ83HV?tag=yousrasmile-20',
+    originalPrice: 1450,
+    discountPrice: 1099,
+    discountPercent: 24,
+    currency: 'رس',
+    rating: 4.9,
+    reviewCount: 1450,
+    features: [
+      '6 وظائف طهي (شواء، قلاية هوائية، تحميص، خبز، تجفيف، وإعادة تسخين)',
+      'مسبار حراري ذكي Foodi Smart Thermometer لدرجة نضج مثالية',
+      'سعة XL تتسع لـ 6 قطع ستيك أو 24 قطعة نقانق دفعة واحدة',
+      'تقنية بدون دخان مع درع الحماية من تطاير الدهون القابل للغسل'
+    ],
+    specs: {
+      'القوة الكهربائية': '1760 واط',
+      'أقصى درجة حرارة': '260 درجة مئوية (500°F)',
+      'سعة سلة القلي': '3.8 لتر',
+      'الملحقات': 'لوح شواء سيراميكي + سلة قلي + فرشاة تنظيف'
+    },
+    keywords: ['شواية نينجا', 'Ninja Foodi Grill', 'قلاية هوائية', 'شواء بدون دخان', 'ستيك'],
+    isFeatured: false,
+    isTopSelling: true,
+    isLatest: false,
+    viewsCount: 23100,
+    createdAt: '2026-06-18'
+  },
+  {
+    id: 'prod-17',
+    titleAr: 'جهاز تنظيف وشد الوجه الذكي Foreo Luna 4 Plus بالنبضات الصوتية والضوء العلاجي',
+    titleEn: 'Foreo Luna 4 Plus Smart Microcurrent & LED Facial Cleansing Device',
+    description: 'تنظيف عميق للبشرة بنبضات T-Sonic مع تيار كهربائي دقيق (Microcurrent) وإضاءة LED ضد التجاعيد',
+    longDescription: 'يعد جهاز Foreo Luna 4 Plus أحدث صيحة في العناية بالبشرة السريرية في المنزل. يجمع بين سيليكون طبي فائق النعومة ألطف بـ 35 مرة من الفرش العادية، ونبضات صوتية تنظف 99.5% من الأوساخ والدهون، بالإضافة إلى ضوء LED أحمر لتحفيز الكولاجين وتيار ميكروكَرِنت لشد عضلات الوجه.',
+    category: 'women-corner',
+    subcategory: 'أجهزة العناية بالبشرة',
+    brand: 'Foreo',
+    image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    pinterestUrl: 'https://www.pinterest.com/pin/570172619/',
+    amazonUrl: 'https://www.amazon.com/dp/B0BFBNV2P4?tag=yousrasmile-20',
+    aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkFOREO',
+    originalPrice: 1850,
+    discountPrice: 1390,
+    discountPercent: 25,
+    currency: 'رس',
+    rating: 4.8,
+    reviewCount: 390,
+    features: [
+      'نبضات T-Sonic بعدد 8000 نبضة بالدقيقة لتنقية المسام بعمق',
+      'علاج بالضوء الأحمر LED لمقاومة علامات التقدم في السن وتجديد البشرة',
+      'تقنية التيار الدقيق Microcurrent لشد خط الفك ونضارة الوجنتين',
+      'شحن USB واحد يدوم حتى 100 استخدام ومقاوم للماء 100%'
+    ],
+    specs: {
+      'التقنيات': 'T-Sonic + Microcurrent + NIR & Red LED',
+      'المادة': 'سيليكون طبي مضاد للبكتيريا ومضاد للحساسية',
+      'البطارية': 'تصل إلى 100 استخدام بالشحنة الواحدة',
+      'مقاومة الماء': '100% IPX8 Waterproof'
+    },
+    keywords: ['فوريو لونا', 'Foreo Luna 4', 'تنظيف البشرة', 'شد الوجه', 'عناية بالبشرة'],
+    isFeatured: true,
+    isTopSelling: false,
+    isLatest: true,
+    viewsCount: 15300,
+    createdAt: '2026-08-03'
+  },
+  {
+    id: 'prod-18',
+    titleAr: 'جهاز تنقية الهواء الذكي Xiaomi Smart Air Purifier 4 Pro بمستشعر ليزري دقيق',
+    titleEn: 'Xiaomi Smart Air Purifier 4 Pro with High-Efficiency Filter & OLED Screen',
+    description: 'تنقية هواء الغرف الكبيرة حتى 60 متر مربع وامتصاص الروائح ودخان الطبخ والتحسس بنسبة 99.97%',
+    longDescription: 'يوفر منقي الهواء شاومي برو 4 هواءً نقياً منعشاً لعائلتك من خلال فلتر ثلاثي الطبقات عالي الكفاءة يزيل حبوب اللقاح والوبر والميكروبات وجزيئات الغبار PM2.5 و PM10، مع شاشة OLED ملونة وتحكم عبر تطبيق Xiaomi Home وصوت هادئ جداً 33.7dB.',
+    category: 'smart-home',
+    subcategory: 'أجهزة تنقية الهواء',
+    brand: 'Xiaomi',
+    image: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    amazonUrl: 'https://www.amazon.com/dp/B09V7N7R7X?tag=yousrasmile-20',
+    aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkXIAOMI',
+    originalPrice: 1199,
+    discountPrice: 849,
+    discountPercent: 29,
+    currency: 'رس',
+    rating: 4.8,
+    reviewCount: 670,
+    features: [
+      'تغطية مساحات واسعة تصل حتى 60 متراً مربعاً وتدفق هواء 500m³/h',
+      'فلتر كربون منشط يمتص روائح الطهي، الدخان والغازات الضارة',
+      'مستشعر ليزري مزدوج لقياس جودة الهواء في الوقت الفعلي',
+      'وضع نوم فائق الهدوء بمستوى صوت 33.7 ديسيبل فقط دون إزعاج'
+    ],
+    specs: {
+      'معدل CADR': '500 متر مكعب / ساعة',
+      'المساحة الفعالة': '35 - 60 متر مربع',
+      'التحكم': 'شاشة OLED + تطبيق Mi Home + Alexa & Google',
+      'عمر الفلتر': '6 إلى 12 شهراً'
+    },
+    keywords: ['منقي هواء', 'شاومي', 'Xiaomi Air Purifier 4 Pro', 'حساسية الهواء', 'سمارت هوم'],
+    isFeatured: false,
+    isTopSelling: true,
+    isLatest: true,
+    viewsCount: 18200,
+    createdAt: '2026-07-20'
+  },
+  {
+    id: 'prod-19',
+    titleAr: 'جهاز خيط الأسنان المائي الاحترافي Waterpik Aquarius Professional Water Flosser',
+    titleEn: 'Waterpik Aquarius Professional Water Flosser with 10 Pressure Settings',
+    description: 'تنظيف عميق بين الأسنان وتحت اللثة بضغط ماء قابل للتعديل معتمد من جمعية أطباء الأسنان ADA',
+    longDescription: 'يزيل خيط الأسنان المائي Waterpik Aquarius ما يصل إلى 99.9% من البلاك ورواسب الطعام من المناطق المعالجة، وهو أكثر فعالية بنسبة 50% من خيط الأسنان التقليدي لتحسين صحة اللثة ومنع الالتهابات والرائحة الكريهة.',
+    category: 'health-fitness',
+    subcategory: 'صحة الفم والأسنان',
+    brand: 'Waterpik',
+    image: 'https://images.unsplash.com/photo-1559591937-e1032c02aa00?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1559591937-e1032c02aa00?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    amazonUrl: 'https://www.amazon.com/dp/B00HFQQ0VU?tag=yousrasmile-20',
+    originalPrice: 499,
+    discountPrice: 349,
+    discountPercent: 30,
+    currency: 'رس',
+    rating: 4.8,
+    reviewCount: 3200,
+    features: [
+      '10 إعدادات ضغط مخصصة من اللطيف جداً إلى التنظيف الفائق',
+      'وضع تدليك اللثة Hydro-Pulse لزيادة تدفق الدم وصحة اللثة',
+      '7 رؤوس مخصصة للتقويم، الجيوب اللثوية، وتيجان الأسنان',
+      'خزان ماء سعة 600 مل يكفي لأكثر من 90 ثانية من التدفق المستمر'
+    ],
+    specs: {
+      'السعة': '600 مل مياه',
+      'عدد الرؤوس': '7 رؤوس ملحقة دوارة 360 درجة',
+      'نطاق الضغط': '10 إلى 100 PSI',
+      'الاعتماد': 'ختم القبول من جمعية أطباء الأسنان الأمريكية (ADA)'
+    },
+    keywords: ['خيط مائي', 'Waterpik', 'تنظيف الأسنان', 'تقويم الأسنان', 'صحة الفم'],
+    isFeatured: false,
+    isTopSelling: true,
+    isLatest: false,
+    viewsCount: 26500,
+    createdAt: '2026-05-30'
+  },
+  {
+    id: 'prod-20',
+    titleAr: 'جهاز إزالة الشعر بالنبض الضوئي المكثف Philips Lumea Prestige IPL المنزلي',
+    titleEn: 'Philips Lumea Prestige IPL Hair Removal Device with SenseIQ',
+    description: 'تقنية SenseIQ الذكية لتقليل نمو الشعر بنسبة تصل حتى 92% بعد 3 جلسات فقط مع 4 ملحقات مقوسة',
+    longDescription: 'يعد جهاز فيليبس لوميا بريستيج الحل الأفضل والأكثر أماناً لإزالة الشعر بالليزر المنزلي. مزود بمستشعر SmartSkin يحدد درجة لون بشرتك تلقائياً ويضبط مستوى الطاقة المناسب، مع 4 رؤوس منحنية ذكية مصممة خصيصاً للجسم والوجه ومنطقة البكيني والإبطين.',
+    category: 'women-corner',
+    subcategory: 'أجهزة إزالة الشعر',
+    brand: 'Philips',
+    image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=800&q=80'
+    ],
+    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    pinterestUrl: 'https://www.pinterest.com/pin/52233736020/',
+    amazonUrl: 'https://www.amazon.com/dp/B07N9DCL2Y?tag=yousrasmile-20',
+    aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkPHILIPS',
+    originalPrice: 3499,
+    discountPrice: 2499,
+    discountPercent: 28,
+    currency: 'رس',
+    rating: 4.9,
+    reviewCount: 1890,
+    features: [
+      'تقليل نمو الشعر بنسبة 92% بعد 3 علاجات متتالية فقط',
+      'مستشعر SmartSkin يقرأ درجة لون البشرة ويختار الإعداد المناسب تلقائياً',
+      '4 ملحقات منحنية ذكية (للجسم، الوجه، منطقة الإبطين، وخط البكيني)',
+      'يعمل سلكياً ولاسلكياً لراحة وسهولة الحركة أثناء الجلسة',
+      'عمر مصباح طويل يصل إلى 450,000 ومضة ضوئية (يكفي لـ 39 سنة استخدام)'
+    ],
+    specs: {
+      'عدد الومضات': '450,000 ومضة ضوئية',
+      'المستشعر الذكي': 'SmartSkin Sensor',
+      'الملحقات': '4 رؤوس مقوسة ذكية مخصصة',
+      'طريقة التشغيل': 'سلكي ولاسلكي (قابلة لإعادة الشحن)'
+    },
+    keywords: ['فيليبس لوميا', 'Philips Lumea', 'ليزر منزلي', 'إزالة الشعر', 'عناية المرأة'],
+    isFeatured: true,
+    isTopSelling: true,
+    isLatest: true,
+    viewsCount: 45000,
+    createdAt: '2026-08-04'
   }
 ];

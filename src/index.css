@@ -50,10 +50,56 @@ html, body, #root,
 [class*="from-[#1d0a33]"], [class*="via-[#0f071a]"], [class*="bg-[#0f071a]"],
 [class*="bg-[#111113]"], [class*="bg-[#0D0714]"], [class*="bg-[#180D2B]"],
 [style*="background-color: #67106a"], [style*="backgroundColor: '#67106a'"] {
-  color: #F4EFF5;
+  color: #FFFFFF;
 }
 
-/* Ensure headings on dark/purple backgrounds are crisp white, bright gold, or soft light tone */
+/* Ensure all form controls, labels, and inputs have crisp white text */
+input, select, textarea {
+  color: #FFFFFF !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+/* Admin Dashboard High Contrast Override */
+.admin-dashboard,
+.admin-dashboard label,
+.admin-dashboard input,
+.admin-dashboard select,
+.admin-dashboard textarea,
+.admin-dashboard p,
+.admin-dashboard span,
+.admin-dashboard h1,
+.admin-dashboard h2,
+.admin-dashboard h3,
+.admin-dashboard h4,
+.admin-dashboard td,
+.admin-dashboard th {
+  color: #FFFFFF;
+}
+
+.admin-dashboard label {
+  color: #FFFFFF !important;
+  font-weight: 700;
+}
+
+.admin-dashboard input,
+.admin-dashboard select,
+.admin-dashboard textarea {
+  color: #FFFFFF !important;
+  background-color: #1E293B !important;
+  border-color: #475569 !important;
+}
+
+.admin-dashboard input:focus,
+.admin-dashboard select:focus,
+.admin-dashboard textarea:focus {
+  border-color: #A855F7 !important;
+  outline: none;
+}
+
+/* Ensure headings on dark/purple backgrounds are crisp white */
 .bg-slate-950 h1, .bg-slate-900 h1, .bg-purple-950 h1,
 .bg-slate-950 h2, .bg-slate-900 h2, .bg-purple-950 h2,
 .bg-slate-950 h3, .bg-slate-900 h3, .bg-purple-950 h3,
@@ -66,27 +112,12 @@ html, body, #root,
 /* Ensure paragraphs & labels on dark/purple backgrounds are bright and easily readable */
 .bg-slate-950 p, .bg-slate-900 p, .bg-purple-950 p, .bg-slate-800 p,
 [class*="from-[#1d0a33]"] p, [class*="bg-[#0D0714]"] p {
-  color: #E2D5E5 !important;
+  color: #F1F5F9 !important;
 }
 
-/* 2. INNER LIGHT SURFACES ONLY: Use dark brown text for contrast */
-.bg-white,
-.bg-amber-50,
-.bg-stone-50,
-.bg-slate-100 {
-  color: #2C1802;
-}
-
-.bg-white h1, .bg-white h2, .bg-white h3, .bg-white h4,
-.bg-amber-50 h1, .bg-amber-50 h2, .bg-amber-50 h3,
-.bg-stone-50 h1, .bg-stone-50 h2, .bg-stone-50 h3 {
-  color: #2C1802 !important;
-}
-
-.bg-white p, .bg-white label,
-.bg-amber-50 p, .bg-amber-50 label,
-.bg-stone-50 p, .bg-stone-50 label {
-  color: #4A2E1B !important;
+/* Ensure high contrast readable text across dark layouts */
+html, body, #root {
+  color: #F4EFF5;
 }
 
 /* Editorial & Meta Typography Helpers */

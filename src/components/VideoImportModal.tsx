@@ -117,7 +117,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
           <div className="space-y-4">
             {/* Paste Video Link */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-300 font-['Tajawal']">
+              <label className="block text-xs font-bold text-white font-['Tajawal']">
                 {language === 'en' ? 'Paste Video Link (YouTube / TikTok / Pinterest):' : 'ضع رابط الفيديو من (YouTube, TikTok, Pinterest):'}
               </label>
               <input 
@@ -126,13 +126,13 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
                 value={videoUrl}
                 onChange={(e) => handleUrlChange(e.target.value)}
                 placeholder="https://www.youtube.com/watch?v=... OR https://pinterest.com/pin/..."
-                className="w-full bg-slate-950 border border-white/15 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 transition-colors"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 transition-colors font-medium"
               />
             </div>
 
             {/* Platform Selector */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-300 font-['Tajawal']">
+              <label className="block text-xs font-bold text-white font-['Tajawal']">
                 {language === 'en' ? 'Platform:' : 'المنصة المكتشفة:'}
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -141,11 +141,11 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
                   onClick={() => setPlatform('youtube')}
                   className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer ${
                     platform === 'youtube'
-                      ? 'bg-red-600/20 border-red-500 text-red-400'
-                      : 'bg-white/5 border-white/10 text-slate-400'
+                      ? 'bg-red-600/30 border-red-500 text-white'
+                      : 'bg-slate-900 border-slate-700 text-slate-300'
                   }`}
                 >
-                  <Youtube className="w-4 h-4" />
+                  <Youtube className="w-4 h-4 text-red-400" />
                   YouTube
                 </button>
 
@@ -154,8 +154,8 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
                   onClick={() => setPlatform('tiktok')}
                   className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer ${
                     platform === 'tiktok'
-                      ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300'
-                      : 'bg-white/5 border-white/10 text-slate-400'
+                      ? 'bg-cyan-500/30 border-cyan-400 text-white'
+                      : 'bg-slate-900 border-slate-700 text-slate-300'
                   }`}
                 >
                   TikTok
@@ -166,8 +166,8 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
                   onClick={() => setPlatform('pinterest')}
                   className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer ${
                     platform === 'pinterest'
-                      ? 'bg-red-500/20 border-red-400 text-red-300'
-                      : 'bg-white/5 border-white/10 text-slate-400'
+                      ? 'bg-red-500/30 border-red-400 text-white'
+                      : 'bg-slate-900 border-slate-700 text-slate-300'
                   }`}
                 >
                   Pinterest
@@ -177,16 +177,16 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
 
             {/* Associate Product */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-300 font-['Tajawal']">
+              <label className="block text-xs font-bold text-white font-['Tajawal']">
                 {language === 'en' ? 'Link to Store Product:' : 'ربط الفيديو بمنتج من المتجر:'}
               </label>
               <select
                 value={selectedProductId}
                 onChange={(e) => setSelectedProductId(e.target.value)}
-                className="w-full bg-slate-950 border border-white/15 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-purple-400 font-['Tajawal']"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-purple-400 font-['Tajawal'] font-bold"
               >
                 {products.map(p => (
-                  <option key={p.id} value={p.id}>
+                  <option key={p.id} value={p.id} className="bg-slate-900 text-white">
                     {p.titleAr} ({p.brand}) - {p.discountPrice} {p.currency}
                   </option>
                 ))}
@@ -195,7 +195,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
 
             {/* Custom Title */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-300 font-['Tajawal']">
+              <label className="block text-xs font-bold text-white font-['Tajawal']">
                 {language === 'en' ? 'Video Review Title (Optional):' : 'عنوان الفيديو أو المراجعة (اختياري):'}
               </label>
               <input 
@@ -203,13 +203,13 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
                 value={customTitle}
                 onChange={(e) => setCustomTitle(e.target.value)}
                 placeholder="مثال: تجربة عملية واستعراض لأهم مميزات الجهاز"
-                className="w-full bg-slate-950 border border-white/15 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 font-['Tajawal']"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 font-['Tajawal']"
               />
             </div>
 
             {/* Video Duration */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-300 font-['Tajawal']">
+              <label className="block text-xs font-bold text-white font-['Tajawal']">
                 {language === 'en' ? 'Duration (MM:SS):' : 'مدة الفيديو:'}
               </label>
               <input 
@@ -217,7 +217,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
                 value={customDuration}
                 onChange={(e) => setCustomDuration(e.target.value)}
                 placeholder="02:30"
-                className="w-full bg-slate-950 border border-white/15 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-purple-400 font-mono"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-purple-400 font-mono"
               />
             </div>
 

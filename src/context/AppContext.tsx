@@ -92,7 +92,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_PRODUCTS_KEY = 'yousrasmile_products_v1';
+const LOCAL_STORAGE_PRODUCTS_KEY = 'yousrasmile_products_v2';
 const LOCAL_STORAGE_FAVS_KEY = 'yousrasmile_favorites_v1';
 const LOCAL_STORAGE_CART_KEY = 'yousrasmile_cart_v1';
 const LOCAL_STORAGE_COMPARE_KEY = 'yousrasmile_compare_v1';
@@ -123,11 +123,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = localStorage.getItem(LOCAL_STORAGE_PRODUCTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed) && parsed.length >= INITIAL_PRODUCTS.length) {
           return parsed.map((p: Product) => ({
             ...p,
             amazonUrl: p.amazonUrl ? p.amazonUrl.replace('amazon.sa', 'amazon.com') : p.amazonUrl
           }));
+        } else if (Array.isArray(parsed) && parsed.length > 0) {
+          // Merge newly added default products that aren't in localStorage
+          const existingIds = new Set(parsed.map((p: Product) => p.id));
+          const newDefaults = INITIAL_PRODUCTS.filter(p => !existingIds.has(p.id));
+          return [...parsed, ...newDefaults];
         }
       }
     } catch (e) {

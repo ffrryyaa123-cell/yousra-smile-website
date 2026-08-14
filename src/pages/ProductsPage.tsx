@@ -19,7 +19,7 @@ export const ProductsPage: React.FC = () => {
   const [layout, setLayout] = useState<'grid' | 'list'>('grid');
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 9;
+  const [itemsPerPage, setItemsPerPage] = useState<number>(20);
 
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: searchQuery || '',
@@ -198,24 +198,42 @@ export const ProductsPage: React.FC = () => {
           {/* Top Control Bar */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0">الترتيب حسب:</span>
-              <select
-                value={filters.sortBy}
-                onChange={(e) => handleFilterChange({ sortBy: e.target.value as any })}
-                className="w-full sm:w-auto bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-purple-500 font-semibold"
-              >
-                <option value="latest">الأحدث نزوَلاً</option>
-                <option value="rating">الأعلى تقييمًا (★ 5.0)</option>
-                <option value="best-selling">الأكثر مبيعًا وطلباً</option>
-                <option value="highest-discount">الأعلى نسبة خصم</option>
-                <option value="price-low">السعر: من الأرخص للأغلى</option>
-                <option value="price-high">السعر: من الأغلى للأرخص</option>
-              </select>
+            <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-400 shrink-0">الترتيب:</span>
+                <select
+                  value={filters.sortBy}
+                  onChange={(e) => handleFilterChange({ sortBy: e.target.value as any })}
+                  className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500 font-semibold"
+                >
+                  <option value="latest">الأحدث نزوَلاً</option>
+                  <option value="rating">الأعلى تقييمًا (★ 5.0)</option>
+                  <option value="best-selling">الأكثر مبيعًا وطلباً</option>
+                  <option value="highest-discount">الأعلى نسبة خصم</option>
+                  <option value="price-low">السعر: من الأرخص للأغلى</option>
+                  <option value="price-high">السعر: من الأغلى للأرخص</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-400 shrink-0">عرض بالصفحة:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500 font-semibold"
+                >
+                  <option value={12}>12 منتج</option>
+                  <option value={20}>20 منتج (الكل)</option>
+                  <option value={50}>50 منتج</option>
+                </select>
+              </div>
             </div>
 
-            <div className="text-xs text-slate-400">
-              يعرض <strong className="text-purple-600 dark:text-purple-400">{filteredProducts.length}</strong> من إجمالي {products.length} منتجات
+            <div className="text-xs text-white font-bold bg-purple-950/80 px-3 py-1.5 rounded-xl border border-purple-500/40">
+              يعرض <strong className="text-amber-400 font-mono text-sm">{filteredProducts.length}</strong> من إجمالي <strong className="text-amber-400 font-mono text-sm">{products.length}</strong> منتجاً
             </div>
           </div>
 
