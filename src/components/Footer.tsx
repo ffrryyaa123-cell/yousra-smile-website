@@ -1,5 +1,5 @@
 import React from 'react';
-import { Youtube, Video, Sparkles, Heart, ShieldCheck, Mail, ArrowLeft, Settings } from 'lucide-react';
+import { Youtube, Video, Instagram, Sparkles, Heart, ShieldCheck, Mail, ArrowLeft, Settings } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { CATEGORIES } from '../data/categories';
 import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
@@ -57,6 +57,15 @@ export const Footer: React.FC = () => {
                 title="TikTok Account"
               >
                 <Video className="w-5 h-5" />
+              </a>
+              <a 
+                href={siteSettings.instagramUrl || "https://instagram.com/yousrasmile"} 
+                target="_blank" 
+                rel="noreferrer"
+                className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-gradient-to-tr hover:from-amber-500 hover:via-pink-500 hover:to-purple-600 text-white border border-slate-700 flex items-center justify-center transition-all"
+                title="Instagram Account"
+              >
+                <Instagram className="w-5 h-5" />
               </a>
               <a 
                 href={siteSettings.pinterestUrl || "https://pinterest.com"} 

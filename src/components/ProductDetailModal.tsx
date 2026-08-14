@@ -143,6 +143,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const shareToFacebook = () => {
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const shareToPinterest = () => {
     const url = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(productUrl)}&media=${encodeURIComponent(product.image)}&description=${encodeURIComponent(shareTitle)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -245,6 +250,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   >
                     <WhatsAppIcon className="w-4 h-4 text-emerald-400" />
                     <span>واتساب (WhatsApp)</span>
+                  </button>
+
+                  <button
+                    onClick={() => { shareToFacebook(); setShowShareMenu(false); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-950/40 text-blue-400 font-bold text-xs transition-colors"
+                  >
+                    <FacebookIcon className="w-4 h-4 text-blue-400" />
+                    <span>فيسبوك (Facebook)</span>
                   </button>
 
                   <button
@@ -612,6 +625,57 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       <ExternalLink className="w-3.5 h-3.5" />
                     </div>
                   </button>
+                </div>
+
+                {/* Social Share Buttons Bar */}
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                      <Share2 className="w-3.5 h-3.5 text-purple-500" />
+                      {language === 'ar' ? 'مشاركة المنتج مع الأصدقاء:' : 'Share Product:'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    <button
+                      type="button"
+                      onClick={shareToWhatsApp}
+                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                      title="مشاركة عبر واتساب"
+                    >
+                      <WhatsAppIcon className="w-4 h-4 text-emerald-500" />
+                      <span className="hidden sm:inline">واتساب</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={shareToFacebook}
+                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                      title="مشاركة عبر فيسبوك"
+                    >
+                      <FacebookIcon className="w-4 h-4 text-blue-500" />
+                      <span className="hidden sm:inline">فيسبوك</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={shareToTwitter}
+                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 border border-sky-500/30 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                      title="مشاركة عبر تويتر / X"
+                    >
+                      <TwitterIcon className="w-4 h-4 text-sky-500" />
+                      <span className="hidden sm:inline">تويتر / X</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={copyToClipboard}
+                      className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                      title="نسخ رابط المنتج"
+                    >
+                      {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-purple-500" />}
+                      <span className="hidden sm:inline">{copiedLink ? 'تم النسخ' : 'نسخ الرابط'}</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Shopper Cart Button in Modal */}

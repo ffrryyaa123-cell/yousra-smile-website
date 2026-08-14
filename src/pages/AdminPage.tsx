@@ -279,7 +279,7 @@ export const AdminPage: React.FC = () => {
       brand: brandsList[0] || 'Roborock',
       image: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80',
       imagesStr: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80',
-      youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      youtubeUrl: '',
       tiktokUrl: '',
       pinterestUrl: '',
       amazonUrl: `https://www.amazon.com/dp/EXAMPLE?tag=${settingsForm.amazonTag}`,

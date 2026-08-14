@@ -10,6 +10,7 @@ import {
   X, 
   Youtube, 
   Video, 
+  Instagram,
   Sparkles, 
   ShieldCheck, 
   SlidersHorizontal,
@@ -120,6 +121,16 @@ export const Header: React.FC = () => {
               >
                 <Video className="w-3 h-3 text-pink-400" />
                 <span>{language === 'ar' ? 'تيك توك' : 'TikTok'}</span>
+              </a>
+              <a 
+                href="https://instagram.com/yousrasmile" 
+                target="_blank" 
+                rel="noreferrer"
+                className="bg-purple-500/10 hover:bg-purple-500/20 text-pink-400 border border-purple-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
+                title="حساب انستغرام"
+              >
+                <Instagram className="w-3 h-3 text-pink-400" />
+                <span>{language === 'ar' ? 'انستغرام' : 'Instagram'}</span>
               </a>
             </div>
 

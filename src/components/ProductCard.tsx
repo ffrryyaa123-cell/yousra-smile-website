@@ -69,13 +69,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
   const handleWatchVideo = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (product.youtubeUrl || product.tiktokUrl || product.pinterestUrl) {
+      // Extract real YouTube embed ID from product.youtubeUrl
+      let embedId = '';
+      if (product.youtubeUrl) {
+        const match = product.youtubeUrl.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        embedId = match ? match[1] : 'nB6r6qL0xQc';
+      }
+      
       openVideoModal({
         id: `vid-${product.id}`,
         productId: product.id,
         productTitle: displayTitle,
         productImage: product.image,
         platform: product.youtubeUrl ? 'youtube' : product.tiktokUrl ? 'tiktok' : 'pinterest',
-        embedId: product.youtubeUrl ? 'dQw4w9WgXcQ' : '123456',
+        embedId: embedId || 'nB6r6qL0xQc',
         videoUrl: product.youtubeUrl || product.tiktokUrl || product.pinterestUrl || '',
         title: language === 'en' ? `Yousra's Review for ${displayTitle}` : `مراجعة يسرى سمايل لـ ${displayTitle}`,
         views: language === 'en' ? 'Over 15K views' : 'أكثر من 15K مشاهدة',

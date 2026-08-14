@@ -92,7 +92,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_PRODUCTS_KEY = 'yousrasmile_products_v2';
+const LOCAL_STORAGE_PRODUCTS_KEY = 'yousrasmile_products_v3';
 const LOCAL_STORAGE_FAVS_KEY = 'yousrasmile_favorites_v1';
 const LOCAL_STORAGE_CART_KEY = 'yousrasmile_cart_v1';
 const LOCAL_STORAGE_COMPARE_KEY = 'yousrasmile_compare_v1';
@@ -100,7 +100,7 @@ const LOCAL_STORAGE_DARK_KEY = 'yousrasmile_darkmode_v1';
 const LOCAL_STORAGE_LANG_KEY = 'yousrasmile_language_v1';
 const LOCAL_STORAGE_CURRENCY_KEY = 'yousrasmile_currency_v1';
 const LOCAL_STORAGE_PRICE_ALERTS_KEY = 'yousrasmile_price_alerts_v1';
-const LOCAL_STORAGE_VIDEOS_KEY = 'yousrasmile_videos_v1';
+const LOCAL_STORAGE_VIDEOS_KEY = 'yousrasmile_videos_v3';
 const LOCAL_STORAGE_RECENTLY_VIEWED_KEY = 'yousrasmile_recently_viewed_v1';
 const LOCAL_STORAGE_SETTINGS_KEY = 'yousrasmile_settings_v2';
 

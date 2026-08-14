@@ -402,7 +402,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     images: [
       'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=800&q=80'
     ],
-    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeUrl: 'https://www.youtube.com/embed/p7H2N8r_f5E',
     amazonUrl: 'https://www.amazon.com/dp/B00EPBH968?tag=yousrasmile-20',
     aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkBISSELL',
     originalPrice: 1150,
@@ -483,7 +483,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     images: [
       'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=800&q=80'
     ],
-    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeUrl: 'https://www.youtube.com/embed/Vd5m8hN6U5w',
     amazonUrl: 'https://www.amazon.com/dp/B0BHZMBK49?tag=yousrasmile-20',
     originalPrice: 2499,
     discountPrice: 1999,
@@ -523,7 +523,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       'https://images.unsplash.com/photo-1544233726-9f1d2b27be8b?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80'
     ],
-    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeUrl: 'https://www.youtube.com/embed/Bw_2_5l8y6E',
     amazonUrl: 'https://www.amazon.com/dp/B01N5UPUYN?tag=yousrasmile-20',
     aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkBREVILLE',
     originalPrice: 2899,
@@ -565,7 +565,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       'https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80'
     ],
-    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeUrl: 'https://www.youtube.com/embed/k2qW8f1M4Zg',
     amazonUrl: 'https://www.amazon.com/dp/B0BWJGH123?tag=yousrasmile-20',
     originalPrice: 3899,
     discountPrice: 2899,
@@ -605,7 +605,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     images: [
       'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80'
     ],
-    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeUrl: 'https://www.youtube.com/embed/lQvO8fKk8X4',
     amazonUrl: 'https://www.amazon.com/dp/B08CDDV22B?tag=yousrasmile-20',
     aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkTINECO',
     originalPrice: 2199,
@@ -646,7 +646,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     images: [
       'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80'
     ],
-    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeUrl: 'https://www.youtube.com/embed/jR2m9kL5p8w',
     amazonUrl: 'https://www.amazon.com/dp/B089TQ83HV?tag=yousrasmile-20',
     originalPrice: 1450,
     discountPrice: 1099,
@@ -687,7 +687,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'
     ],
-    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeUrl: 'https://www.youtube.com/embed/m_4h8uL0e3I',
     pinterestUrl: 'https://www.pinterest.com/pin/570172619/',
     amazonUrl: 'https://www.amazon.com/dp/B0BFBNV2P4?tag=yousrasmile-20',
     aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkFOREO',
@@ -729,7 +729,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     images: [
       'https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&w=800&q=80'
     ],
-    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeUrl: 'https://www.youtube.com/embed/X5a9zQ2_8mQ',
     amazonUrl: 'https://www.amazon.com/dp/B09V7N7R7X?tag=yousrasmile-20',
     aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkXIAOMI',
     originalPrice: 1199,
@@ -770,7 +770,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     images: [
       'https://images.unsplash.com/photo-1559591937-e1032c02aa00?auto=format&fit=crop&w=800&q=80'
     ],
-    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeUrl: 'https://www.youtube.com/embed/q4V8hN0l2p8',
     amazonUrl: 'https://www.amazon.com/dp/B00HFQQ0VU?tag=yousrasmile-20',
     originalPrice: 499,
     discountPrice: 349,
@@ -811,7 +811,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=800&q=80'
     ],
-    youtubeUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    youtubeUrl: 'https://www.youtube.com/embed/d2N8pQ6k1vY',
     pinterestUrl: 'https://www.pinterest.com/pin/52233736020/',
     amazonUrl: 'https://www.amazon.com/dp/B07N9DCL2Y?tag=yousrasmile-20',
     aliexpressUrl: 'https://s.click.aliexpress.com/e/_DkPHILIPS',

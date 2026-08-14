@@ -52,13 +52,11 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
     const linkedProd = products.find(p => p.id === selectedProductId) || products[0];
 
     // Extract embed ID if Youtube
-    let embedId = 'sample-embed';
+    let embedId = 'p7H2N8r_f5E';
     if (platform === 'youtube') {
       const match = videoUrl.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
       if (match && match[1]) {
         embedId = match[1];
-      } else {
-        embedId = 'dQw4w9WgXcQ';
       }
     }
 

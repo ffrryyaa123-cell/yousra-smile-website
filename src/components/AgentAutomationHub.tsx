@@ -261,7 +261,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['مكنسة ذكية', 'روبروك', 'سمارت هوم'],
         image: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B0C39K9911?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=p7H2N8r_f5E',
         shortVideoHook: 'هل هذه أذكى مكنسة في العالم؟ شاهد كيف تنظف وتغسل نفسها بدون أي تدخل منك!'
       },
       {
@@ -280,7 +280,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['قلاية هوائية', 'فيليبس', 'طبخ صحي'],
         image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B07N8P9922?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=Vd5m8hN6U5w',
         shortVideoHook: 'أسرع وجبة مقرمشة بدون نقطة زيت واحدة مع القلاية الذكية!'
       },
       {
@@ -299,7 +299,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['قفل ذكي', 'أمان منزلي', 'بصمة'],
         image: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B08V5Q3344?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=Bw_2_5l8y6E',
         shortVideoHook: 'ودّع المفاتيح القديمة للأبد مع أحدث قفل ذكي للباب!'
       },
       {
@@ -318,7 +318,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['كاميرا مراقبة', 'يوفي', 'أمان'],
         image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B09K8L5566?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=k2qW8f1M4Zg',
         shortVideoHook: 'كيف تحمي منزلك وعائلتك بدقة 4K من أي مكان في العالم؟'
       },
       {
@@ -337,7 +337,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['إضاءة ذكية', 'ديكور غرف', 'جوفي'],
         image: 'https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B08X9P7788?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=lQvO8fKk8X4',
         shortVideoHook: 'حوّل غرفتك إلى ستوديو سينمائي بألوان ذكية مبهرة بلمسة واحدة!'
       },
       {
@@ -356,7 +356,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['شاحن لاسلكي', 'أنكر', 'ماج سيف'],
         image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B08M9N1122?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=jR2m9kL5p8w',
         shortVideoHook: 'تخلص من فوضى الأسلاك على مكتبك مع هذا الشاحن الذكي 3 في 1!'
       },
       {
@@ -375,7 +375,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['فواحة ذكية', 'عطور منزلية', 'راحة'],
         image: 'https://images.unsplash.com/photo-1589710751893-f9a6770ad71b?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B09J8K3344?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=m_4h8uL0e3I',
         shortVideoHook: 'أجواء استرخاء فندقية برائحة فواحة وإضاءة ساحرة في منزلك!'
       },
       {
@@ -394,7 +394,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['منقي هواء', 'صحة', 'ليفويت'],
         image: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B08P9Q5566?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=X5a9zQ2_8mQ',
         shortVideoHook: 'تنفس هواءً نقياً مثل الجبال مع أهدأ وأقوى منقي هواء ذكي!'
       },
       {
@@ -413,7 +413,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['صانعة قهوة', 'ديلونجي', 'إسبريسو'],
         image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B07X9Y7788?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=q4V8hN0l2p8',
         shortVideoHook: 'كوب قهوة احترافي مثل أرقى الكافيهات في مطبخك كل صباح!'
       },
       {
@@ -432,7 +432,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['سلة ذكية', 'نظافة', 'سمارت'],
         image: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B08V8W9900?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=d2N8pQ6k1vY',
         shortVideoHook: 'لن تلمس أكياس القمامة بيدك بعد اليوم مع هذه السلة الذكية الخارقة!'
       },
       {
@@ -451,7 +451,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['ميزان ذكي', 'صحة', 'لياقة'],
         image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B07N9M1122?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=p7H2N8r_f5E',
         shortVideoHook: 'تابع لياقتك وصحة جسمك بالتفصيل مع هذا الميزان الذكي الأكثر دقة!'
       },
       {
@@ -470,7 +470,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['ستائر ذكية', 'سويتش بوت', 'أتمتة'],
         image: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B08J8K3344?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=Vd5m8hN6U5w',
         shortVideoHook: 'استيقظ على ضوء الشمس الطبيعي مع الستائر التي تفتح بنفسها ذكياً!'
       },
       {
@@ -489,7 +489,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['خلاط محمول', 'عصائر', 'جيم'],
         image: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B09M8L5566?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=Bw_2_5l8y6E',
         shortVideoHook: 'سموذي طازج وبارد في أي مكان وأي وقت خلال 30 ثانية فقط!'
       },
       {
@@ -508,7 +508,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['فيش ذكي', 'توفير كهرباء', 'سمارت'],
         image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B07N8P9900?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=k2qW8f1M4Zg',
         shortVideoHook: 'كيف توفر 30% من فاتورة الكهرباء مع هذا المقبس الذكي الصغير؟'
       },
       {
@@ -527,7 +527,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['إطعام ذكي', 'حيوانات أليفة', 'كاميرا'],
         image: 'https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B08V9W1122?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=lQvO8fKk8X4',
         shortVideoHook: 'اطمئن على قطتك أو كلبك وأطعمهم وتحدث معهم حتى لو كنت مسافراً!'
       },
       {
@@ -546,7 +546,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['مساج ذكي', 'راحة', 'رقبة'],
         image: 'https://images.unsplash.com/photo-1589710751893-f9a6770ad71b?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B09J9K3344?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=jR2m9kL5p8w',
         shortVideoHook: 'تخلص من إرهاق الرقبة والأكتاف بعد يوم عمل شاق في 15 دقيقة فقط!'
       },
       {
@@ -565,7 +565,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['شاحن سيارة', 'باسوس', 'ماج سيف'],
         image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B08M9N5566?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=m_4h8uL0e3I',
         shortVideoHook: 'أقوى حامل وشاحن سيارة ذكي بدون أي سخونة لهاتفك!'
       },
       {
@@ -584,7 +584,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['إيكو شو', 'أليكسا', 'مساعد ذكي'],
         image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B08P9Q7788?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=X5a9zQ2_8mQ',
         shortVideoHook: 'شاشة واحدة تدير لك كل تفاصيل منزلك الذكي بسهولة تامة!'
       },
       {
@@ -603,7 +603,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['ري ذكي', 'حدائق', 'نباتات'],
         image: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B08V8W3344?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=q4V8hN0l2p8',
         shortVideoHook: 'حافظ على خضرة وجمال نباتاتك دون القلق من موعد الري!'
       },
       {
@@ -622,7 +622,7 @@ export const AgentAutomationHub: React.FC = () => {
         keywords: ['مصباح ذكي', 'إضاءة نوم', 'شاحن'],
         image: 'https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80',
         affiliateUrl: `https://www.amazon.sa/dp/B08M9N7788?tag=${affiliateTag}`,
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoUrl: 'https://www.youtube.com/watch?v=d2N8pQ6k1vY',
         shortVideoHook: 'أجمل قطعة ديكور ذكية لغرفة النوم مع شاحن وإضاءة ساحرة!'
       }
     ];
@@ -824,11 +824,13 @@ export const AgentAutomationHub: React.FC = () => {
 
       // If video hook exists, add to video reviews collection too
       if (p.shortVideoHook || p.videoUrl) {
+        const match = (p.videoUrl || '').match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        const embedId = match ? match[1] : 'nB6r6qL0xQc';
         const newVid: Omit<VideoReview, 'id'> = {
           title: `مراجعة وتجربة: ${p.titleAr}`,
           platform: 'youtube',
-          embedId: 'dQw4w9WgXcQ',
-          videoUrl: p.videoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          embedId: embedId,
+          videoUrl: p.videoUrl || `https://www.youtube.com/watch?v=${embedId}`,
           thumbnailUrl: p.image,
           productId: p.id,
           productTitle: p.titleAr,
@@ -925,16 +927,19 @@ export const AgentAutomationHub: React.FC = () => {
     const selectedProd = products.find(p => p.id === selectedProductIdForVideo);
     if (!selectedProd) return;
 
+    const match = (selectedProd.youtubeUrl || '').match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    const prodEmbedId = match ? match[1] : 'nB6r6qL0xQc';
+
     const newVideoData: Omit<VideoReview, 'id' | 'views' | 'date'> = {
       productId: selectedProd.id,
       productTitle: selectedProd.titleAr,
       productImage: selectedProd.image,
       thumbnailUrl: selectedProd.image,
       platform: videoPlatform,
-      embedId: 'dQw4w9WgXcQ',
+      embedId: prodEmbedId,
       videoUrl: videoPlatform === 'tiktok' 
-        ? `https://www.tiktok.com/@yousrasmile/video/${Date.now()}`
-        : `https://www.youtube.com/watch?v=dQw4w9WgXcQ`,
+        ? (selectedProd.tiktokUrl || `https://www.tiktok.com/@yousrasmile/video/${Date.now()}`)
+        : (selectedProd.youtubeUrl || `https://www.youtube.com/watch?v=${prodEmbedId}`),
       title: videoScriptResult.videoTitle || `تجربة ومراجعة ${selectedProd.titleAr}`,
       duration: videoScriptResult.estimatedDuration || '0:45'
     };
@@ -1494,7 +1499,7 @@ export const AgentAutomationHub: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                setPreviewVideoUrl(prod.videoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+                                setPreviewVideoUrl(prod.videoUrl || "https://www.youtube.com/watch?v=p7H2N8r_f5E");
                                 setPreviewVideoTitle(prod.titleAr);
                               }}
                               className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
