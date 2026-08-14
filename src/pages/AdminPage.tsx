@@ -48,6 +48,7 @@ import { VideoImportModal } from '../components/VideoImportModal';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 import { AgentAutomationHub } from '../components/AgentAutomationHub';
 import { GeminiApiKeyManager } from '../components/GeminiApiKeyManager';
+import { GoogleWorkspaceHub } from '../components/GoogleWorkspaceHub';
 
 export const AdminPage: React.FC = () => {
   const { 
@@ -69,7 +70,7 @@ export const AdminPage: React.FC = () => {
 
   const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
   const [passcode, setPasscode] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'messages' | 'analytics' | 'settings' | 'ai-assistant' | 'agent-hub'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'messages' | 'analytics' | 'settings' | 'ai-assistant' | 'agent-hub' | 'workspace'>('overview');
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
@@ -872,6 +873,19 @@ export const AdminPage: React.FC = () => {
         >
           <Sparkles className="w-4 h-4 text-purple-400" />
           <span className="font-black">✨ مساعد الـ SEO والنصوص</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('workspace')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
+            activeTab === 'workspace' 
+              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 text-white shadow-lg border-blue-400 font-black' 
+              : 'bg-slate-900 text-blue-300 border-blue-500/40 hover:border-blue-400 hover:text-white'
+          }`}
+        >
+          <Globe className="w-4 h-4 text-blue-400 animate-spin" />
+          <span className="font-black">📁 مساحة عمل Google (Drive / Sheets / Classroom / Calendar)</span>
+          <span className="px-1.5 py-0.5 rounded bg-blue-500/30 text-[10px] text-blue-200 font-mono">PRO</span>
         </button>
       </div>
 
@@ -1912,6 +1926,11 @@ export const AdminPage: React.FC = () => {
       {/* TAB 10: AI AGENTS HUB & AUTOMATION */}
       {activeTab === 'agent-hub' && (
         <AgentAutomationHub />
+      )}
+
+      {/* TAB 11: GOOGLE WORKSPACE HUB */}
+      {activeTab === 'workspace' && (
+        <GoogleWorkspaceHub />
       )}
 
       {/* Video Import Modal */}

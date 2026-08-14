@@ -34,6 +34,7 @@ import {
   X 
 } from 'lucide-react';
 import { GeminiApiKeyManager } from './GeminiApiKeyManager';
+import { GoogleWorkspaceHub } from './GoogleWorkspaceHub';
 
 export const AgentAutomationHub: React.FC = () => {
   const { 
@@ -46,7 +47,7 @@ export const AgentAutomationHub: React.FC = () => {
     getAffiliateUrl 
   } = useApp();
 
-  const [activeSubTab, setActiveSubTab] = useState<'upload_agent' | 'bulk_batch_agent' | 'video_agent' | 'compare_agent' | 'api_docs' | 'tracking_analytics' | 'gemini_key'>('bulk_batch_agent');
+  const [activeSubTab, setActiveSubTab] = useState<'upload_agent' | 'bulk_batch_agent' | 'video_agent' | 'compare_agent' | 'api_docs' | 'tracking_analytics' | 'gemini_key' | 'google_workspace'>('bulk_batch_agent');
   const [copiedKey, setCopiedKey] = useState<boolean>(false);
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
 
@@ -1130,6 +1131,18 @@ export const AgentAutomationHub: React.FC = () => {
         >
           <Key className="w-4 h-4 text-amber-400 animate-pulse" />
           <span className="font-bold">🔑 إدارة واختبار مفتاح Gemini AI</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('google_workspace')}
+          className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
+            activeSubTab === 'google_workspace'
+              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 text-white shadow-lg shadow-blue-600/30 border-blue-400 font-black'
+              : 'bg-slate-900 text-blue-300 border-blue-500/40 hover:bg-blue-500/10'
+          }`}
+        >
+          <Globe className="w-4 h-4 text-blue-400 animate-spin" />
+          <span className="font-bold">📁 مزامنة Google Workspace (Drive/Sheets/Calendar)</span>
         </button>
       </div>
 
@@ -2414,6 +2427,15 @@ print(response.json())`}
       {activeSubTab === 'gemini_key' && (
         <div className="space-y-6">
           <GeminiApiKeyManager />
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 📁 TAB 7: Google Workspace Hub (Drive, Sheets, Classroom, Calendar) */}
+      {/* ========================================================================= */}
+      {activeSubTab === 'google_workspace' && (
+        <div className="space-y-6">
+          <GoogleWorkspaceHub />
         </div>
       )}
 
