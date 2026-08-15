@@ -92,7 +92,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_PRODUCTS_KEY = 'yousrasmile_products_v3';
+const LOCAL_STORAGE_PRODUCTS_KEY = 'yousrasmile_products_v5';
 const LOCAL_STORAGE_FAVS_KEY = 'yousrasmile_favorites_v1';
 const LOCAL_STORAGE_CART_KEY = 'yousrasmile_cart_v1';
 const LOCAL_STORAGE_COMPARE_KEY = 'yousrasmile_compare_v1';
@@ -100,19 +100,21 @@ const LOCAL_STORAGE_DARK_KEY = 'yousrasmile_darkmode_v1';
 const LOCAL_STORAGE_LANG_KEY = 'yousrasmile_language_v1';
 const LOCAL_STORAGE_CURRENCY_KEY = 'yousrasmile_currency_v1';
 const LOCAL_STORAGE_PRICE_ALERTS_KEY = 'yousrasmile_price_alerts_v1';
-const LOCAL_STORAGE_VIDEOS_KEY = 'yousrasmile_videos_v3';
+const LOCAL_STORAGE_VIDEOS_KEY = 'yousrasmile_videos_v5';
 const LOCAL_STORAGE_RECENTLY_VIEWED_KEY = 'yousrasmile_recently_viewed_v1';
-const LOCAL_STORAGE_SETTINGS_KEY = 'yousrasmile_settings_v2';
+const LOCAL_STORAGE_SETTINGS_KEY = 'yousrasmile_settings_v4';
 
 const DEFAULT_SITE_SETTINGS: SiteSettings = {
   siteName: 'ابتسامة يسرى (Yousra Smile)',
-  siteLogo: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=200&q=80',
+  siteLogo: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=200&q=80',
   defaultLanguage: 'ar',
-  defaultCurrency: 'SAR',
+  defaultCurrency: 'USD',
+  instagramUrl: 'https://instagram.com/yousrasmile',
+  snapchatUrl: 'https://snapchat.com/add/yousrasmile',
   pinterestUrl: 'https://pinterest.com/yousrasmile',
   youtubeUrl: 'https://youtube.com/@yousrasmile',
   tiktokUrl: 'https://tiktok.com/@yousrasmile',
-  amazonTag: 'yousrasmile-20',
+  amazonTag: 'frial-20',
   aliexpressTag: 'yousra_affiliate_id',
   contactEmail: 'contact@yousrasmile.com'
 };
@@ -313,7 +315,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {
       console.error('Error loading currency:', e);
     }
-    return 'SAR';
+    return 'USD';
   });
 
   const setCurrency = useCallback((code: CurrencyCode) => {

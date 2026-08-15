@@ -11,6 +11,7 @@ import {
   Youtube, 
   Video, 
   Instagram,
+  Ghost,
   Sparkles, 
   ShieldCheck, 
   SlidersHorizontal,
@@ -103,7 +104,7 @@ export const Header: React.FC = () => {
             {/* Social Channels Pills (Shown on Tablet & Desktop) */}
             <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-['Tajawal'] font-bold">
               <a 
-                href="https://youtube.com" 
+                href={siteSettings.youtubeUrl || "https://youtube.com"} 
                 target="_blank" 
                 rel="noreferrer"
                 className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
@@ -113,7 +114,7 @@ export const Header: React.FC = () => {
                 <span>{language === 'ar' ? 'يوتيوب' : 'YouTube'}</span>
               </a>
               <a 
-                href="https://tiktok.com" 
+                href={siteSettings.tiktokUrl || "https://tiktok.com"} 
                 target="_blank" 
                 rel="noreferrer"
                 className="bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 border border-pink-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
@@ -123,7 +124,7 @@ export const Header: React.FC = () => {
                 <span>{language === 'ar' ? 'تيك توك' : 'TikTok'}</span>
               </a>
               <a 
-                href="https://instagram.com/yousrasmile" 
+                href={siteSettings.instagramUrl || "https://instagram.com/yousrasmile"} 
                 target="_blank" 
                 rel="noreferrer"
                 className="bg-purple-500/10 hover:bg-purple-500/20 text-pink-400 border border-purple-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
@@ -131,6 +132,16 @@ export const Header: React.FC = () => {
               >
                 <Instagram className="w-3 h-3 text-pink-400" />
                 <span>{language === 'ar' ? 'انستغرام' : 'Instagram'}</span>
+              </a>
+              <a 
+                href={siteSettings.snapchatUrl || "https://snapchat.com/add/yousrasmile"} 
+                target="_blank" 
+                rel="noreferrer"
+                className="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
+                title="حساب سناب شات"
+              >
+                <Ghost className="w-3 h-3 text-yellow-400" />
+                <span>{language === 'ar' ? 'سناب شات' : 'Snapchat'}</span>
               </a>
             </div>
 

@@ -35,6 +35,9 @@ import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.jpg';
 import { BlogSection } from '../components/BlogSection';
 import { FlashDealsTicker } from '../components/FlashDealsTicker';
 import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
+import { SmartSavingsCalculator } from '../components/SmartSavingsCalculator';
+import { AffiliateDealScanner } from '../components/AffiliateDealScanner';
+import { InstantVideoStudio } from '../components/InstantVideoStudio';
 
 export const HomePage: React.FC = () => {
   const { 
@@ -237,6 +240,9 @@ export const HomePage: React.FC = () => {
           <span className="font-mono-meta text-xs text-slate-200 font-semibold">Fake Reviews Guarantee</span>
         </div>
       </section>
+
+      {/* ⚡ Instant Affiliate Deal & Link Scanner */}
+      <AffiliateDealScanner />
 
       {/* Category Grid Section */}
       <section className="space-y-2.5">
@@ -598,6 +604,9 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* 💡 Interactive Smart Home Savings & ROI Calculator */}
+      <SmartSavingsCalculator />
 
       {/* Buying Guides & Blog Articles Section */}
       <BlogSection />

@@ -35,6 +35,8 @@ import {
 } from 'lucide-react';
 import { GeminiApiKeyManager } from './GeminiApiKeyManager';
 import { GoogleWorkspaceHub } from './GoogleWorkspaceHub';
+import { InstantVideoStudio } from './InstantVideoStudio';
+import { generateProductVideoCampaign } from '../services/productVideoService';
 
 export const AgentAutomationHub: React.FC = () => {
   const { 
@@ -47,11 +49,12 @@ export const AgentAutomationHub: React.FC = () => {
     getAffiliateUrl 
   } = useApp();
 
-  const [activeSubTab, setActiveSubTab] = useState<'upload_agent' | 'bulk_batch_agent' | 'video_agent' | 'compare_agent' | 'api_docs' | 'tracking_analytics' | 'gemini_key' | 'google_workspace'>('bulk_batch_agent');
+  const [activeSubTab, setActiveSubTab] = useState<'upload_agent' | 'bulk_batch_agent' | 'video_agent' | 'compare_agent' | 'api_docs' | 'tracking_analytics' | 'gemini_key' | 'google_workspace'>('video_agent');
   const [copiedKey, setCopiedKey] = useState<boolean>(false);
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
 
-  // Video Preview Modal State
+  // Video Studio & Preview Modal State
+  const [studioModalProduct, setStudioModalProduct] = useState<any | null>(null);
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
   const [previewVideoTitle, setPreviewVideoTitle] = useState<string>('');
 
@@ -82,9 +85,19 @@ export const AgentAutomationHub: React.FC = () => {
   const [selectedSocialNetworks, setSelectedSocialNetworks] = useState<string[]>(['tiktok', 'youtube', 'pinterest', 'instagram', 'snapchat']);
 
   // 2. Video Agent State
+  const [videoMode, setVideoMode] = useState<'url_to_video' | 'catalog_to_video'>('url_to_video');
+  const [urlProductInput, setUrlProductInput] = useState<string>('https://www.amazon.sa/dp/B0CX234');
+  const [urlAffiliateInput, setUrlAffiliateInput] = useState<string>('');
+  const [urlCustomNotes, setUrlCustomNotes] = useState<string>('');
+  const [isGeneratingUrlCampaign, setIsGeneratingUrlCampaign] = useState<boolean>(false);
+  const [urlCampaignResult, setUrlCampaignResult] = useState<any | null>(null);
+  const [urlCampaignError, setUrlCampaignError] = useState<string | null>(null);
+  const [urlCampaignSavedToStore, setUrlCampaignSavedToStore] = useState<boolean>(false);
+  const [urlCampaignSavedToVideos, setUrlCampaignSavedToVideos] = useState<boolean>(false);
+
   const [selectedProductIdForVideo, setSelectedProductIdForVideo] = useState<string>(products[0]?.id || '');
-  const [videoPlatform, setVideoPlatform] = useState<'tiktok' | 'youtube' | 'pinterest'>('tiktok');
-  const [videoAudience, setVideoAudience] = useState<string>('المهتمين بالأجهزة المنزلية الذكية والحلول العصرية');
+  const [videoPlatform, setVideoPlatform] = useState<'tiktok' | 'youtube' | 'pinterest' | 'instagram'>('tiktok');
+  const [videoAudience, setVideoAudience] = useState<string>('المهتمين بالأجهزة المنزلية الذكية والحلول العصرية والتوفير');
   const [isGeneratingVideo, setIsGeneratingVideo] = useState<boolean>(false);
   const [videoScriptResult, setVideoScriptResult] = useState<any | null>(null);
   const [videoError, setVideoError] = useState<string | null>(null);
@@ -995,6 +1008,146 @@ export const AgentAutomationHub: React.FC = () => {
     }
   };
 
+  // Run URL to Video & Affiliate Campaign Generator using dedicated productVideoService
+  const handleGenerateUrlCampaign = async () => {
+    if (!urlProductInput || urlProductInput.trim() === '') {
+      setUrlCampaignError('يرجى إدخال رابط المنتج (أمازون / علي إكسبريس) أو رابطه الترويجي.');
+      return;
+    }
+
+    setIsGeneratingUrlCampaign(true);
+    setUrlCampaignError(null);
+    setUrlCampaignSavedToStore(false);
+    setUrlCampaignSavedToVideos(false);
+
+    try {
+      const campaign = await generateProductVideoCampaign({
+        productUrl: urlProductInput.trim(),
+        affiliateLink: urlAffiliateInput.trim() || undefined,
+        platform: videoPlatform,
+        targetAudience: videoAudience,
+        customNotes: urlCustomNotes.trim() || undefined,
+        agentApiKey: agentApiKey
+      });
+
+      setUrlCampaignResult({
+        productTitleAr: campaign.product.nameAr,
+        productTitleEn: campaign.product.nameEn,
+        category: campaign.product.category,
+        subcategory: campaign.product.subcategory,
+        brand: campaign.product.brand,
+        originalPrice: campaign.product.originalPrice,
+        discountPrice: campaign.product.discountPrice,
+        discountPercent: campaign.product.discountPercent,
+        features: campaign.product.features,
+        affiliateLink: campaign.product.affiliateLink,
+        seoTitle: campaign.seoMetadata.title,
+        seoDescription: campaign.seoMetadata.description,
+        keywords: campaign.seoMetadata.keywords,
+        socialCaption: campaign.socialCaption,
+        hashtags: campaign.hashtags,
+        suggestedVideoUrl: campaign.suggestedVideoUrl,
+        videoScript: campaign.videoScript
+      });
+    } catch (err: any) {
+      setUrlCampaignError(err.message || 'حدث خطأ أثناء معالجة الرابط وتوليد الفيديو.');
+    } finally {
+      setIsGeneratingUrlCampaign(false);
+    }
+  };
+
+  // Save Generated Campaign as Product in Store
+  const handleSaveUrlCampaignToStore = () => {
+    if (!urlCampaignResult) return;
+
+    const newProd: Product = {
+      id: `url-prod-${Date.now()}`,
+      titleAr: urlCampaignResult.productTitleAr || 'منتج ذكي مميز',
+      titleEn: urlCampaignResult.productTitleEn || 'Smart Product Edition',
+      description: `${urlCampaignResult.seoDescription || ''} — مزود بأحدث التقنيات الذكية مع ضمان سنتين.`,
+      longDescription: `${urlCampaignResult.seoDescription || ''}\n\nالمميزات:\n${urlCampaignResult.features?.join('\n') || ''}`,
+      originalPrice: urlCampaignResult.originalPrice || 399,
+      discountPrice: urlCampaignResult.discountPrice || 299,
+      discountPercent: urlCampaignResult.discountPercent || 25,
+      currency: 'SAR',
+      rating: 4.9,
+      reviewCount: 142,
+      viewsCount: 230,
+      createdAt: new Date().toISOString(),
+      category: (urlCampaignResult.category as any) || 'smart-home',
+      subcategory: urlCampaignResult.subcategory || 'أجهزة ذكية متطورة',
+      brand: urlCampaignResult.brand || 'يسرى سمايل',
+      features: urlCampaignResult.features || ['تقنية ذكية فائقة', 'توفير استهلاك الطاقة', 'ضمان رسمي معتمد'],
+      specs: { 'الضمان': 'سنتين', 'التوافق': 'جميع الهواتف والأنظمة الذكية' },
+      image: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=800&auto=format&fit=crop&q=80',
+      images: [
+        'https://images.unsplash.com/photo-1558002038-1055907df827?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&auto=format&fit=crop&q=80'
+      ],
+      amazonUrl: urlCampaignResult.affiliateLink || urlProductInput,
+      youtubeUrl: urlCampaignResult.suggestedVideoUrl || 'https://www.youtube.com/watch?v=p7H2N8r_f5E',
+      isFeatured: true,
+      isTopSelling: true,
+      isActive: true,
+      keywords: urlCampaignResult.keywords || ['أجهزة_ذكية', 'تخفيضات', 'أمازون', 'يسرى_سمايل']
+    };
+
+    addProduct(newProd);
+    setUrlCampaignSavedToStore(true);
+  };
+
+  // Save Generated Campaign Video to Reviews Page
+  const handleSaveUrlCampaignToVideos = () => {
+    if (!urlCampaignResult || !urlCampaignResult.videoScript) return;
+
+    const newVideoData: VideoReview = {
+      id: `url-vid-${Date.now()}`,
+      productId: `url-prod-${Date.now()}`,
+      productTitle: urlCampaignResult.productTitleAr || 'منتج ذكي عصري',
+      productImage: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=800&auto=format&fit=crop&q=80',
+      platform: 'youtube',
+      embedId: 'p7H2N8r_f5E',
+      videoUrl: urlCampaignResult.suggestedVideoUrl || 'https://www.youtube.com/watch?v=p7H2N8r_f5E',
+      title: urlCampaignResult.videoScript.videoTitle || `مراجعة وتجربة ${urlCampaignResult.productTitleAr}`,
+      views: '12.4K',
+      date: 'منذ يومين',
+      duration: urlCampaignResult.videoScript.estimatedDuration || '0:35'
+    };
+
+    addVideo(newVideoData);
+    setUrlCampaignSavedToVideos(true);
+  };
+
+  // Copy Complete Marketing Bundle
+  const handleCopyCampaignBundle = () => {
+    if (!urlCampaignResult) return;
+    const bundleText = `
+🎯 حزمة النشر والتسويق المتكاملة من يسرى سمايل:
+=======================================
+📦 اسم المنتج: ${urlCampaignResult.productTitleAr} (${urlCampaignResult.productTitleEn})
+💰 السعر: ${urlCampaignResult.discountPrice} ر.س (خصم ${urlCampaignResult.discountPercent || 25}%)
+🔗 رابط الأفلييت للشراء: ${urlCampaignResult.affiliateLink}
+
+📱 الكابشن المقترح للنشر (TikTok / Instagram):
+${urlCampaignResult.socialCaption}
+
+🔥 الهاشتاقات:
+${urlCampaignResult.hashtags?.join(' ')}
+
+🎬 سكريبت الفيديو:
+- عنوان الفيديو: ${urlCampaignResult.videoScript?.videoTitle}
+- هوك البداية (أول 3 ثوانٍ): ${urlCampaignResult.videoScript?.hook}
+- دعوة الشراء (CTA): ${urlCampaignResult.videoScript?.callToAction}
+
+🔍 بيانات الـ SEO:
+- عنوان محركات البحث: ${urlCampaignResult.seoTitle}
+- الوصف: ${urlCampaignResult.seoDescription}
+- الكلمات المفتاحية: ${urlCampaignResult.keywords?.join(', ')}
+    `.trim();
+
+    handleCopy(bundleText, 'bundle');
+  };
+
   return (
     <div className="space-y-6">
       
@@ -1499,13 +1652,12 @@ export const AgentAutomationHub: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                setPreviewVideoUrl(prod.videoUrl || "https://www.youtube.com/watch?v=p7H2N8r_f5E");
-                                setPreviewVideoTitle(prod.titleAr);
+                                setStudioModalProduct(prod);
                               }}
-                              className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
+                              className="px-3 py-1.5 bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 hover:opacity-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
                             >
-                              <Play className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-                              <span>معاينة وتشغيل الفيديو 🎥</span>
+                              <Play className="w-3.5 h-3.5 text-white fill-white" />
+                              <span>تشغيل فيديو المنتج الفوري 🎥</span>
                             </button>
 
                             <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40 text-[10px]">
@@ -1820,182 +1972,559 @@ export const AgentAutomationHub: React.FC = () => {
       {/* 🎥 TAB 2: AI Video Review & Shorts Generator */}
       {/* ========================================================================= */}
       {activeSubTab === 'video_agent' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
-            <div className="flex items-center gap-2.5 text-red-500 font-black text-sm">
-              <Video className="w-5 h-5" />
-              <span>صانع سكريبتات ومراجعات الفيديو الفيرال</span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              اختر أي منتج من كتالوج المتجر الحالي، وسيقوم الوكيل بتوليد سكريبت كامل لفيديو تيك توك / شورتس / ريلز مدعوم بالثواني، المشاهد البصرية، والنصوص الصوتية، مع توجيه للشراء برابط الأفلييت.
-            </p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  اختر المنتج المراد صناعة فيديو له *
-                </label>
-                <select
-                  value={selectedProductIdForVideo}
-                  onChange={(e) => setSelectedProductIdForVideo(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none"
-                >
-                  {products.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.titleAr} ({formatPrice(p.discountPrice)})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    المنصة المستهدفة
-                  </label>
-                  <select
-                    value={videoPlatform}
-                    onChange={(e) => setVideoPlatform(e.target.value as any)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none"
-                  >
-                    <option value="tiktok">تيك توك (TikTok Shorts)</option>
-                    <option value="youtube">يوتيوب شورتس (YouTube Shorts)</option>
-                    <option value="pinterest">بنترست فيديو (Pinterest Video Pin)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    مدة الفيديو
-                  </label>
-                  <div className="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-400">
-                    30 إلى 45 ثانية
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  الجمهور المستهدف أو نبرة الصوت
-                </label>
-                <input
-                  type="text"
-                  value={videoAudience}
-                  onChange={(e) => setVideoAudience(e.target.value)}
-                  placeholder="مثال: عشاق الطبخ السريع والتوفير، أو العائلات العصرية"
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none"
-                />
-              </div>
-
-              {videoError && (
-                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-500 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{videoError}</span>
-                </div>
-              )}
-
-              <button
-                onClick={handleGenerateVideoScript}
-                disabled={isGeneratingVideo}
-                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 transition-all cursor-pointer disabled:opacity-50"
-              >
-                {isGeneratingVideo ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>جاري كتابة سكريبت الفيديو وتقسيم المشاهد...</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-4 h-4" />
-                    <span>توليد سكريبت ومراجعة الفيديو بالذكاء الاصطناعي</span>
-                  </>
-                )}
-              </button>
-            </div>
+        <div className="space-y-6">
+          {/* ⚡ Instant 1-Click Link-To-Video Studio */}
+          <InstantVideoStudio 
+            onProductPublished={() => {
+              setActiveSubTab('bulk_batch_agent');
+            }}
+          />
+        </div>
+      )}
+      {false && activeSubTab === 'video_agent' && (
+        <div className="space-y-6">
+          {/* Sub-mode switcher */}
+          <div className="bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl flex items-center gap-2 max-w-xl">
+            <button
+              onClick={() => setVideoMode('url_to_video')}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                videoMode === 'url_to_video'
+                  ? 'bg-gradient-to-r from-red-600 to-pink-600 text-white shadow-md shadow-red-600/30'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/50'
+              }`}
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span>🔗 توليد من رابط المنتج / الأفلييت (URL to Video)</span>
+            </button>
+            <button
+              onClick={() => setVideoMode('catalog_to_video')}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                videoMode === 'catalog_to_video'
+                  ? 'bg-gradient-to-r from-red-600 to-pink-600 text-white shadow-md shadow-red-600/30'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700/50'
+              }`}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>🛍️ توليد من منتجات المتجر الحالية</span>
+            </button>
           </div>
 
-          {/* Script Output Preview */}
-          <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-slate-400">سكريبت ومخطط الفيديو (Storyboard & Script)</span>
-              {videoScriptResult && (
-                <span className="px-2.5 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[10px] font-bold">
-                  {videoScriptResult.estimatedDuration || '45s'}
-                </span>
-              )}
-            </div>
-
-            {videoScriptResult ? (
-              <div className="space-y-4 animate-fadeIn">
-                <div className="bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
-                  <h4 className="text-sm font-black text-slate-900 dark:text-white">{videoScriptResult.videoTitle}</h4>
-                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400">
-                    <span className="font-black block text-red-300 mb-0.5">🔥 خطاف أول 3 ثوانٍ (Hook):</span>
-                    "{videoScriptResult.hook}"
+          {videoMode === 'url_to_video' ? (
+            /* ================= MODE 1: URL TO VIDEO & AFFILIATE CAMPAIGN ================= */
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+                <div className="flex items-center gap-2.5 text-red-500 font-black text-sm">
+                  <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center">
+                    <Video className="w-4 h-4 text-red-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold">مولد الفيديو والأفلييت من رابط المنتج</h3>
+                    <p className="text-[10px] text-slate-400 font-normal">Gemini 3.7 Flash • استخراج السكربت والـ SEO ورابط العمولة</p>
                   </div>
                 </div>
 
-                {/* Scenes timeline */}
-                <div className="space-y-2">
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block">مشاهد الفيديو المقسمة بالثواني:</span>
-                  <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                    {videoScriptResult.scenes?.map((scene: any, idx: number) => (
-                      <div key={idx} className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1 text-xs">
-                        <div className="flex items-center justify-between text-indigo-400 font-mono font-bold">
-                          <span>المشهد {idx + 1} ({scene.timeRange})</span>
-                          <span className="text-[10px] text-slate-400">كتابة على الشاشة: "{scene.screenText}"</span>
-                        </div>
-                        <p className="text-slate-600 dark:text-slate-300">
-                          <strong className="text-amber-500">🎥 المشهد المرئي:</strong> {scene.visualPrompt}
-                        </p>
-                        <p className="text-slate-800 dark:text-slate-100 bg-slate-200/60 dark:bg-slate-900/60 p-2 rounded-lg font-['Cairo']">
-                          <strong className="text-emerald-400">🎙️ الصوت (Voiceover):</strong> {scene.voiceoverText}
-                        </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                      <span>رابط المنتج من أمازون / علي إكسبريس أو اسمه *</span>
+                      <span className="text-[10px] text-red-500">رابط حقيقي أو تسويقي</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={urlProductInput}
+                      onChange={(e) => setUrlProductInput(e.target.value)}
+                      placeholder="https://www.amazon.sa/dp/B08... أو https://amzn.to/..."
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                      <span>رابط الأفلييت الترويجي الخاص بك (اختياري)</span>
+                      <span className="text-[10px] text-emerald-500 font-medium">سيتم دمجه بالكابشن والزر</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={urlAffiliateInput}
+                      onChange={(e) => setUrlAffiliateInput(e.target.value)}
+                      placeholder="https://amzn.to/customLink أو اترك فارغاً للتركيب التلقائي"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none font-mono"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        المنصة المستهدفة
+                      </label>
+                      <select
+                        value={videoPlatform}
+                        onChange={(e) => setVideoPlatform(e.target.value as any)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none"
+                      >
+                        <option value="tiktok">تيك توك (TikTok Shorts)</option>
+                        <option value="youtube">يوتيوب شورتس (YouTube Shorts)</option>
+                        <option value="instagram">إنستغرام ريلز (Reels)</option>
+                        <option value="pinterest">بنترست فيديو (Pinterest Video Pin)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        مدة الفيديو
+                      </label>
+                      <div className="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-400">
+                        30 إلى 45 ثانية
                       </div>
-                    ))}
+                    </div>
                   </div>
-                </div>
 
-                {/* Call to action */}
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-400">
-                  <span className="font-black block text-emerald-300 mb-0.5">🎯 دعوة الشراء في نهاية الفيديو (CTA):</span>
-                  "{videoScriptResult.callToAction}"
-                </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      الجمهور المستهدف أو نبرة الصوت
+                    </label>
+                    <input
+                      type="text"
+                      value={videoAudience}
+                      onChange={(e) => setVideoAudience(e.target.value)}
+                      placeholder="مثال: عشاق المنازل الذكية والطبخ والتوفير"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none"
+                    />
+                  </div>
 
-                {/* Save to Videos Catalog */}
-                <div className="pt-2 flex items-center gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      ملاحظات وتوجيهات إضافية للوكيل (اختياري)
+                    </label>
+                    <input
+                      type="text"
+                      value={urlCustomNotes}
+                      onChange={(e) => setUrlCustomNotes(e.target.value)}
+                      placeholder="مثال: ركز على قوة المحرك، أو توفير الكهرباء، وضمان سنتين"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none"
+                    />
+                  </div>
+
+                  {urlCampaignError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-500 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{urlCampaignError}</span>
+                    </div>
+                  )}
+
                   <button
-                    onClick={handleSaveVideoToCatalog}
-                    disabled={videoSaved}
-                    className={`flex-1 py-3.5 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                      videoSaved
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30'
-                    }`}
+                    onClick={handleGenerateUrlCampaign}
+                    disabled={isGeneratingUrlCampaign}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-pink-600 to-rose-600 hover:opacity-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 transition-all cursor-pointer disabled:opacity-50"
                   >
-                    {videoSaved ? (
+                    {isGeneratingUrlCampaign ? (
                       <>
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>✅ تم حفظ الفيديو وإضافته إلى قسم الفيديوهات بالموقع!</span>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>جاري تحليل الرابط وتوليد السكريبت والكابشن والـ SEO ورابط الأفلييت...</span>
                       </>
                     ) : (
                       <>
-                        <Plus className="w-4 h-4" />
-                        <span>إضافة الفيديو إلى صفحة مراجعات الفيديو بالموقع</span>
+                        <Zap className="w-4 h-4" />
+                        <span>🚀 توليد حزمة الفيديو والتسويق من الرابط فوراً</span>
                       </>
                     )}
                   </button>
                 </div>
               </div>
-            ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-slate-400 space-y-2">
-                <Video className="w-10 h-10 text-red-400 animate-pulse" />
-                <span className="text-xs font-bold">في انتظار اختيار المنتج والضغط على زر التوليد...</span>
-                <span className="text-[11px] text-slate-500 max-w-sm">سيتم إنشاء سكريبت كامل جذاب بالثواني والكتابة على الشاشة ودعوة للشراء للأفلييت.</span>
+
+              {/* Output Preview */}
+              <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-400 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    حزمة التسويق والفيديو الناتجة من الرابط
+                  </span>
+                  {urlCampaignResult && (
+                    <button
+                      onClick={handleCopyCampaignBundle}
+                      className="px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>{copiedSnippet === 'bundle' ? 'تم النسخ!' : 'نسخ الحزمة كاملة'}</span>
+                    </button>
+                  )}
+                </div>
+
+                {urlCampaignResult ? (
+                  <div className="space-y-4 animate-fadeIn">
+                    {/* Product & Affiliate Card */}
+                    <div className="bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                            {urlCampaignResult.productTitleAr}
+                          </h4>
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            {urlCampaignResult.productTitleEn}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-xl">
+                            {urlCampaignResult.discountPrice} ر.س
+                          </span>
+                          <span className="text-[11px] line-through text-slate-400">
+                            {urlCampaignResult.originalPrice} ر.س
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Direct Affiliate Link Box */}
+                      <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                            رابط الأفلييت المعتمد والمفعل لعمولتك:
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={urlCampaignResult.affiliateLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-emerald-400 hover:text-emerald-300 underline flex items-center gap-1 font-bold"
+                            >
+                              <span>اختبار الرابط</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                            <button
+                              onClick={() => handleCopy(urlCampaignResult.affiliateLink, 'aff-link')}
+                              className="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-[10px] font-bold"
+                            >
+                              {copiedSnippet === 'aff-link' ? 'تم النسخ!' : 'نسخ الرابط'}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="text-[11px] font-mono text-emerald-300 break-all select-all bg-emerald-950/40 p-1.5 rounded-lg border border-emerald-800/40">
+                          {urlCampaignResult.affiliateLink}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Social Media Caption & Hashtags */}
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <Share2 className="w-3.5 h-3.5 text-pink-500" />
+                          كابشن النشر المباشر (TikTok / Instagram / YouTube):
+                        </span>
+                        <button
+                          onClick={() => handleCopy(urlCampaignResult.socialCaption, 'caption')}
+                          className="text-[11px] font-bold text-pink-500 hover:text-pink-400 flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>{copiedSnippet === 'caption' ? 'تم النسخ!' : 'نسخ الكابشن'}</span>
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700/60 whitespace-pre-line font-['Cairo']">
+                        {urlCampaignResult.socialCaption}
+                      </p>
+
+                      {/* Hashtags */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {urlCampaignResult.hashtags?.map((tag: string, idx: number) => (
+                          <span key={idx} className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-lg">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* SEO & Keywords */}
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-1 text-xs">
+                      <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold">
+                        <span>🔍 بيانات الـ SEO لمحركات البحث:</span>
+                        <span className="font-mono text-[10px] text-amber-400">Google Optimized</span>
+                      </div>
+                      <p className="font-bold text-slate-800 dark:text-slate-100">{urlCampaignResult.seoTitle}</p>
+                      <p className="text-slate-500 text-[11px]">{urlCampaignResult.seoDescription}</p>
+                    </div>
+
+                    {/* Video Storyboard & Voiceover */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <Video className="w-3.5 h-3.5 text-red-400" />
+                          مخطط وسكريبت الفيديو بالثواني:
+                        </span>
+                        <span className="text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded-md">
+                          {urlCampaignResult.videoScript?.estimatedDuration || '35 ثانية'}
+                        </span>
+                      </div>
+
+                      {/* Hook */}
+                      <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400">
+                        <span className="font-black block text-red-300 mb-0.5">🔥 خطاف أول 3 ثوانٍ (Hook):</span>
+                        "{urlCampaignResult.videoScript?.hook}"
+                      </div>
+
+                      {/* Scenes timeline */}
+                      <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                        {urlCampaignResult.videoScript?.scenes?.map((scene: any, idx: number) => (
+                          <div key={idx} className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1 text-xs">
+                            <div className="flex items-center justify-between text-indigo-400 font-mono font-bold">
+                              <span>المشهد {idx + 1} ({scene.timeRange})</span>
+                              <span className="text-[10px] text-slate-400">كتابة على الشاشة: "{scene.screenText}"</span>
+                            </div>
+                            <p className="text-slate-600 dark:text-slate-300">
+                              <strong className="text-amber-500">🎥 المشهد المرئي:</strong> {scene.visualPrompt}
+                            </p>
+                            <p className="text-slate-800 dark:text-slate-100 bg-slate-200/60 dark:bg-slate-900/60 p-2 rounded-lg font-['Cairo']">
+                              <strong className="text-emerald-400">🎙️ الصوت (Voiceover):</strong> {scene.voiceoverText}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* CTA */}
+                      <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-400">
+                        <span className="font-black block text-emerald-300 mb-0.5">🎯 دعوة الشراء (CTA):</span>
+                        "{urlCampaignResult.videoScript?.callToAction}"
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <button
+                        onClick={handleSaveUrlCampaignToStore}
+                        disabled={urlCampaignSavedToStore}
+                        className={`py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                          urlCampaignSavedToStore
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30'
+                        }`}
+                      >
+                        {urlCampaignSavedToStore ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>✅ تم النشر في المتجر برابط عمولتك!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-4 h-4" />
+                            <span>✨ نشر هذا المنتج فوراً في المتجر</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={handleSaveUrlCampaignToVideos}
+                        disabled={urlCampaignSavedToVideos}
+                        className={`py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                          urlCampaignSavedToVideos
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30'
+                        }`}
+                      >
+                        {urlCampaignSavedToVideos ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>✅ تمت الإضافة لقسم الفيديوهات بالموقع!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Video className="w-4 h-4" />
+                            <span>🎬 إضافة الفيديو لقسم مراجعات الفيديو</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-72 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-slate-400 space-y-3">
+                    <Video className="w-12 h-12 text-red-400 animate-pulse" />
+                    <div>
+                      <span className="text-xs font-bold block text-slate-300">أدخل رابط المنتج أو الأفلييت واضغط "توليد الحزمة"</span>
+                      <span className="text-[11px] text-slate-500 max-w-sm block mt-1">
+                        سيقوم الوكيل الذكي باستخراج العنوان والكابشن المباشر والـ SEO والهاشتاقات وسكريبت الفيديو ورابط العمولة بنقرة واحدة.
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            /* ================= MODE 2: CATALOG TO VIDEO SCRIPT ================= */
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+                <div className="flex items-center gap-2.5 text-red-500 font-black text-sm">
+                  <Video className="w-5 h-5" />
+                  <span>صانع سكريبتات ومراجعات الفيديو من الكتالوج</span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  اختر أي منتج من كتالوج المتجر الحالي، وسيقوم الوكيل بتوليد سكريبت كامل لفيديو تيك توك / شورتس / ريلز مدعوم بالثواني، المشاهد البصرية، والنصوص الصوتية، مع توجيه للشراء برابط الأفلييت.
+                </p>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      اختر المنتج المراد صناعة فيديو له *
+                    </label>
+                    <select
+                      value={selectedProductIdForVideo}
+                      onChange={(e) => setSelectedProductIdForVideo(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none"
+                    >
+                      {products.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.titleAr} ({formatPrice(p.discountPrice)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        المنصة المستهدفة
+                      </label>
+                      <select
+                        value={videoPlatform}
+                        onChange={(e) => setVideoPlatform(e.target.value as any)}
+                        className="w-full px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none"
+                      >
+                        <option value="tiktok">تيك توك (TikTok Shorts)</option>
+                        <option value="youtube">يوتيوب شورتس (YouTube Shorts)</option>
+                        <option value="pinterest">بنترست فيديو (Pinterest Video Pin)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        مدة الفيديو
+                      </label>
+                      <div className="px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-400">
+                        30 إلى 45 ثانية
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                      الجمهور المستهدف أو نبرة الصوت
+                    </label>
+                    <input
+                      type="text"
+                      value={videoAudience}
+                      onChange={(e) => setVideoAudience(e.target.value)}
+                      placeholder="مثال: عشاق الطبخ السريع والتوفير، أو العائلات العصرية"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none"
+                    />
+                  </div>
+
+                  {videoError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-500 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{videoError}</span>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleGenerateVideoScript}
+                    disabled={isGeneratingVideo}
+                    className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isGeneratingVideo ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>جاري كتابة سكريبت الفيديو وتقسيم المشاهد...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4" />
+                        <span>توليد سكريبت ومراجعة الفيديو بالذكاء الاصطناعي</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Script Output Preview */}
+              <div className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-400">سكريبت ومخطط الفيديو (Storyboard & Script)</span>
+                  {videoScriptResult && (
+                    <span className="px-2.5 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[10px] font-bold">
+                      {videoScriptResult.estimatedDuration || '45s'}
+                    </span>
+                  )}
+                </div>
+
+                {videoScriptResult ? (
+                  <div className="space-y-4 animate-fadeIn">
+                    <div className="bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white">{videoScriptResult.videoTitle}</h4>
+                      <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400">
+                        <span className="font-black block text-red-300 mb-0.5">🔥 خطاف أول 3 ثوانٍ (Hook):</span>
+                        "{videoScriptResult.hook}"
+                      </div>
+                    </div>
+
+                    {/* Scenes timeline */}
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block">مشاهد الفيديو المقسمة بالثواني:</span>
+                      <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                        {videoScriptResult.scenes?.map((scene: any, idx: number) => (
+                          <div key={idx} className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1 text-xs">
+                            <div className="flex items-center justify-between text-indigo-400 font-mono font-bold">
+                              <span>المشهد {idx + 1} ({scene.timeRange})</span>
+                              <span className="text-[10px] text-slate-400">كتابة على الشاشة: "{scene.screenText}"</span>
+                            </div>
+                            <p className="text-slate-600 dark:text-slate-300">
+                              <strong className="text-amber-500">🎥 المشهد المرئي:</strong> {scene.visualPrompt}
+                            </p>
+                            <p className="text-slate-800 dark:text-slate-100 bg-slate-200/60 dark:bg-slate-900/60 p-2 rounded-lg font-['Cairo']">
+                              <strong className="text-emerald-400">🎙️ الصوت (Voiceover):</strong> {scene.voiceoverText}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Call to action */}
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-400">
+                      <span className="font-black block text-emerald-300 mb-0.5">🎯 دعوة الشراء في نهاية الفيديو (CTA):</span>
+                      "{videoScriptResult.callToAction}"
+                    </div>
+
+                    {/* Save to Videos Catalog */}
+                    <div className="pt-2 flex items-center gap-3">
+                      <button
+                        onClick={handleSaveVideoToCatalog}
+                        disabled={videoSaved}
+                        className={`flex-1 py-3.5 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                          videoSaved
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30'
+                        }`}
+                      >
+                        {videoSaved ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>✅ تم حفظ الفيديو وإضافته إلى قسم الفيديوهات بالموقع!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-4 h-4" />
+                            <span>إضافة الفيديو إلى صفحة مراجعات الفيديو بالموقع</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-64 flex flex-col items-center justify-center text-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-slate-400 space-y-2">
+                    <Video className="w-10 h-10 text-red-400 animate-pulse" />
+                    <span className="text-xs font-bold">في انتظار اختيار المنتج والضغط على زر التوليد...</span>
+                    <span className="text-[11px] text-slate-500 max-w-sm">سيتم إنشاء سكريبت كامل جذاب بالثواني والكتابة على الشاشة ودعوة للشراء للأفلييت.</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -2445,6 +2974,18 @@ print(response.json())`}
       )}
 
       {/* 🎬 Video Preview & Inspection Modal */}
+      {studioModalProduct && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div className="max-w-5xl w-full my-auto">
+            <InstantVideoStudio 
+              initialProduct={studioModalProduct}
+              onClose={() => setStudioModalProduct(null)}
+              onProductPublished={() => setStudioModalProduct(null)}
+            />
+          </div>
+        </div>
+      )}
+
       {previewVideoUrl && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl space-y-4 p-6">

@@ -15,7 +15,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   onFilterChange,
   onReset
 }) => {
-  const { products } = useApp();
+  const { products, formatPrice } = useApp();
 
   // Extract unique brands
   const brands = Array.from(new Set(products.map(p => p.brand))).filter(Boolean);
@@ -33,7 +33,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
         </div>
         <button
           onClick={onReset}
-          className="text-xs text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 flex items-center gap-1 transition-colors"
+          className="text-xs text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 flex items-center gap-1 transition-colors cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           إعادة ضبط
@@ -80,7 +80,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
           onChange={(e) => onFilterChange({ brand: e.target.value })}
           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-purple-500"
         >
-          <option value="all">جميع الماركات</option>
+          <option value="all">جميع الماركات ({brands.length})</option>
           {brands.map((b, i) => (
             <option key={i} value={b}>{b}</option>
           ))}
@@ -95,9 +95,9 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
             <button
               key={disc}
               onClick={() => onFilterChange({ minDiscount: disc })}
-              className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-colors ${
+              className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
                 filters.minDiscount === disc
-                  ? 'bg-purple-600 text-white border-purple-600'
+                  ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
                   : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-purple-300'
               }`}
             >
@@ -111,20 +111,20 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
       <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
         <div className="flex justify-between items-center text-xs text-slate-700 dark:text-slate-300 font-bold">
           <span>نطاق السعر الأقصى:</span>
-          <span className="text-purple-600 dark:text-purple-400 font-extrabold font-['Tajawal']">{filters.maxPrice} ريال</span>
+          <span className="text-purple-600 dark:text-purple-400 font-extrabold font-['Tajawal']">{formatPrice(filters.maxPrice)}</span>
         </div>
         <input 
           type="range"
-          min={100}
-          max={10000}
-          step={100}
+          min={50}
+          max={5000}
+          step={50}
           value={filters.maxPrice}
           onChange={(e) => onFilterChange({ maxPrice: Number(e.target.value) })}
           className="w-full accent-purple-600 cursor-pointer"
         />
         <div className="flex justify-between text-[10px] text-slate-400">
-          <span>100 ريال</span>
-          <span>10,000 ريال</span>
+          <span>{formatPrice(50)}</span>
+          <span>{formatPrice(5000)}</span>
         </div>
       </div>
 

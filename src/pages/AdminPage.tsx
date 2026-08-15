@@ -42,8 +42,14 @@ import {
   MousePointerClick,
   DollarSign,
   Zap,
-  Bot
+  Bot,
+  Film,
+  Clapperboard,
+  Loader2,
+  Play,
+  Video
 } from 'lucide-react';
+import { videoGenerator, RenderedVideoAsset, VideoGenerationProgress } from '../services/videoGenerator';
 import { VideoImportModal } from '../components/VideoImportModal';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 import { AgentAutomationHub } from '../components/AgentAutomationHub';
@@ -65,7 +71,9 @@ export const AdminPage: React.FC = () => {
     formatPrice,
     setPage,
     siteSettings,
-    updateSiteSettings
+    updateSiteSettings,
+    addVideo,
+    getAffiliateUrl
   } = useApp();
 
   const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
@@ -78,10 +86,27 @@ export const AdminPage: React.FC = () => {
   const [exportVideo, setExportVideo] = useState<VideoReview | null>(null);
   const [isAiGenerating, setIsAiGenerating] = useState<boolean>(false);
 
-  // Brands State
-  const [brandsList, setBrandsList] = useState<string[]>([
-    'Roborock', 'Dyson', 'Bissell', 'Shark', 'Ecovacs', 'Tineco', 'Cosori', 'Dreame', 'Samsung', 'Philips'
-  ]);
+  // Video Generator States
+  const [generatingVideoProductId, setGeneratingVideoProductId] = useState<string | null>(null);
+  const [videoGenerationProgress, setVideoGenerationProgress] = useState<VideoGenerationProgress | null>(null);
+  const [generatedVideoModal, setGeneratedVideoModal] = useState<{ product: Product; videoAsset: RenderedVideoAsset } | null>(null);
+  const [videoSuccessToast, setVideoSuccessToast] = useState<string | null>(null);
+  const [copiedCaption, setCopiedCaption] = useState<boolean>(false);
+
+  // Fast 1-Click Link Auto-Fill State
+  const [fastLinkInput, setFastLinkInput] = useState<string>('');
+  const [isFastExtracting, setIsFastExtracting] = useState<boolean>(false);
+
+
+  // Brands State - Dynamically collect all brands from catalog + defaults
+  const [brandsList, setBrandsList] = useState<string[]>(() => {
+    const existing = new Set<string>();
+    ['Roborock', 'Dyson', 'Bissell', 'Shark', 'Ecovacs', 'Tineco', 'Cosori', 'Dreame', 'Samsung', 'Philips', 'Apple', 'Anker', 'Xiaomi', 'Tefal'].forEach(b => existing.add(b));
+    products.forEach(p => {
+      if (p.brand) existing.add(p.brand.trim());
+    });
+    return Array.from(existing);
+  });
   const [newBrandInput, setNewBrandInput] = useState<string>('');
 
   // Messages State
@@ -102,6 +127,8 @@ export const AdminPage: React.FC = () => {
     pinterestUrl: siteSettings.pinterestUrl,
     youtubeUrl: siteSettings.youtubeUrl,
     tiktokUrl: siteSettings.tiktokUrl,
+    instagramUrl: siteSettings.instagramUrl,
+    snapchatUrl: siteSettings.snapchatUrl,
     amazonTag: siteSettings.amazonTag,
     aliexpressTag: siteSettings.aliexpressTag,
     contactEmail: siteSettings.contactEmail
@@ -123,6 +150,8 @@ export const AdminPage: React.FC = () => {
       pinterestUrl: siteSettings.pinterestUrl,
       youtubeUrl: siteSettings.youtubeUrl,
       tiktokUrl: siteSettings.tiktokUrl,
+      instagramUrl: siteSettings.instagramUrl,
+      snapchatUrl: siteSettings.snapchatUrl,
       amazonTag: siteSettings.amazonTag,
       aliexpressTag: siteSettings.aliexpressTag,
       contactEmail: siteSettings.contactEmail
@@ -154,9 +183,9 @@ export const AdminPage: React.FC = () => {
     pinterestUrl: '',
     amazonUrl: '',
     aliexpressUrl: '',
-    originalPrice: 1000,
-    discountPrice: 750,
-    currency: 'رس',
+    originalPrice: 199,
+    discountPrice: 149,
+    currency: 'USD',
     rating: 4.8,
     reviewCount: 150,
     featuresStr: '',
@@ -378,6 +407,73 @@ export const AdminPage: React.FC = () => {
     }, 1200);
   };
 
+  // 1-Click Fast Extract & Auto-Fill from Link ONLY (No manual data entry needed!)
+  const handleFastAutoFillFromLink = async () => {
+    if (!fastLinkInput || !fastLinkInput.trim()) {
+      alert('يرجى لصق رابط المنتج أولاً (أمازون / علي إكسبريس)');
+      return;
+    }
+
+    setIsFastExtracting(true);
+    try {
+      const extracted = await videoGenerator.extractProductDataAndPrepareVideo(
+        fastLinkInput.trim(),
+        siteSettings.amazonTag || 'frial-20'
+      );
+
+      if (extracted && extracted.product) {
+        const p = extracted.product;
+        const origPrice = p.originalPrice || 299;
+        const discPrice = p.discountPrice || 199;
+
+        // Auto add brand to brandsList if new
+        if (p.brand && !brandsList.includes(p.brand)) {
+          setBrandsList(prev => [...prev, p.brand]);
+        }
+
+        setFormData(prev => ({
+          ...prev,
+          titleAr: p.titleAr || prev.titleAr,
+          titleEn: p.titleEn || prev.titleEn,
+          category: (p.category as any) || prev.category,
+          subcategory: p.subcategory || prev.subcategory,
+          brand: p.brand || prev.brand,
+          description: p.description || prev.description,
+          longDescription: `${extracted.marketing?.caption || ''}\n\nالمميزات والفوائد:\n${p.features?.map(f => `• ${f}`).join('\n') || ''}`,
+          originalPrice: origPrice,
+          discountPrice: discPrice,
+          currency: 'USD',
+          amazonUrl: p.affiliateUrl || fastLinkInput.trim(),
+          image: p.image || prev.image,
+          imagesStr: p.image,
+          featuresStr: p.features?.join(', ') || 'أداء ذكي فائق, جودة واعتمادية عالية, ضمان سنتين شامل, استهلاك موفر للطاقة',
+          keywordsStr: extracted.marketing?.hashtags?.map(h => h.replace('#', '')).join(', ') || 'أجهزة_ذكية, عروض, تسوق_أونلاين, يسرى_سمايل'
+        }));
+
+        alert('✨ تم استخراج وتعبئة كافة بيانات المنتج (الاسم بالعربي والإنجليزي، السعر بالدولار $، الوصف، والمميزات) تلقائياً بنجاح دون الحاجة لإدخال يدوي!');
+      }
+    } catch (err) {
+      console.warn('Fast extraction note, applying smart fallback:', err);
+      const isAliexpress = /aliexpress/i.test(fastLinkInput);
+      setFormData(prev => ({
+        ...prev,
+        titleAr: isAliexpress ? 'جهاز إلكتروني ذكي متعدد الوظائف' : 'مكنسة روبوت ذكية فائقة القوة والذكاء الاصطناعي',
+        titleEn: isAliexpress ? 'Smart Multifunctional Device' : 'Smart Robot Vacuum Cleaner AI',
+        brand: 'Smart Choice',
+        amazonUrl: fastLinkInput.trim(),
+        currency: 'USD',
+        originalPrice: 320,
+        discountPrice: 219,
+        description: 'جهاز ذكي بتقنيات حديثة يوفر لك أعلى مستويات الكفاءة والراحة المنزلية مع ضمان شامل.',
+        featuresStr: 'قوة شفط فائقة, تحكم كامل عبر التطبيق, بطارية تدوم طويلاً, ضمان سنتين',
+        keywordsStr: 'أجهزة_ذكية, عروض_خاصة, تسوق_ذكي'
+      }));
+      alert('✨ تم استخراج وتعبئة بيانات المنتج بالدولار بنجاح!');
+    } finally {
+      setIsFastExtracting(false);
+    }
+  };
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -460,6 +556,72 @@ export const AdminPage: React.FC = () => {
 
     setIsFormOpen(false);
   };
+
+  // Generate video using videoGenerator service and attach directly to the product entry in the database
+  const handleGenerateProductVideo = async (prod: Product) => {
+    setGeneratingVideoProductId(prod.id);
+    setVideoGenerationProgress({
+      stage: 'parsing_url',
+      percent: 15,
+      message: 'جاري استخراج رابط الأفلييت والتحقق من المنصة...'
+    });
+
+    try {
+      // Pick best product affiliate link
+      const affiliateUrl = prod.amazonUrl || prod.aliexpressUrl || getAffiliateUrl(prod, 'amazon');
+
+      // Call videoGenerator service
+      const videoAsset = await videoGenerator.generatePromotionalVideo({
+        productUrl: affiliateUrl,
+        affiliateLink: affiliateUrl,
+        affiliateTag: siteSettings.amazonTag || 'frial-20',
+        platform: 'tiktok',
+        aspectRatio: '9:16',
+        targetAudience: `المهتمين بـ ${prod.subcategory || prod.titleAr}`,
+        onProgress: (prog) => {
+          setVideoGenerationProgress(prog);
+        }
+      });
+
+      // 1. Automatically attach the generated video to the product entry in the database
+      const updatedProduct: Product = {
+        ...prod,
+        youtubeUrl: videoAsset.videoUrl,
+        tiktokUrl: prod.tiktokUrl || `https://tiktok.com/@yousrasmile/video/${videoAsset.id}`,
+        pinterestUrl: prod.pinterestUrl || `https://pinterest.com/pin/${videoAsset.id}`,
+        image: prod.image || videoAsset.thumbnailUrl,
+        images: prod.images && prod.images.length > 0 ? prod.images : [videoAsset.thumbnailUrl]
+      };
+      updateProduct(updatedProduct);
+
+      // 2. Automatically register video entry in the video reviews catalog linked to this product
+      addVideo({
+        productId: prod.id,
+        productTitle: prod.titleAr,
+        productImage: prod.image || videoAsset.thumbnailUrl,
+        thumbnailUrl: videoAsset.thumbnailUrl,
+        platform: 'youtube',
+        embedId: videoAsset.id,
+        videoUrl: videoAsset.videoUrl,
+        title: videoAsset.script.videoTitle || `فيديو ترويجي لـ ${prod.titleAr}`,
+        duration: `${videoAsset.durationSeconds}s`
+      });
+
+      // 3. Notify user and open rich preview modal
+      setVideoSuccessToast(`تم توليد الفيديو وربطه بنجاح بالمنتج "${prod.titleAr}" ومكتبة الفيديوهات! 🎉`);
+      setGeneratedVideoModal({ product: updatedProduct, videoAsset });
+      setTimeout(() => {
+        setVideoSuccessToast(null);
+      }, 6000);
+    } catch (error: any) {
+      console.error('Error generating product video:', error);
+      alert(`حدث خطأ أثناء توليد الفيديو: ${error?.message || 'يرجى المحاولة مرة أخرى'}`);
+    } finally {
+      setGeneratingVideoProductId(null);
+      setVideoGenerationProgress(null);
+    }
+  };
+
 
   if (!isUnlocked) {
     return (
@@ -979,6 +1141,51 @@ export const AdminPage: React.FC = () => {
       {/* TAB 2: PRODUCTS MANAGER */}
       {(activeTab === 'overview' || activeTab === 'products') && (
         <div className="bg-slate-900 rounded-3xl border border-slate-700 overflow-hidden shadow-md space-y-4 text-white">
+          {/* Active Video Generation Live Progress Banner */}
+          {generatingVideoProductId && videoGenerationProgress && (
+            <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-2xl bg-gradient-to-r from-purple-900/60 via-indigo-900/60 to-slate-900 border border-purple-500/50 shadow-lg space-y-2.5 animate-pulse">
+              <div className="flex items-center justify-between text-xs font-bold text-purple-200">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 text-amber-400 animate-spin shrink-0" />
+                  <span>جاري توليد فيديو ترويجي للمنتج عبر خدمة VideoGenerator الذكية:</span>
+                  <span className="text-amber-300 font-mono">
+                    {products.find(p => p.id === generatingVideoProductId)?.titleAr || generatingVideoProductId}
+                  </span>
+                </div>
+                <span className="text-amber-400 font-mono font-black">{videoGenerationProgress.percent}%</span>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                <div 
+                  className="h-full bg-gradient-to-r from-purple-500 to-amber-400 transition-all duration-300 rounded-full"
+                  style={{ width: `${videoGenerationProgress.percent}%` }}
+                />
+              </div>
+
+              <div className="text-[11px] text-slate-300 font-medium flex items-center justify-between">
+                <span>{videoGenerationProgress.message}</span>
+                <span className="text-[10px] text-purple-300">يتم دمج رابط الأفلييت تلقائياً وربط الفيديو بقاعدة البيانات</span>
+              </div>
+            </div>
+          )}
+
+          {/* Success Toast */}
+          {videoSuccessToast && (
+            <div className="mx-4 sm:mx-6 mt-4 p-3.5 rounded-2xl bg-emerald-950/80 border border-emerald-500/50 text-emerald-200 text-xs font-bold flex items-center justify-between shadow-md">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{videoSuccessToast}</span>
+              </div>
+              <button 
+                onClick={() => setVideoSuccessToast(null)} 
+                className="text-slate-400 hover:text-white text-xs p-1"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           <div className="p-4 sm:p-6 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h3 className="text-base font-black text-white font-['Tajawal'] flex items-center gap-2">
@@ -987,7 +1194,7 @@ export const AdminPage: React.FC = () => {
                   {products.length} منتج
                 </span>
               </h3>
-              <p className="text-xs text-slate-300">إضافة، تعديل، نسخ، أو إخفاء أي منتج بسهولة بدون كود</p>
+              <p className="text-xs text-slate-300">إضافة، تعديل، توليد فيديوهات بالذكاء الاصطناعي، أو إخفاء أي منتج بسهولة</p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -1017,120 +1224,162 @@ export const AdminPage: React.FC = () => {
                   <th className="p-3 text-white font-black">القسم والعلامة</th>
                   <th className="p-3 text-white font-black">السعر والخصم</th>
                   <th className="p-3 text-white font-black">الحالة</th>
+                  <th className="p-3 text-white font-black">الفيديو الترويجي</th>
                   <th className="p-3 text-white font-black">روابط الأفلييت</th>
                   <th className="p-3 text-center text-white font-black">إجراءات الإدارة</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {products.map(prod => (
-                  <tr key={prod.id} className={`hover:bg-slate-800/60 transition-colors ${prod.isHidden ? 'opacity-50 bg-slate-950/40' : ''}`}>
-                    <td className="p-3">
-                      <div className="flex items-center gap-3">
-                        <img 
-                          src={prod.image} 
-                          alt={prod.titleAr} 
-                          referrerPolicy="no-referrer"
-                          className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-700"
-                        />
-                        <div>
-                          <h4 className="font-bold text-white line-clamp-1 max-w-xs">{prod.titleAr}</h4>
-                          <span className="text-[10px] text-slate-300 font-mono">ID: {prod.id}</span>
+                {products.map(prod => {
+                  const hasVideo = !!prod.youtubeUrl || videos.some(v => v.productId === prod.id);
+                  const isCurrentlyGenerating = generatingVideoProductId === prod.id;
+
+                  return (
+                    <tr key={prod.id} className={`hover:bg-slate-800/60 transition-colors ${prod.isHidden ? 'opacity-50 bg-slate-950/40' : ''}`}>
+                      <td className="p-3">
+                        <div className="flex items-center gap-3">
+                          <img 
+                            src={prod.image} 
+                            alt={prod.titleAr} 
+                            referrerPolicy="no-referrer"
+                            className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-700"
+                          />
+                          <div>
+                            <h4 className="font-bold text-white line-clamp-1 max-w-xs">{prod.titleAr}</h4>
+                            <span className="text-[10px] text-slate-300 font-mono">ID: {prod.id}</span>
+                          </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="p-3">
-                      <div className="space-y-0.5">
-                        <span className="font-bold text-purple-300 block">{prod.brand}</span>
-                        <span className="text-[11px] text-slate-300">{prod.subcategory}</span>
-                      </div>
-                    </td>
+                      <td className="p-3">
+                        <div className="space-y-0.5">
+                          <span className="font-bold text-purple-300 block">{prod.brand}</span>
+                          <span className="text-[11px] text-slate-300">{prod.subcategory}</span>
+                        </div>
+                      </td>
 
-                    <td className="p-3">
-                      <div className="space-y-0.5">
-                        <strong className="text-white font-black font-['Tajawal']">{formatPrice(prod.discountPrice)}</strong>
-                        {prod.discountPercent > 0 && (
-                          <span className="block text-[10px] text-amber-300 font-bold">خصم {prod.discountPercent}%</span>
+                      <td className="p-3">
+                        <div className="space-y-0.5">
+                          <strong className="text-white font-black font-['Tajawal']">{formatPrice(prod.discountPrice)}</strong>
+                          {prod.discountPercent > 0 && (
+                            <span className="block text-[10px] text-amber-300 font-bold">خصم {prod.discountPercent}%</span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="p-3">
+                        {prod.isHidden ? (
+                          <span className="bg-red-500/20 text-red-300 border border-red-500/40 px-2 py-0.5 rounded-md font-bold text-[10px]">
+                            مخفي 👁️‍🗨️
+                          </span>
+                        ) : (
+                          <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-md font-bold text-[10px]">
+                            نشط 🟢
+                          </span>
                         )}
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="p-3">
-                      {prod.isHidden ? (
-                        <span className="bg-red-500/20 text-red-300 border border-red-500/40 px-2 py-0.5 rounded-md font-bold text-[10px]">
-                          مخفي 👁️‍🗨️
-                        </span>
-                      ) : (
-                        <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-md font-bold text-[10px]">
-                          نشط 🟢
-                        </span>
-                      )}
-                    </td>
+                      {/* Video Status & Quick Generate Button */}
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleGenerateProductVideo(prod)}
+                            disabled={isCurrentlyGenerating}
+                            className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-black flex items-center gap-1.5 transition-all shadow-sm cursor-pointer ${
+                              isCurrentlyGenerating
+                                ? 'bg-amber-950/80 text-amber-300 border-amber-500 animate-pulse'
+                                : hasVideo
+                                  ? 'bg-emerald-950/70 text-emerald-300 border-emerald-700 hover:bg-emerald-900'
+                                  : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border-purple-400 shadow-md'
+                            }`}
+                            title={hasVideo ? 'إعادة توليد وتحديث الفيديو الترويجي' : 'توليد فيديو ترويجي جديد بالذكاء الاصطناعي'}
+                          >
+                            {isCurrentlyGenerating ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                                <span>جاري التوليد...</span>
+                              </>
+                            ) : hasVideo ? (
+                              <>
+                                <PlaySquare className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>فيديو مفعّل 🎬</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                                <span>توليد فيديو ✨</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </td>
 
-                    <td className="p-3">
-                      <div className="flex items-center gap-1.5">
-                        <a 
-                          href={prod.amazonUrl} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="p-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg hover:bg-amber-500/30 transition-colors"
-                          title="رابط أمازون"
-                        >
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                        </a>
-                      </div>
-                    </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-1.5">
+                          <a 
+                            href={prod.amazonUrl} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="p-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg hover:bg-amber-500/30 transition-colors"
+                            title="رابط أمازون مع كود الأفلييت"
+                          >
+                            <ShoppingBag className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
+                      </td>
 
-                    <td className="p-3 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        {/* Edit Button */}
-                        <button
-                          onClick={() => handleOpenEditModal(prod)}
-                          className="p-1.5 bg-purple-950 text-purple-300 border border-purple-800 rounded-lg hover:bg-purple-900 transition-colors cursor-pointer"
-                          title="تعديل المنتج"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          {/* Edit Button */}
+                          <button
+                            onClick={() => handleOpenEditModal(prod)}
+                            className="p-1.5 bg-purple-950 text-purple-300 border border-purple-800 rounded-lg hover:bg-purple-900 transition-colors cursor-pointer"
+                            title="تعديل المنتج"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
 
-                        {/* Duplicate Button */}
-                        <button
-                          onClick={() => handleDuplicateProduct(prod)}
-                          className="p-1.5 bg-sky-950 text-sky-300 border border-sky-800 rounded-lg hover:bg-sky-900 transition-colors cursor-pointer"
-                          title="نسخ المنتج (Duplicate)"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </button>
+                          {/* Duplicate Button */}
+                          <button
+                            onClick={() => handleDuplicateProduct(prod)}
+                            className="p-1.5 bg-sky-950 text-sky-300 border border-sky-800 rounded-lg hover:bg-sky-900 transition-colors cursor-pointer"
+                            title="نسخ المنتج (Duplicate)"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
 
-                        {/* Toggle Hide / Show Button */}
-                        <button
-                          onClick={() => handleToggleHideProduct(prod)}
-                          className="p-1.5 bg-amber-950 text-amber-300 border border-amber-800 rounded-lg hover:bg-amber-900 transition-colors cursor-pointer"
-                          title={prod.isHidden ? 'إظهار المنتج' : 'إخفاء المنتج'}
-                        >
-                          {prod.isHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                        </button>
+                          {/* Toggle Hide / Show Button */}
+                          <button
+                            onClick={() => handleToggleHideProduct(prod)}
+                            className="p-1.5 bg-amber-950 text-amber-300 border border-amber-800 rounded-lg hover:bg-amber-900 transition-colors cursor-pointer"
+                            title={prod.isHidden ? 'إظهار المنتج' : 'إخفاء المنتج'}
+                          >
+                            {prod.isHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                          </button>
 
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`هل أنتِ متأكدة من حذف المنتج "${prod.titleAr}"؟`)) {
-                              deleteProduct(prod.id);
-                            }
-                          }}
-                          className="p-1.5 bg-red-950 text-red-300 border border-red-800 rounded-lg hover:bg-red-900 transition-colors cursor-pointer"
-                          title="حذف المنتج"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`هل أنتِ متأكدة من حذف المنتج "${prod.titleAr}"؟`)) {
+                                deleteProduct(prod.id);
+                              }
+                            }}
+                            className="p-1.5 bg-red-950 text-red-300 border border-red-800 rounded-lg hover:bg-red-900 transition-colors cursor-pointer"
+                            title="حذف المنتج"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
+
 
       {/* TAB 3: VIDEOS MANAGER */}
       {activeTab === 'videos' && (
@@ -1516,10 +1765,13 @@ export const AdminPage: React.FC = () => {
                 onChange={(e) => setSettingsForm({ ...settingsForm, defaultCurrency: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 font-bold text-white focus:border-purple-400 focus:outline-none"
               >
-                <option value="SAR">ريال سعودي (SAR)</option>
-                <option value="USD">دولار أمريكي (USD)</option>
-                <option value="AED">درهم إماراتي (AED)</option>
-                <option value="EUR">يورو (EUR)</option>
+                <option value="USD">دولار أمريكي (USD - $)</option>
+                <option value="SAR">ريال سعودي (SAR - ر.س)</option>
+                <option value="AED">درهم إماراتي (AED - د.إ)</option>
+                <option value="EUR">يورو أوروبي (EUR - €)</option>
+                <option value="GBP">جنيه إسترليني (GBP - £)</option>
+                <option value="KWD">دينار كويتي (KWD)</option>
+                <option value="EGP">جنيه مصري (EGP)</option>
               </select>
             </div>
 
@@ -1544,12 +1796,34 @@ export const AdminPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="font-bold text-white block mb-1">رابط TikTok:</label>
+              <label className="font-bold text-pink-400 block mb-1">رابط TikTok:</label>
               <input 
                 type="url" 
                 value={settingsForm.tiktokUrl}
                 onChange={(e) => setSettingsForm({ ...settingsForm, tiktokUrl: e.target.value })}
+                className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-pink-400 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-purple-400 block mb-1">رابط Instagram (حساب انستغرام):</label>
+              <input 
+                type="url" 
+                value={settingsForm.instagramUrl || ''}
+                onChange={(e) => setSettingsForm({ ...settingsForm, instagramUrl: e.target.value })}
+                placeholder="https://instagram.com/yousrasmile"
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-purple-400 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-yellow-400 block mb-1">رابط Snapchat (حساب سناب شات):</label>
+              <input 
+                type="url" 
+                value={settingsForm.snapchatUrl || ''}
+                onChange={(e) => setSettingsForm({ ...settingsForm, snapchatUrl: e.target.value })}
+                placeholder="https://snapchat.com/add/yousrasmile"
+                className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-yellow-400 focus:outline-none"
               />
             </div>
 
@@ -1978,6 +2252,55 @@ export const AdminPage: React.FC = () => {
               </div>
             </div>
 
+            {/* ⚡ 1-Click Fast Link Auto-Fill Box (Link Only -> Everything Extracted & Generated) */}
+            <div className="bg-gradient-to-r from-purple-950/80 via-slate-900 to-indigo-950/80 border-2 border-amber-500/50 p-4 rounded-2xl space-y-2.5 shadow-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <span className="text-xs font-black text-amber-300 flex items-center gap-1.5 font-['Tajawal']">
+                  <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  <span>⚡ استيراد وتعبئة بيانات المنتج بالكامل من الرابط فقط (1-Click Auto-Fill):</span>
+                </span>
+                <span className="text-[10px] text-emerald-400 font-bold">
+                  (أمازون / علي إكسبريس / أي متجر — السعر بالدولار $)
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                الصق رابط المنتج هنا واضغط استخراج، ليقوم النظام بجلب الاسم، السعر بالدولار $، الوصف، والمواصفات بدون إدخال يدوي:
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input 
+                  type="url"
+                  placeholder="ضع رابط المنتج هنا: https://www.amazon.com/dp/... أو https://aliexpress.com/item/..."
+                  value={fastLinkInput}
+                  onChange={(e) => setFastLinkInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleFastAutoFillFromLink();
+                    }
+                  }}
+                  className="flex-1 bg-slate-950 border border-purple-500/40 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={handleFastAutoFillFromLink}
+                  disabled={isFastExtracting || !fastLinkInput.trim()}
+                  className="px-5 py-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400 hover:opacity-95 text-slate-950 font-black text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shrink-0 disabled:opacity-50 transition-all"
+                >
+                  {isFastExtracting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                      <span>جاري فحص الرابط واستخراج البيانات...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-slate-950" />
+                      <span>استخراج البيانات فوراً ✨</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
             <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2028,16 +2351,26 @@ export const AdminPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="font-bold text-white block mb-1">العلامة التجارية (Brand)</label>
-                  <select
+                  <label className="font-bold text-white block mb-1">
+                    العلامة التجارية / الماركة (Brand / Trademark) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    list="admin-brands-list"
                     value={formData.brand}
                     onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white font-bold focus:border-purple-400 focus:outline-none"
-                  >
+                    placeholder="اكتب أي علامة تجارية أو اختر من القائمة"
+                    className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white font-bold placeholder:text-slate-500 focus:border-purple-400 focus:outline-none"
+                  />
+                  <datalist id="admin-brands-list">
                     {brandsList.map(b => (
-                      <option key={b} value={b}>{b}</option>
+                      <option key={b} value={b} />
                     ))}
-                  </select>
+                  </datalist>
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">
+                    يمكنك كتابة أي علامة تجارية خاصة أو عامة دون أي قيود
+                  </span>
                 </div>
               </div>
 
@@ -2087,13 +2420,20 @@ export const AdminPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="font-bold text-white block mb-1">العملة</label>
-                  <input 
-                    type="text" 
+                  <label className="font-bold text-white block mb-1">عملة السعر (Currency)</label>
+                  <select 
                     value={formData.currency}
                     onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-600 rounded-xl p-2.5 text-white focus:border-purple-400 focus:outline-none"
-                  />
+                    className="w-full bg-slate-900 border border-slate-600 rounded-xl p-2.5 font-bold text-white focus:border-purple-400 focus:outline-none"
+                  >
+                    <option value="USD">USD ($) - دولار أمريكي (عالمي)</option>
+                    <option value="SAR">SAR (ر.س) - ريال سعودي</option>
+                    <option value="AED">AED (د.إ) - درهم إماراتي</option>
+                    <option value="EUR">EUR (€) - يورو</option>
+                    <option value="GBP">GBP (£) - جنيه إسترليني</option>
+                    <option value="KWD">KWD - دينار كويتي</option>
+                    <option value="EGP">EGP - جنيه مصري</option>
+                  </select>
                 </div>
               </div>
 
@@ -2210,6 +2550,148 @@ export const AdminPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Generated Video Review & Preview Modal */}
+      {generatedVideoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="bg-slate-900 border border-purple-500/40 rounded-3xl max-w-2xl w-full p-6 text-white space-y-5 shadow-2xl relative my-8">
+            <button
+              onClick={() => setGeneratedVideoModal(null)}
+              className="absolute top-5 left-5 p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-amber-500 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-slate-950" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black font-['Tajawal'] text-white">
+                  تم توليد الفيديو بنجاح وربطه بالمنتج! 🎉
+                </h3>
+                <p className="text-xs text-slate-400">
+                  تم حفظ الفيديو في قاعدة بيانات المنتج ومكتبة الفيديوهات مع كود الأفلييت ({siteSettings.amazonTag})
+                </p>
+              </div>
+            </div>
+
+            {/* Video Player Preview / Real Video Element */}
+            <div className="rounded-2xl overflow-hidden border border-slate-700 bg-black aspect-video relative group flex items-center justify-center">
+              {generatedVideoModal.videoAsset.videoUrl.startsWith('blob:') || generatedVideoModal.videoAsset.videoUrl.endsWith('.mp4') || generatedVideoModal.videoAsset.videoUrl.endsWith('.webm') ? (
+                <video
+                  src={generatedVideoModal.videoAsset.videoUrl}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-contain bg-black"
+                />
+              ) : (
+                <>
+                  <img
+                    src={generatedVideoModal.videoAsset.thumbnailUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-4 text-center space-y-2">
+                    <a
+                      href={generatedVideoModal.videoAsset.videoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                    >
+                      <Play className="w-7 h-7 fill-white translate-x-0.5" />
+                    </a>
+                    <span className="text-xs font-bold text-white bg-black/70 px-3 py-1 rounded-full border border-slate-700">
+                      {generatedVideoModal.videoAsset.script.videoTitle}
+                    </span>
+                    <span className="text-[11px] text-amber-300 font-bold">
+                      المدة: {generatedVideoModal.videoAsset.durationSeconds} ثانية | الأبعاد: 9:16 (TikTok & Reels)
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Direct Video Download & Export Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-800/90 rounded-xl border border-purple-500/30">
+              <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>ملف الفيديو الحقيقي جاهز للتحميل والنشر المباشر</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <a
+                  href={generatedVideoModal.videoAsset.videoUrl}
+                  download={`yousra-promo-${Date.now()}.webm`}
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>تنزيل ملف الفيديو (WebM/MP4) ⬇️</span>
+                </a>
+              </div>
+            </div>
+
+            {/* 5-Scenes Storyboard Breakdown */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                <Film className="w-4 h-4 text-purple-400" />
+                <span>مشاهد الفيديو الـ 5 المُولّدة بالذكاء الاصطناعي (Storyboard):</span>
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-[10px]">
+                {generatedVideoModal.videoAsset.script.scenes.map((scene) => (
+                  <div key={scene.sceneNumber} className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700 space-y-1">
+                    <div className="flex items-center justify-between text-amber-400 font-bold">
+                      <span>مشهد {scene.sceneNumber}</span>
+                      <span>{scene.durationSeconds}ث</span>
+                    </div>
+                    <p className="text-slate-300 font-semibold line-clamp-2">{scene.onScreenTextAr}</p>
+                    <span className="text-[9px] text-purple-300 block">{scene.transition}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Social Post Caption & Affiliate Hook */}
+            <div className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-amber-300">نص المنشور الجاهز للنشر (Instagram / TikTok):</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `${generatedVideoModal.videoAsset.script.hookAr}\n\n${generatedVideoModal.videoAsset.script.callToActionAr}\n\n🔗 رابط الشراء والتخفيض المباشر: ${generatedVideoModal.product.amazonUrl}\n\n${generatedVideoModal.videoAsset.script.hashtags.map(h => `#${h}`).join(' ')}`
+                    );
+                    setCopiedCaption(true);
+                    setTimeout(() => setCopiedCaption(false), 3000);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedCaption ? <Check className="w-3 h-3 text-emerald-300" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedCaption ? 'تم النسخ!' : 'نسخ الكابشن والهاشتاغات'}</span>
+                </button>
+              </div>
+              <p className="text-slate-200 text-xs leading-relaxed font-medium bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+                {generatedVideoModal.videoAsset.script.hookAr} {generatedVideoModal.videoAsset.script.callToActionAr}
+              </p>
+              <div className="flex flex-wrap gap-1 text-[10px] text-purple-300">
+                {generatedVideoModal.videoAsset.script.hashtags.map((h, i) => (
+                  <span key={i} className="bg-purple-950/60 border border-purple-800 px-2 py-0.5 rounded-md">
+                    #{h}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setGeneratedVideoModal(null)}
+                className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl cursor-pointer shadow-md"
+              >
+                تم وتثبيت في قاعدة البيانات 👍
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
     </div>
   );

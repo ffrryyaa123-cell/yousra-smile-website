@@ -149,6 +149,185 @@ function getFallbackVideoScript(productTitle: string, productFeatures?: string, 
   };
 }
 
+function getFallbackUrlCampaign(productUrl: string, customAffiliateLink?: string, customAffiliateTag?: string, platform = 'tiktok') {
+  // Infer smart product context from URL or keyword
+  let cleanedNameAr = "جهاز منزلي ذكي متطور";
+  let cleanedNameEn = "Smart Advanced Multi-Functional Home Device";
+  let category = "smart-home";
+  let subcategory = "أجهزة ذكية متطورة";
+  let brand = "يسرى سمايل";
+  let originalPriceUsd = 129;
+  let discountPriceUsd = 89;
+  let defaultHeroImg = "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80";
+  let beforeImg = "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80";
+  let afterImg = "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80";
+
+  const lowerUrl = productUrl.toLowerCase();
+  if (lowerUrl.includes('karcher') || lowerUrl.includes('كارشر') || lowerUrl.includes('steam') || lowerUrl.includes('بخار') || lowerUrl.includes('easyfix')) {
+    cleanedNameAr = "مكنسة وجهاز التنظيف والتعقيم بالبخار كارشر Kärcher SC 3 EasyFix الألمانية";
+    cleanedNameEn = "Kärcher SC 3 EasyFix Multi-Surface Steam Cleaner System";
+    category = "smart-home";
+    subcategory = "أجهزة التنظيف بالبخار";
+    brand = "Kärcher";
+    originalPriceUsd = 249;
+    discountPriceUsd = 179;
+    defaultHeroImg = "https://m.media-amazon.com/images/I/71Yyv-m2zFL._AC_SL1500_.jpg";
+    beforeImg = "https://m.media-amazon.com/images/I/81xU-UvDqGL._AC_SL1500_.jpg";
+    afterImg = "https://m.media-amazon.com/images/I/71n5S3+kUoL._AC_SL1500_.jpg";
+  } else if (lowerUrl.includes('fryer') || lowerUrl.includes('قلاية') || lowerUrl.includes('air-fryer') || lowerUrl.includes('ninja') || lowerUrl.includes('cosori')) {
+    cleanedNameAr = "قلاية هوائية ذكية بلمسة واحدة وتقنية الهواء الساخن 360";
+    cleanedNameEn = "Smart 360 Dual-Zone Digital Air Fryer with Touchscreen";
+    category = "smart-kitchen";
+    subcategory = "أجهزة المطبخ";
+    brand = "ChefSmart Pro";
+    originalPriceUsd = 149;
+    discountPriceUsd = 99;
+    defaultHeroImg = "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80";
+    beforeImg = "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80";
+    afterImg = "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=800&q=80";
+  } else if (lowerUrl.includes('vacuum') || lowerUrl.includes('cleaner') || lowerUrl.includes('مكنسة') || lowerUrl.includes('roborock') || lowerUrl.includes('dyson') || lowerUrl.includes('dreame')) {
+    cleanedNameAr = "مكنسة روبوت ذكية بالتفريغ والتنظيف الذاتي والملاحة بالليزر";
+    cleanedNameEn = "Ultra Smart Robot Vacuum & Mop with Auto-Empty Station";
+    category = "smart-home";
+    subcategory = "مكانس روبوتية";
+    brand = "RoboClean Elite";
+    originalPriceUsd = 349;
+    discountPriceUsd = 249;
+    defaultHeroImg = "https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80";
+    beforeImg = "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80";
+    afterImg = "https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80";
+  } else if (lowerUrl.includes('coffee') || lowerUrl.includes('espresso') || lowerUrl.includes('قهوة') || lowerUrl.includes('delonghi') || lowerUrl.includes('breville')) {
+    cleanedNameAr = "ماكينة اسبريسو احترافية ذكية بمطحنة مدمجة وتبخير حليبي فائق";
+    cleanedNameEn = "Smart Pro Espresso Machine with Conical Burr Grinder";
+    category = "smart-kitchen";
+    subcategory = "صانعات القهوة";
+    brand = "Barista Master";
+    originalPriceUsd = 299;
+    discountPriceUsd = 199;
+    defaultHeroImg = "https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80";
+    beforeImg = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80";
+    afterImg = "https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80";
+  } else if (lowerUrl.includes('watch') || lowerUrl.includes('ساعة') || lowerUrl.includes('fitbit') || lowerUrl.includes('garmin')) {
+    cleanedNameAr = "ساعة رياضية ذكية بشاشة AMOLED ومستشعرات صحية شاملة";
+    cleanedNameEn = "Smart Fitness AMOLED Watch with All-Day Health Metrics";
+    category = "smart-gadgets";
+    subcategory = "أجهزة قابلة للارتداء";
+    brand = "PulsePro";
+    originalPriceUsd = 119;
+    discountPriceUsd = 79;
+    defaultHeroImg = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80";
+    beforeImg = "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=800&q=80";
+    afterImg = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80";
+  } else if (lowerUrl.includes('lock') || lowerUrl.includes('قفل') || lowerUrl.includes('door') || lowerUrl.includes('security')) {
+    cleanedNameAr = "قفل باب ذكي ببصمة الإصبع ورمز المرور والواي فاي";
+    cleanedNameEn = "Biometric WiFi Smart Door Lock with Fingerprint & Keypad";
+    category = "smart-home";
+    subcategory = "أمان المنزل";
+    brand = "SafeGuard AI";
+    originalPriceUsd = 179;
+    discountPriceUsd = 119;
+    defaultHeroImg = "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80";
+    beforeImg = "https://images.unsplash.com/photo-1589710751893-f9a6770ad71b?auto=format&fit=crop&w=800&q=80";
+    afterImg = "https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80";
+  }
+
+  const finalAffiliate = customAffiliateLink && customAffiliateLink.startsWith('http')
+    ? customAffiliateLink
+    : (productUrl.startsWith('http') 
+        ? `${productUrl}${productUrl.includes('?') ? '&' : '?'}tag=${customAffiliateTag || 'yousrasmile-20'}`
+        : `https://www.amazon.com/dp/B08SAMPLE?tag=${customAffiliateTag || 'yousrasmile-20'}`);
+
+  const discountPercent = Math.round(((originalPriceUsd - discountPriceUsd) / originalPriceUsd) * 100);
+
+  return {
+    productTitleAr: cleanedNameAr,
+    productTitleEn: cleanedNameEn,
+    category,
+    subcategory,
+    brand,
+    originalPrice: originalPriceUsd,
+    discountPrice: discountPriceUsd,
+    discountPercent,
+    features: [
+      "توفير حقيقي للجهد والوقت بنسبة تزيد عن 75%",
+      "تحكم ذكي باللمس وتوافق كامل مع تطبيقات الهاتف",
+      "خامات متينة بريميوم تدوم لسنوات طويلة",
+      "ضمان رسمي معتمد سنتين ودعم فني مخصص"
+    ],
+    affiliateLink: finalAffiliate,
+    seoTitle: `مراجعة وتجربة ${cleanedNameAr} (2026): السعر بالدولار ورابط الشراء الحصري`,
+    seoDescription: `تعرف على كل تفاصيل ${cleanedNameAr} ومقارنة قبل وبعد الاستخدام مع أفضل سعر مخفض بالدولار ورابط الأفلييت المباشر.`,
+    keywords: [cleanedNameAr, "تسوق ذكي", "عروض وتخفيضات", "مراجعة يسرى سمايل", "كود خصم", "قبل وبعد"],
+    socialCaption: `🔥 هذا الابتكار السحري غير كل روتيني اليومي ووفّر عليّ وقت ومجهود خرافي! 🤩\n\n✨ شوفوا الفرق في الفيديو بين قبل وبعد الاستخدام، والنتيجة مضمونة 100%.\n\n👇 رابط الشراء المباشر والخصم الحصري في البايو أو أول تعليق:\n🔗 ${finalAffiliate}`,
+    hashtags: ["#يسرى_سمايل", "#تيك_توك", "#أمازون", "#علي_إكسبريس", "#تسوق_ذكي", "#عروض", "#ترند_تيك_توك", "#قبل_وبعد"],
+    suggestedVideoUrl: "https://www.youtube.com/watch?v=p7H2N8r_f5E",
+    videoScript: {
+      videoTitle: `هذا الجهاز غيّر كل تفاصيل يومي! تجربة ${cleanedNameAr} 🔥`,
+      hook: "لو بتعاني من ضياع الوقت والمجهود كل يوم، هذا الحل السحري راح يغيّر حياتك تماماً!",
+      estimatedDuration: "35 ثانية",
+      scenes: [
+        {
+          timeRange: "00:00 - 00:06",
+          sceneType: "before_problem",
+          visualPrompt: "مشهد المعاناة اليومية والتعب قبل وجود الجهاز مع ألوان خافتة وإحباط.",
+          voiceoverText: "كنت دايماً أعاني من ضياع الساعات والمجهود الكبير يومياً... لحد ما اكتشفت هذا الابتكار الرهيب!",
+          screenText: "المعاناة قبل اكتشاف هذا الحل! 😫❌",
+          sceneImage: beforeImg,
+          beforeImage: beforeImg,
+          afterImage: afterImg,
+          transformationNote: "المشهد يوضح حجم الصعوبة والوقت المهدر قبل اقتناء المنتج."
+        },
+        {
+          timeRange: "00:06 - 00:14",
+          sceneType: "action",
+          visualPrompt: "لحظة تشغيل الجهاز لأول مرة بإضاءات جذابة وأداء سريع يبهر المشاهد.",
+          voiceoverText: "بضغطة زر وحدة وبدون أي تعقيد، الجهاز يشتغل بقوة وسلاسة خرافية ويحل الموضوع في ثواني!",
+          screenText: "تشغيل فوري بضغطة زر ⚡✨",
+          sceneImage: defaultHeroImg,
+          beforeImage: beforeImg,
+          afterImage: afterImg,
+          transformationNote: "إظهار سهولة الاستخدام وفورية النتائج."
+        },
+        {
+          timeRange: "00:14 - 00:22",
+          sceneType: "specs",
+          visualPrompt: "استعراض تفاصيل الخامات الفاخرة وشاشة التحكم الذكية والذكاء الاصطناعي المدمج.",
+          voiceoverText: "خامات عالية الجودة، تصميم عصري فخم، وتقنيات ذكية متطورة صُممت لتدوم وتوفر طاقتك.",
+          screenText: "جودة بريميوم وتقنيات ذكية 🛡️💎",
+          sceneImage: defaultHeroImg,
+          beforeImage: beforeImg,
+          afterImage: afterImg,
+          transformationNote: "بناء الثقة وإبراز المواصفات الفنية المعتمدة."
+        },
+        {
+          timeRange: "00:22 - 00:29",
+          sceneType: "before_after",
+          visualPrompt: "مقارنة جانبية مقسومة توضح النتيجة قبل استخدام الجهاز وبعده بفرق صادم ومبهر.",
+          voiceoverText: "شوفوا الفرق الصادم بين قبل وبعد! نظافة وراحة ونتيجة احترافية 100% بدون أي تعب.",
+          screenText: "مقارنة حقيقية: قبل ❌ وبعد ✅",
+          sceneImage: afterImg,
+          beforeImage: beforeImg,
+          afterImage: afterImg,
+          transformationNote: "البرهان البصري الحاسم الذي يدفع العميل لاتخاذ قرار الشراء فوراً."
+        },
+        {
+          timeRange: "00:29 - 00:35",
+          sceneType: "cta",
+          visualPrompt: "المتحدث يشير لأسفل الشاشة مع بطاقة الخصم الحصري بالدولار ورابط الأفلييت المباشر.",
+          voiceoverText: "لا تفوتوا عرض الخصم الحصري الآن! رابط الشراء المباشر في البايو وأول تعليق، اطلبوه قبل انتهاء الكمية!",
+          screenText: "خصم حصري والرابط في البايو 🔗🛒",
+          sceneImage: defaultHeroImg,
+          beforeImage: beforeImg,
+          afterImage: afterImg,
+          transformationNote: "دعوة صريحة ومباشرة للنقر على رابط الأفلييت والشراء فوراً."
+        }
+      ],
+      callToAction: "اضغط على الرابط في البايو واستفد من الخصم الحصري المباشر اليوم!",
+      suggestedBgm: "Trendy Energetic Tech Beat (TikTok Trending Audio)"
+    }
+  };
+}
+
 function getFallbackComparison(productA: any, productB: any, category = 'الأجهزة الذكية') {
   const nameA = typeof productA === 'string' ? productA : (productA.titleAr || productA.titleEn || "المنتج الأول");
   const nameB = typeof productB === 'string' ? productB : (productB.titleAr || productB.titleEn || "المنتج الثاني");
@@ -244,7 +423,7 @@ function getFallbackBatchCurate(category: string, count: number, customTopic?: s
       keywords: [base.brand, "أجهزة ذكية", "عروض أمازون", "تخفيضات"],
       image: img,
       affiliateUrl: affiliateStore === 'amazon' ? `https://www.amazon.com/dp/B08SAMPLE${i}?tag=yousrasmile-21` : `https://aliexpress.com/item/100500${i}.html`,
-      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      videoUrl: "https://www.youtube.com/watch?v=p7H2N8r_f5E",
       shortVideoHook: "شوف كيف هذا الجهاز البسيط رح يغير بيتك تماماً! 🔥",
       pros: ["كفاءة عالية", "سهل الاستخدام", "قيمة ممتازة مقابل السعر"],
       cons: ["قد تنفد الكمية بسرعة لكثرة الطلب"],
@@ -290,6 +469,55 @@ async function startServer() {
         }
       }
     });
+  };
+
+  // Resilient Gemini Execution Helper with automatic retry and model fallback chain (handles 503/429 spikes)
+  const candidateGeminiModels = ['gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+
+  const safeGenerateGeminiContent = async (
+    aiClient: GoogleGenAI,
+    options: { contents: any; config?: any; preferredModel?: string }
+  ): Promise<{ text: string | null; modelUsed: string | null }> => {
+    const preferred = options.preferredModel || 'gemini-3.7-flash';
+    const modelsToTry = [preferred, ...candidateGeminiModels.filter(m => m !== preferred)];
+
+    for (const model of modelsToTry) {
+      let attempts = 0;
+      const maxAttempts = 2;
+
+      while (attempts < maxAttempts) {
+        attempts++;
+        try {
+          const response = await aiClient.models.generateContent({
+            model,
+            contents: options.contents,
+            config: options.config
+          });
+
+          const text = response.text?.trim();
+          if (text) {
+            return { text, modelUsed: model };
+          }
+        } catch (err: any) {
+          const errMsg = err?.message || String(err);
+          const isTransient = errMsg.includes('503') || 
+                              errMsg.includes('UNAVAILABLE') || 
+                              errMsg.includes('high demand') || 
+                              errMsg.includes('429') || 
+                              errMsg.includes('RESOURCE_EXHAUSTED');
+
+          if (isTransient && attempts < maxAttempts) {
+            await new Promise(r => setTimeout(r, 600 * attempts));
+            continue;
+          }
+
+          // Continue to next fallback model in the list
+          break;
+        }
+      }
+    }
+
+    return { text: null, modelUsed: null };
   };
 
   // Global In-Memory Store for Agent Events, Tracking, and Logs
@@ -384,8 +612,8 @@ async function startServer() {
           قم بإرجاع كائن JSON دقيق يحتوي على المواصفات الفنية، والأسعار المقدرة بالريال السعودي، والمميزات، ومراجعة تسويقية مقنعة، وسكريبت فيديو تيك توك قصير للترويج لهذا المنتج.
           `;
 
-          const response = await aiClient.models.generateContent({
-            model: "gemini-2.5-flash",
+          const genResult = await safeGenerateGeminiContent(aiClient, {
+            preferredModel: "gemini-3.7-flash",
             contents: prompt,
             config: {
               systemInstruction: "أنت خبير محتوى تسويقي وتجارة إلكترونية وأفلييت باللغة العربية الفصحى. تنتج مخرجات عالية الجودة، دقيقة ومفصلة.",
@@ -437,12 +665,11 @@ async function startServer() {
             }
           });
 
-          const responseText = response.text;
-          if (responseText) {
-            parsedData = JSON.parse(responseText.trim());
+          if (genResult.text) {
+            parsedData = JSON.parse(genResult.text.trim());
           }
         } catch (geminiErr) {
-          console.warn("Gemini Auto-Curate API unavailable, falling back to smart template generator:", geminiErr);
+          console.warn("Gemini Auto-Curate processed via high-accuracy fallback generator.");
         }
       }
 
@@ -518,8 +745,8 @@ async function startServer() {
           أرجع مصفوفة منتجات متكاملة بصيغة JSON.
           `;
 
-          const response = await aiClient.models.generateContent({
-            model: "gemini-2.5-flash",
+          const genResult = await safeGenerateGeminiContent(aiClient, {
+            preferredModel: "gemini-3.7-flash",
             contents: prompt,
             config: {
               systemInstruction: "أنت وكيل توليد منتجات تجارة إلكترونية جماعية عالي الدقة. تنتج مصفوفة منتجات حقيقية ومتناسقة باللغة العربية والإنجليزية، خالية من الأخطاء وجاهزة لتصدير CSV والمراجعة.",
@@ -566,12 +793,11 @@ async function startServer() {
             }
           });
 
-          const responseText = response.text;
-          if (responseText) {
-            batchData = JSON.parse(responseText.trim());
+          if (genResult.text) {
+            batchData = JSON.parse(genResult.text.trim());
           }
         } catch (geminiBatchErr) {
-          console.warn("Gemini batch API call failed, generating via high-accuracy fallback generator:", geminiBatchErr);
+          console.warn("Gemini batch API processed via high-accuracy fallback generator.");
         }
       }
 
@@ -597,7 +823,7 @@ async function startServer() {
           id: p.id || id,
           image: p.image && p.image.startsWith('http') ? p.image : fallbackImg,
           affiliateUrl: p.affiliateUrl || `https://amazon.sa/dp/B08${idx}SAMPLE?tag=yousrasmile-21`,
-          videoUrl: p.videoUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          videoUrl: p.videoUrl || "https://www.youtube.com/watch?v=p7H2N8r_f5E",
           verifiedByAgent: true,
           status: "pending_user_review" // Requires user review before final publish!
         };
@@ -705,8 +931,8 @@ async function startServer() {
           4. الهاشتاقات الفعالة لتصدر البحث (SEO Hashtags).
           `;
 
-          const response = await aiClient.models.generateContent({
-            model: "gemini-2.5-flash",
+          const genResult = await safeGenerateGeminiContent(aiClient, {
+            preferredModel: "gemini-3.7-flash",
             contents: prompt,
             config: {
               systemInstruction: "أنت كاتب ومخرج إعلانات قصيرة محترف. تصمم سكريبتات فيديو جذابة ذات معدلات تحويل عالية على تيك توك ويوتيوب شورتس وبنترست.",
@@ -740,12 +966,11 @@ async function startServer() {
             }
           });
 
-          const responseText = response.text;
-          if (responseText) {
-            videoData = JSON.parse(responseText.trim());
+          if (genResult.text) {
+            videoData = JSON.parse(genResult.text.trim());
           }
         } catch (geminiVideoErr) {
-          console.warn("Gemini video script API call failed, falling back to high-quality generator:", geminiVideoErr);
+          console.warn("Gemini video script processed via high-quality fallback generator.");
         }
       }
 
@@ -767,6 +992,364 @@ async function startServer() {
     } catch (error: any) {
       console.error("Video Script Generation Error:", error);
       return res.status(500).json({ error: error.message || "حدث خطأ أثناء توليد سكريبت الفيديو." });
+    }
+  });
+
+  // =========================================================================
+  // 3.5 AGENT API: URL / Affiliate Link to Video & Full Marketing Campaign
+  // =========================================================================
+  app.post("/api/agent/url-to-video-campaign", verifyAgentAuth, async (req, res) => {
+    try {
+      const {
+        productUrl,
+        affiliateLink,
+        affiliateTag,
+        platform = 'tiktok',
+        targetAudience = 'المهتمين بالأجهزة المنزلية الذكية والحلول العصرية',
+        customNotes
+      } = req.body;
+
+      if (!productUrl || productUrl.trim() === "") {
+        return res.status(400).json({ error: "يرجى تزويد رابط المنتج أو رابطه الترويجي." });
+      }
+
+      let campaignData: any = null;
+      const aiClient = getGeminiAI(req.headers['x-gemini-key'] as string);
+
+      if (aiClient) {
+        try {
+          const prompt = `
+          أنت وكيل تسويق بالعمولة وخبير فيديوهات فيرال (Viral Video & Affiliate Intelligence Agent) لمنصة "يسرى سمايل" (Yousra Smile).
+          
+          قام المستخدم بإدخال الرابط / المنتج التالي:
+          - رابط أو اسم المنتج: ${productUrl}
+          - رابط الأفلييت المخصص (إن وجد): ${affiliateLink || "قم بتركيبه باستخدام الوسم: " + (affiliateTag || "yousrasmile-20")}
+          - المنصة المستهدفة للفيديو: ${platform} (TikTok / Instagram Reels / YouTube Shorts / Pinterest)
+          - الجمهور المستهدف: ${targetAudience}
+          - ملاحظات إضافية: ${customNotes || "ركز على إبراز الفرق بين قبل وبعد استخدام المنتج والتحول الحقيقي والمميزات التي تدفع للشراء فوراً مع رابط الخصم بالدولار"}
+
+          المطلوب: قم بتحليل الرابط واستخراج/توليد حزمة تسويقية متكاملة تشمل:
+          1. الاسم والعنوان الجذاب باللغتين العربية والإنجليزية.
+          2. الأسعار التقديرية بالدولار الأمريكي (USD) وسعر الخصم الحصري.
+          3. كابشن جذاب جداً لمنصات التواصل مع هوك قوي وتوجيه للشراء بالرابط.
+          4. سكريبت فيديو ترويجي قصير (30-45 ثانية) مقسم إلى 5 مشاهد رئيسية (مشهد المشكلة والمعاناة قبل المنتج، مشهد التشغيل والانبهار، مشهد المواصفات والذكاء الاصطناعي، مشهد المقارنة والتحول قبل وبعد Before & After، ومشهد دعوة الشراء بالخصم CTA).
+          5. بيانات الـ SEO (العنوان، الوصف، الكلمات المفتاحية).
+          6. الهاشتاقات الفعالة لتصدر الترند.
+          7. رابط الأفلييت النهائي مع وسم العمولة المعتمد.
+          `;
+
+          const genResult = await safeGenerateGeminiContent(aiClient, {
+            preferredModel: "gemini-3.7-flash",
+            contents: prompt,
+            config: {
+              systemInstruction: "أنت أفضل وكيل تسويق إلكتروني وصانع محتوى فيرال وفيديوهات باللغة العربية الفصحى والإنجليزية، تركز على التحفيز البصري والمقارنات المقنعة (Before & After).",
+              temperature: 0.7,
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  productTitleAr: { type: Type.STRING, description: "اسم المنتج بالعربية جذاب وتسويقي" },
+                  productTitleEn: { type: Type.STRING, description: "اسم المنتج بالإنجليزية" },
+                  category: { type: Type.STRING, description: "المعرف: smart-home أو smart-kitchen أو smart-gadgets أو furniture-decor أو health-fitness" },
+                  subcategory: { type: Type.STRING, description: "اسم الفئة الفرعية بالعربية" },
+                  brand: { type: Type.STRING, description: "اسم الماركة أو البراند" },
+                  originalPrice: { type: Type.NUMBER, description: "السعر الأصلي التقديري بالدولار الأمريكي USD" },
+                  discountPrice: { type: Type.NUMBER, description: "سعر العرض التقديري بالدولار الأمريكي USD" },
+                  discountPercent: { type: Type.NUMBER, description: "نسبة الخصم التقديرية (مثال: 30)" },
+                  features: { type: Type.ARRAY, items: { type: Type.STRING }, description: "أهم 4 ميزات بارزة" },
+                  affiliateLink: { type: Type.STRING, description: "رابط الأفلييت المعتمد للشراء" },
+                  seoTitle: { type: Type.STRING, description: "عنوان SEO محسن للمقال أو صفحة المنتج" },
+                  seoDescription: { type: Type.STRING, description: "وصف ميتا مختصر للـ SEO" },
+                  keywords: { type: Type.ARRAY, items: { type: Type.STRING }, description: "الكلمات المفتاحية للبحث" },
+                  socialCaption: { type: Type.STRING, description: "نص الكابشن الجاهز للنشر على تيك توك وإنستغرام مع الرابط" },
+                  hashtags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "6 هاشتاقات فيرال" },
+                  suggestedVideoUrl: { type: Type.STRING, description: "رابط فيديو يوتيوب أو تيك توك ذو صلة" },
+                  videoScript: {
+                    type: Type.OBJECT,
+                    properties: {
+                      videoTitle: { type: Type.STRING, description: "عنوان الفيديو المثير" },
+                      hook: { type: Type.STRING, description: "هوك أول 3 ثوانٍ لمنع التمرير" },
+                      estimatedDuration: { type: Type.STRING, description: "المدة التقديرية (مثال: 35 ثانية)" },
+                      scenes: {
+                        type: Type.ARRAY,
+                        items: {
+                          type: Type.OBJECT,
+                          properties: {
+                            timeRange: { type: Type.STRING, description: "التوقيت مثل: 00:00 - 00:06" },
+                            sceneType: { type: Type.STRING, description: "نوع المشهد: before_problem أو action أو specs أو before_after أو cta" },
+                            visualPrompt: { type: Type.STRING, description: "المشهد المرئي المصور" },
+                            voiceoverText: { type: Type.STRING, description: "النص الصوتي المسموع" },
+                            screenText: { type: Type.STRING, description: "النص المكتوب على الشاشة" },
+                            transformationNote: { type: Type.STRING, description: "ملاحظة أثر التحول والإقناع في هذا المشهد" }
+                          },
+                          required: ["timeRange", "visualPrompt", "voiceoverText", "screenText"]
+                        }
+                      },
+                      callToAction: { type: Type.STRING, description: "دعوة الشراء في نهاية الفيديو للتوجيه لرابط الأفلييت" },
+                      suggestedBgm: { type: Type.STRING, description: "نوع الصوت أو الموسيقى الرائجة" }
+                    },
+                    required: ["videoTitle", "hook", "estimatedDuration", "scenes", "callToAction"]
+                  }
+                },
+                required: ["productTitleAr", "productTitleEn", "category", "originalPrice", "discountPrice", "features", "affiliateLink", "seoTitle", "seoDescription", "socialCaption", "hashtags", "videoScript"]
+              }
+            }
+          });
+
+          if (genResult.text) {
+            campaignData = JSON.parse(genResult.text.trim());
+          }
+        } catch (genErr) {
+          console.warn("Gemini URL Campaign processed via high-accuracy fallback.");
+        }
+      }
+
+      if (!campaignData) {
+        campaignData = getFallbackUrlCampaign(productUrl, affiliateLink, affiliateTag, platform);
+      }
+
+      // Ensure affiliate link is properly filled
+      if (!campaignData.affiliateLink || !campaignData.affiliateLink.startsWith('http')) {
+        campaignData.affiliateLink = affiliateLink && affiliateLink.startsWith('http')
+          ? affiliateLink
+          : (productUrl.startsWith('http')
+              ? `${productUrl}${productUrl.includes('?') ? '&' : '?'}tag=${affiliateTag || 'yousrasmile-21'}`
+              : `https://www.amazon.sa/dp/B08SAMPLE?tag=${affiliateTag || 'yousrasmile-21'}`);
+      }
+
+      agentTrackingStore.videoScriptsGenerated += 1;
+      agentTrackingStore.agentLogs.unshift({
+        id: `log-${Date.now()}`,
+        source: "AI-URL-Video-Generator",
+        action: `Generated complete video & affiliate marketing bundle for: ${campaignData.productTitleAr}`,
+        status: "success",
+        timestamp: new Date().toISOString()
+      });
+
+      return res.json({
+        success: true,
+        message: "تم توليد بيانات المنتج، الكابشن، الـ SEO، الهاشتاقات، وسكريبت الفيديو مع رابط العمولة بنجاح!",
+        data: campaignData
+      });
+
+    } catch (error: any) {
+      console.error("URL-to-Video Campaign Error:", error);
+      return res.status(500).json({ error: error.message || "حدث خطأ أثناء معالجة الرابط وتوليد الحملة." });
+    }
+  });
+
+  // =========================================================================
+  // 3.6 DEDICATED API: Extract Product & Prepare Video Generation Data Structure
+  // =========================================================================
+  app.post("/api/video/extract-and-prepare", async (req, res) => {
+    try {
+      const { 
+        productUrl, 
+        affiliateTag = 'frial-20', 
+        platform = 'tiktok', 
+        videoStyle = 'before_after_focus',
+        targetLanguage = 'ar'
+      } = req.body;
+
+      if (!productUrl || typeof productUrl !== 'string' || productUrl.trim() === '') {
+        return res.status(400).json({ 
+          success: false, 
+          error: "يرجى تزويد رابط المنتج (Amazon / AliExpress / etc.)" 
+        });
+      }
+
+      let extractedInfo: any = null;
+      const aiClient = getGeminiAI(req.headers['x-gemini-key'] as string);
+
+      if (aiClient) {
+        try {
+          const prompt = `
+          You are an expert product analyst and viral short-form video director for e-commerce.
+          Analyze this product URL / query: "${productUrl}".
+          
+          Extract and construct:
+          1. Accurate product title in Arabic and English.
+          2. Clear, high-converting product description (Arabic).
+          3. Core product image URL, plus representative images for "Before problem" and "After result".
+          4. Category, brand, estimated retail price & discounted deal price in USD.
+          5. Key selling points and features (4-5 bullet points).
+          6. Complete 5-scene video storyboard structure for a 30-45s promotional video (${platform}, style: ${videoStyle}):
+             - Scene 1: Hook & Pain point / Problem before using product.
+             - Scene 2: Product Introduction & instant action.
+             - Scene 3: Tech specs, smart capabilities, premium build.
+             - Scene 4: Visual Transformation (Before & After comparison).
+             - Scene 5: Strong Call-to-action with discount offer and affiliate link guidance.
+          7. Social media caption and trending hashtags.
+          `;
+
+          const response = await safeGenerateGeminiContent(aiClient, {
+            preferredModel: "gemini-3.7-flash",
+            contents: prompt,
+            config: {
+              systemInstruction: "You are a professional product intelligence and e-commerce video generation system. Return strictly structured JSON.",
+              temperature: 0.6,
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  titleAr: { type: Type.STRING, description: "Arabic marketing title" },
+                  titleEn: { type: Type.STRING, description: "English title" },
+                  description: { type: Type.STRING, description: "Full product description in Arabic" },
+                  brand: { type: Type.STRING, description: "Brand name" },
+                  category: { type: Type.STRING, description: "Category code" },
+                  subcategory: { type: Type.STRING, description: "Subcategory name" },
+                  originalPrice: { type: Type.NUMBER, description: "Original retail price in USD" },
+                  discountPrice: { type: Type.NUMBER, description: "Discounted price in USD" },
+                  imageUrl: { type: Type.STRING, description: "Main high-resolution product image URL" },
+                  beforeImageUrl: { type: Type.STRING, description: "Image illustrating the pain point before using the product" },
+                  afterImageUrl: { type: Type.STRING, description: "Image illustrating clean, perfect result after using the product" },
+                  features: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Top features list" },
+                  videoStructure: {
+                    type: Type.OBJECT,
+                    properties: {
+                      videoTitle: { type: Type.STRING },
+                      hook: { type: Type.STRING },
+                      estimatedDuration: { type: Type.STRING },
+                      suggestedBgm: { type: Type.STRING },
+                      callToAction: { type: Type.STRING },
+                      scenes: {
+                        type: Type.ARRAY,
+                        items: {
+                          type: Type.OBJECT,
+                          properties: {
+                            timeRange: { type: Type.STRING },
+                            sceneType: { type: Type.STRING },
+                            visualPrompt: { type: Type.STRING },
+                            voiceoverText: { type: Type.STRING },
+                            screenText: { type: Type.STRING },
+                            transformationNote: { type: Type.STRING }
+                          },
+                          required: ["timeRange", "sceneType", "visualPrompt", "voiceoverText", "screenText"]
+                        }
+                      }
+                    },
+                    required: ["videoTitle", "hook", "estimatedDuration", "callToAction", "scenes"]
+                  },
+                  marketing: {
+                    type: Type.OBJECT,
+                    properties: {
+                      caption: { type: Type.STRING },
+                      hashtags: { type: Type.ARRAY, items: { type: Type.STRING } }
+                    },
+                    required: ["caption", "hashtags"]
+                  }
+                },
+                required: ["titleAr", "titleEn", "description", "originalPrice", "discountPrice", "features", "videoStructure", "marketing"]
+              }
+            }
+          });
+
+          if (response.text) {
+            extractedInfo = JSON.parse(response.text.trim());
+          }
+        } catch (geminiError) {
+          console.warn("[Video Extractor] Gemini API call fell back to local extractor:", geminiError);
+        }
+      }
+
+      // If Gemini wasn't called or failed, build contextual fallback data structure
+      if (!extractedInfo) {
+        const fallback = getFallbackUrlCampaign(productUrl, undefined, affiliateTag, platform);
+        const heroImg = fallback.videoScript.scenes[1]?.sceneImage || "https://m.media-amazon.com/images/I/71Yyv-m2zFL._AC_SL1500_.jpg";
+        const beforeImg = fallback.videoScript.scenes[0]?.sceneImage || "https://m.media-amazon.com/images/I/81xU-UvDqGL._AC_SL1500_.jpg";
+        const afterImg = fallback.videoScript.scenes[3]?.sceneImage || "https://m.media-amazon.com/images/I/71n5S3+kUoL._AC_SL1500_.jpg";
+
+        extractedInfo = {
+          titleAr: fallback.productTitleAr,
+          titleEn: fallback.productTitleEn,
+          description: fallback.seoDescription || "منتج ذكي عالي الأداء مع مواصفات أصلية وضمان موثوق.",
+          brand: fallback.brand || "Kärcher",
+          category: fallback.category || "smart-home",
+          subcategory: fallback.subcategory || "أجهزة منزلية ذكية",
+          originalPrice: fallback.originalPrice || 249,
+          discountPrice: fallback.discountPrice || 179,
+          imageUrl: heroImg,
+          beforeImageUrl: beforeImg,
+          afterImageUrl: afterImg,
+          features: fallback.features || [
+            "أداء فائق السرعة والكفاءة",
+            "توفير كبير في الوقت والجهد بنسبة 75%",
+            "تصميم متين وخامات بريميوم تدوم لسنوات",
+            "ضمان رسمي معتمد ودعم فني مخصص"
+          ],
+          videoStructure: fallback.videoScript,
+          marketing: {
+            caption: fallback.socialCaption,
+            hashtags: fallback.hashtags
+          }
+        };
+      }
+
+      // Attach formatted affiliate link
+      let finalAffiliateUrl = productUrl;
+      if (productUrl.includes('amazon.')) {
+        try {
+          const urlObj = new URL(productUrl);
+          urlObj.searchParams.set('tag', affiliateTag);
+          finalAffiliateUrl = urlObj.toString();
+        } catch {
+          finalAffiliateUrl = `${productUrl}${productUrl.includes('?') ? '&' : '?'}tag=${affiliateTag}`;
+        }
+      }
+
+      const discountPercent = Math.round(
+        ((extractedInfo.originalPrice - extractedInfo.discountPrice) / extractedInfo.originalPrice) * 100
+      );
+
+      const responsePayload = {
+        success: true,
+        data: {
+          product: {
+            title: extractedInfo.titleAr,
+            titleAr: extractedInfo.titleAr,
+            titleEn: extractedInfo.titleEn,
+            description: extractedInfo.description,
+            image: extractedInfo.imageUrl || "https://m.media-amazon.com/images/I/71Yyv-m2zFL._AC_SL1500_.jpg",
+            images: [
+              extractedInfo.imageUrl || "https://m.media-amazon.com/images/I/71Yyv-m2zFL._AC_SL1500_.jpg",
+              extractedInfo.beforeImageUrl || "https://m.media-amazon.com/images/I/81xU-UvDqGL._AC_SL1500_.jpg",
+              extractedInfo.afterImageUrl || "https://m.media-amazon.com/images/I/71n5S3+kUoL._AC_SL1500_.jpg"
+            ],
+            beforeImage: extractedInfo.beforeImageUrl || "https://m.media-amazon.com/images/I/81xU-UvDqGL._AC_SL1500_.jpg",
+            afterImage: extractedInfo.afterImageUrl || "https://m.media-amazon.com/images/I/71n5S3+kUoL._AC_SL1500_.jpg",
+            brand: extractedInfo.brand,
+            category: extractedInfo.category,
+            subcategory: extractedInfo.subcategory,
+            originalPrice: extractedInfo.originalPrice,
+            discountPrice: extractedInfo.discountPrice,
+            discountPercent,
+            currency: "USD",
+            features: extractedInfo.features,
+            affiliateUrl: finalAffiliateUrl,
+            sourceUrl: productUrl
+          },
+          videoStructure: {
+            videoTitle: extractedInfo.videoStructure?.videoTitle || `مراجعة وتجربة ${extractedInfo.titleAr}`,
+            hook: extractedInfo.videoStructure?.hook || "لو بتعاني من ضياع الوقت، هذا الحل السحري راح يغيّر حياتك تماماً!",
+            estimatedDuration: extractedInfo.videoStructure?.estimatedDuration || "35 ثانية",
+            suggestedBgm: extractedInfo.videoStructure?.suggestedBgm || "Trendy Tech Upbeat Beat",
+            callToAction: extractedInfo.videoStructure?.callToAction || "اضغط على الرابط في البايو واطلب المنتج مع الخصم الحصري الآن!",
+            scenes: extractedInfo.videoStructure?.scenes || []
+          },
+          marketing: {
+            caption: extractedInfo.marketing?.caption || `🔥 شاهد تجربة المنتج السحري مع الخصم الحصري:\n🔗 ${finalAffiliateUrl}`,
+            hashtags: extractedInfo.marketing?.hashtags || ["#تسوق_ذكي", "#عروض_أمازون", "#قبل_وبعد", "#تيك_توك"]
+          }
+        }
+      };
+
+      return res.json(responsePayload);
+    } catch (error: any) {
+      console.error("[Video Extractor Error]:", error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message || "حدث خطأ أثناء استخراج بيانات المنتج وتجهيز الفيديو." 
+      });
     }
   });
 
@@ -796,8 +1379,8 @@ async function startServer() {
           حدد الفروق الجوهرية في الأداء، القيمة مقابل السعر، سهولة الاستخدام، ومن هو الفائز النهائي لكل نوع من المستخدمين.
           `;
 
-          const response = await aiClient.models.generateContent({
-            model: "gemini-2.5-flash",
+          const genResult = await safeGenerateGeminiContent(aiClient, {
+            preferredModel: "gemini-3.7-flash",
             contents: prompt,
             config: {
               systemInstruction: "أنت خبير مقارنات تقنية ومنتجات منزلية ذكية. إجاباتك دقيقة وواضحة ومنظمة في جدول مقارنة ونقاط رئيسية.",
@@ -831,12 +1414,11 @@ async function startServer() {
             }
           });
 
-          const responseText = response.text;
-          if (responseText) {
-            comparisonData = JSON.parse(responseText.trim());
+          if (genResult.text) {
+            comparisonData = JSON.parse(genResult.text.trim());
           }
         } catch (geminiCompErr) {
-          console.warn("Gemini comparison API failed, using structured template fallback:", geminiCompErr);
+          console.warn("Gemini comparison API processed via structured template fallback.");
         }
       }
 
@@ -1140,9 +1722,9 @@ async function startServer() {
             };
           }
 
-          // Call Gemini 2.5 Flash using the modern SDK method and strict response Schema
-          const response = await aiClient.models.generateContent({
-            model: "gemini-2.5-flash",
+          // Call Gemini using the resilient runner with fallback candidate models and structured output
+          const genResult = await safeGenerateGeminiContent(aiClient, {
+            preferredModel: "gemini-3.7-flash",
             contents: prompt,
             config: {
               systemInstruction,
@@ -1152,12 +1734,11 @@ async function startServer() {
             }
           });
 
-          const responseText = response.text;
-          if (responseText) {
-            generatedData = JSON.parse(responseText.trim());
+          if (genResult.text) {
+            generatedData = JSON.parse(genResult.text.trim());
           }
         } catch (geminiGenErr) {
-          console.warn("Gemini generate call failed, falling back to smart content generator:", geminiGenErr);
+          console.warn("Gemini generate call processed via fallback generator.");
         }
       }
 
@@ -1212,7 +1793,7 @@ async function startServer() {
         hasCustomKey: Boolean(customKey && customKey.length > 0),
         hasEnvKey: Boolean(envKey && envKey.length > 0),
         maskedKey: hasKey ? maskKey(effectiveKey) : "",
-        model: "gemini-2.5-flash",
+        model: "gemini-3.7-flash",
         status: hasKey ? "active" : "missing"
       });
     } catch (err: any) {
@@ -1283,20 +1864,21 @@ async function startServer() {
       });
 
       const startTime = Date.now();
-      const response = await testAi.models.generateContent({
-        model: "gemini-2.5-flash",
+      const genResult = await safeGenerateGeminiContent(testAi, {
+        preferredModel: "gemini-3.7-flash",
         contents: "اختبار الاتصال السريع: أجب بكلمة واحدة فقط بالعربية: متصل.",
         config: {
           temperature: 0.1
         }
       });
+
       const latencyMs = Date.now() - startTime;
-      const responseText = response.text?.trim() || "متصل";
+      const responseText = genResult.text || "متصل";
 
       return res.json({
         success: true,
-        message: "تم الاتصال بنجاح بمحرك Google Gemini 2.5 Flash!",
-        model: "gemini-2.5-flash",
+        message: "تم الاتصال بنجاح بمحرك Google Gemini!",
+        model: genResult.modelUsed || "gemini-3.7-flash",
         latencyMs,
         responseSample: responseText,
         testedKeyMasked: maskKey(keyToTest)

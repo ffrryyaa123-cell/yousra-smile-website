@@ -204,7 +204,7 @@ export const GeminiApiKeyManager: React.FC<GeminiApiKeyManagerProps> = ({
               <p className="text-[11px] opacity-90">{testResult.message || testResult.error}</p>
               {testResult.latencyMs && (
                 <span className="text-[10px] text-amber-300 font-mono mt-1 block">
-                  ⚡ زمن الاستجابة: {testResult.latencyMs}ms | النموذج: {testResult.model || 'gemini-2.5-flash'}
+                  ⚡ زمن الاستجابة: {testResult.latencyMs}ms | النموذج: {testResult.model || 'gemini-3.7-flash'}
                 </span>
               )}
             </div>
@@ -228,7 +228,7 @@ export const GeminiApiKeyManager: React.FC<GeminiApiKeyManagerProps> = ({
                 إعدادات ومفاتيح Gemini AI
               </h3>
               <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-500/40 text-purple-300 font-mono text-[10px] font-bold rounded-md">
-                gemini-2.5-flash
+                gemini-3.7-flash
               </span>
             </div>
             <p className="text-xs text-slate-300 font-medium">

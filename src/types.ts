@@ -87,13 +87,15 @@ export interface VideoReview {
   productTitle: string;
   productImage: string;
   thumbnailUrl?: string;
-  platform: 'youtube' | 'tiktok' | 'pinterest';
+  platform: 'youtube' | 'tiktok' | 'pinterest' | 'instagram' | 'snapchat' | 'direct' | 'local' | 'generated';
   embedId: string;
   videoUrl: string;
   title: string;
   views: string;
   date: string;
   duration: string;
+  scenes?: any[];
+  script?: any;
 }
 
 export interface PriceAlert {
@@ -131,6 +133,8 @@ export interface SiteSettings {
   siteLogo: string;
   defaultLanguage: 'ar' | 'en';
   defaultCurrency: CurrencyCode;
+  instagramUrl?: string;
+  snapchatUrl?: string;
   pinterestUrl: string;
   youtubeUrl: string;
   tiktokUrl: string;
@@ -151,6 +155,67 @@ export interface AiGeneratedProductContent {
   suggestedFeatures?: string[];
 }
 
+export interface VideoScene {
+  timeRange: string;
+  visualPrompt: string;
+  voiceoverText: string;
+  screenText: string;
+  sceneType?: 'before_problem' | 'action' | 'specs' | 'before_after' | 'cta';
+  sceneImage?: string;
+  beforeImage?: string;
+  afterImage?: string;
+  transformationNote?: string;
+}
+
+export interface PromotionalVideoScript {
+  videoTitle: string;
+  hook: string;
+  estimatedDuration: string;
+  scenes: VideoScene[];
+  callToAction: string;
+  suggestedBgm?: string;
+}
+
+export interface ExtractedProductInfo {
+  nameAr: string;
+  nameEn: string;
+  description: string;
+  category: string;
+  subcategory?: string;
+  brand?: string;
+  originalPrice: number;
+  discountPrice: number;
+  discountPercent: number;
+  currency: string;
+  features: string[];
+  affiliateLink: string;
+  sourceUrl: string;
+}
+
+export interface ProductVideoCampaignResult {
+  product: ExtractedProductInfo;
+  videoScript: PromotionalVideoScript;
+  socialCaption: string;
+  hashtags: string[];
+  seoMetadata: {
+    title: string;
+    description: string;
+    keywords: string[];
+  };
+  suggestedVideoUrl?: string;
+}
+
+export interface ProductVideoServiceInput {
+  productUrl: string;
+  affiliateLink?: string;
+  affiliateTag?: string;
+  platform?: 'tiktok' | 'youtube' | 'instagram' | 'pinterest';
+  targetAudience?: string;
+  customNotes?: string;
+  geminiApiKey?: string;
+  agentApiKey?: string;
+}
+
 export type PageView = 
   | 'home' 
   | 'products' 
@@ -166,3 +231,4 @@ export type PageView =
   | 'terms' 
   | 'cookies' 
   | 'disclosure';
+
