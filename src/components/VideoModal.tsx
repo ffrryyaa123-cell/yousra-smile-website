@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { VideoReview } from '../types';
 import { useApp } from '../context/AppContext';
-import { X, PlaySquare, ShoppingBag, ExternalLink, Share2, Youtube } from 'lucide-react';
+import { X, PlaySquare, ShoppingBag, ExternalLink, Share2, Youtube, RefreshCw, Upload } from 'lucide-react';
 import { SocialVideoExportModal } from './SocialVideoExportModal';
 
 interface VideoModalProps {
@@ -10,12 +10,13 @@ interface VideoModalProps {
 }
 
 export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
-  const { products, openProductDetail, logAffiliateClick, language, formatPrice, getAffiliateUrl } = useApp();
+  const { products, openProductDetail, logAffiliateClick, language, formatPrice, getAffiliateUrl, openImportVideoModal } = useApp();
   const [showExportModal, setShowExportModal] = useState(false);
 
   if (!video) return null;
 
   const linkedProduct = products.find(p => p.id === video.productId);
+  const isDirectOrLocal = video.platform === 'local' || video.platform === 'direct' || video.videoUrl.startsWith('blob:') || video.videoUrl.endsWith('.mp4') || video.videoUrl.endsWith('.webm');
 
   return (
     <>
@@ -32,14 +33,28 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
             </div>
             
             <div className="flex items-center gap-2">
+              {/* Replace Video from Computer Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  openImportVideoModal(video.productId, 'upload', true);
+                }}
+                className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="استبدال هذا الفيديو بفيديو من جهازك"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">استبدال من جهازي</span>
+              </button>
+
               {/* Share / Export Button */}
               <button
                 type="button"
                 onClick={() => setShowExportModal(true)}
-                className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Share2 className="w-3.5 h-3.5" />
-                <span>تصدير لمواقع التواصل</span>
+                <span>تصدير</span>
               </button>
 
               <button 
@@ -53,13 +68,23 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
 
           {/* Video Player */}
           <div className="aspect-video w-full bg-black relative">
-            <iframe 
-              className="w-full h-full"
-              src={video.platform === 'youtube' ? `https://www.youtube.com/embed/${video.embedId}?autoplay=1` : video.videoUrl}
-              title={video.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
+            {isDirectOrLocal ? (
+              <video 
+                className="w-full h-full object-contain"
+                src={video.videoUrl}
+                controls
+                autoPlay
+                playsInline
+              />
+            ) : (
+              <iframe 
+                className="w-full h-full"
+                src={video.platform === 'youtube' ? `https://www.youtube.com/embed/${video.embedId}?autoplay=1` : video.videoUrl}
+                title={video.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            )}
           </div>
 
           {/* Linked Product Bar & Multi-Store Pricing */}

@@ -6,8 +6,8 @@ import { ProductCard } from './ProductCard';
 export const RecentlyViewedSection: React.FC = () => {
   const { products, recentlyViewedIds, openProductDetail, language, formatPrice } = useApp();
 
-  const viewedProducts = recentlyViewedIds
-    .map(id => products.find(p => p.id === id))
+  const viewedProducts = (recentlyViewedIds || [])
+    .map(id => (products || []).find(p => p.id === id))
     .filter((p): p is typeof products[0] => Boolean(p));
 
   if (viewedProducts.length === 0) return null;

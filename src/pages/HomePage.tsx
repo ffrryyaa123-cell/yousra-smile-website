@@ -201,7 +201,7 @@ export const HomePage: React.FC = () => {
               >
                 <div>
                   <div className="font-mono-meta text-[11px] text-amber-300 mb-1">
-                    {prod.brand.toUpperCase()} / [0{idx + 1}]
+                    {(prod.brand || 'YOUSRA').toUpperCase()} / [0{idx + 1}]
                   </div>
                   <div className="w-full aspect-square bg-slate-900 rounded-xl overflow-hidden mb-2 border border-purple-500/20">
                     <img 

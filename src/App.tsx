@@ -19,6 +19,7 @@ import { SEOHead } from './components/SEOHead';
 import { WhatsAppButton } from './components/WhatsAppButton';
 import { ScrollToTop } from './components/ScrollToTop';
 import { RecentPurchaseToast } from './components/RecentPurchaseToast';
+import { VideoImportModal } from './components/VideoImportModal';
 
 const AppContent: React.FC = () => {
   const { 
@@ -30,7 +31,12 @@ const AppContent: React.FC = () => {
     alertModalProduct,
     editingThumbnailVideo,
     closeThumbnailEditor,
-    darkMode
+    darkMode,
+    importVideoModalOpen,
+    closeImportVideoModal,
+    importVideoPreselectedProductId,
+    importVideoDefaultMode,
+    importVideoIsReplacing
   } = useApp();
 
   const renderCurrentPage = () => {
@@ -106,6 +112,16 @@ const AppContent: React.FC = () => {
           onClose={closeThumbnailEditor} 
         />
       )}
+
+      {/* Video Import / Upload from Device & Replacement Modal */}
+      <VideoImportModal 
+        isOpen={importVideoModalOpen}
+        onClose={closeImportVideoModal}
+        preselectedProductId={importVideoPreselectedProductId}
+        isReplacing={importVideoIsReplacing}
+        defaultMode={importVideoDefaultMode}
+      />
+
       {/* Floating WhatsApp Consultation Button */}
       <WhatsAppButton />
 

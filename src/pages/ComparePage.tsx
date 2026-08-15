@@ -127,7 +127,7 @@ export const ComparePage: React.FC = () => {
                 {comparedProducts.map(prod => (
                   <td key={prod.id} className="p-4 align-top">
                     <ul className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-                      {prod.features.slice(0, 3).map((feat, i) => (
+                      {(prod.features || []).slice(0, 3).map((feat, i) => (
                         <li key={i} className="flex items-start gap-1">
                           <span className="text-purple-500 font-bold">•</span>
                           <span>{feat}</span>

@@ -5,6 +5,7 @@ import {
   Bot, 
   Sparkles, 
   UploadCloud, 
+  Upload,
   Video, 
   GitCompare, 
   Code2, 
@@ -46,7 +47,9 @@ export const AgentAutomationHub: React.FC = () => {
     language, 
     formatPrice, 
     siteSettings, 
-    getAffiliateUrl 
+    getAffiliateUrl,
+    openImportVideoModal,
+    replaceProductVideo
   } = useApp();
 
   const [activeSubTab, setActiveSubTab] = useState<'upload_agent' | 'bulk_batch_agent' | 'video_agent' | 'compare_agent' | 'api_docs' | 'tracking_analytics' | 'gemini_key' | 'google_workspace'>('video_agent');
@@ -1116,6 +1119,48 @@ export const AgentAutomationHub: React.FC = () => {
 
     addVideo(newVideoData);
     setUrlCampaignSavedToVideos(true);
+  };
+
+  // Upload custom video from computer and replace default video
+  const handleUploadDeviceVideoForUrlCampaign = () => {
+    if (!urlCampaignResult) return;
+
+    const newProdId = `url-prod-${Date.now()}`;
+    const newProd: Product = {
+      id: newProdId,
+      titleAr: urlCampaignResult.productTitleAr || 'منتج ذكي مميز',
+      titleEn: urlCampaignResult.productTitleEn || 'Smart Product Edition',
+      description: `${urlCampaignResult.seoDescription || ''} — مزود بأحدث التقنيات الذكية مع ضمان سنتين.`,
+      longDescription: `${urlCampaignResult.seoDescription || ''}\n\nالمميزات:\n${urlCampaignResult.features?.join('\n') || ''}`,
+      originalPrice: urlCampaignResult.originalPrice || 399,
+      discountPrice: urlCampaignResult.discountPrice || 299,
+      discountPercent: urlCampaignResult.discountPercent || 25,
+      currency: 'SAR',
+      rating: 4.9,
+      reviewCount: 142,
+      viewsCount: 230,
+      createdAt: new Date().toISOString(),
+      category: (urlCampaignResult.category as any) || 'smart-home',
+      subcategory: urlCampaignResult.subcategory || 'أجهزة ذكية متطورة',
+      brand: urlCampaignResult.brand || 'يسرى سمايل',
+      features: urlCampaignResult.features || ['تقنية ذكية فائقة', 'توفير استهلاك الطاقة', 'ضمان رسمي معتمد'],
+      specs: { 'الضمان': 'سنتين', 'التوافق': 'جميع الهواتف والأنظمة الذكية' },
+      image: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=800&auto=format&fit=crop&q=80',
+      images: [
+        'https://images.unsplash.com/photo-1558002038-1055907df827?w=800&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&auto=format&fit=crop&q=80'
+      ],
+      amazonUrl: urlCampaignResult.affiliateLink || urlProductInput,
+      youtubeUrl: urlCampaignResult.suggestedVideoUrl || 'https://www.youtube.com/watch?v=p7H2N8r_f5E',
+      isFeatured: true,
+      isTopSelling: true,
+      isActive: true,
+      keywords: urlCampaignResult.keywords || ['أجهزة_ذكية', 'تخفيضات', 'أمازون', 'يسرى_سمايل']
+    };
+
+    addProduct(newProd);
+    setUrlCampaignSavedToStore(true);
+    openImportVideoModal(newProdId, 'upload', true);
   };
 
   // Copy Complete Marketing Bundle
@@ -2287,50 +2332,60 @@ ${urlCampaignResult.hashtags?.join(' ')}
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="pt-2 space-y-2.5">
                       <button
-                        onClick={handleSaveUrlCampaignToStore}
-                        disabled={urlCampaignSavedToStore}
-                        className={`py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                          urlCampaignSavedToStore
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30'
-                        }`}
+                        onClick={handleUploadDeviceVideoForUrlCampaign}
+                        className="w-full py-3.5 px-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 via-emerald-500 to-purple-600 hover:opacity-95 text-slate-950 shadow-xl hover:scale-[1.01] transition-all cursor-pointer border border-amber-400/50"
                       >
-                        {urlCampaignSavedToStore ? (
-                          <>
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>✅ تم النشر في المتجر برابط عمولتك!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="w-4 h-4" />
-                            <span>✨ نشر هذا المنتج فوراً في المتجر</span>
-                          </>
-                        )}
+                        <Upload className="w-4 h-4 text-slate-950" />
+                        <span>📁 رفع واستبدال بفيديو من جهازي (مع الاحتفاظ بكامل تفاصيل المنتج) 🔥</span>
                       </button>
 
-                      <button
-                        onClick={handleSaveUrlCampaignToVideos}
-                        disabled={urlCampaignSavedToVideos}
-                        className={`py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                          urlCampaignSavedToVideos
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30'
-                        }`}
-                      >
-                        {urlCampaignSavedToVideos ? (
-                          <>
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>✅ تمت الإضافة لقسم الفيديوهات بالموقع!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Video className="w-4 h-4" />
-                            <span>🎬 إضافة الفيديو لقسم مراجعات الفيديو</span>
-                          </>
-                        )}
-                      </button>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button
+                          onClick={handleSaveUrlCampaignToStore}
+                          disabled={urlCampaignSavedToStore}
+                          className={`py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                            urlCampaignSavedToStore
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30'
+                          }`}
+                        >
+                          {urlCampaignSavedToStore ? (
+                            <>
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>✅ تم النشر في المتجر برابط عمولتك!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-4 h-4" />
+                              <span>✨ نشر هذا المنتج فوراً في المتجر</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          onClick={handleSaveUrlCampaignToVideos}
+                          disabled={urlCampaignSavedToVideos}
+                          className={`py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                            urlCampaignSavedToVideos
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30'
+                          }`}
+                        >
+                          {urlCampaignSavedToVideos ? (
+                            <>
+                              <CheckCircle2 className="w-4 h-4" />
+                              <span>✅ تمت الإضافة لقسم الفيديوهات بالموقع!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Video className="w-4 h-4" />
+                              <span>🎬 إضافة الفيديو لقسم مراجعات الفيديو</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (

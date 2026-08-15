@@ -73,7 +73,9 @@ export const AdminPage: React.FC = () => {
     siteSettings,
     updateSiteSettings,
     addVideo,
-    getAffiliateUrl
+    getAffiliateUrl,
+    openImportVideoModal,
+    replaceProductVideo
   } = useApp();
 
   const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
@@ -1279,9 +1281,9 @@ export const AdminPage: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Video Status & Quick Generate Button */}
+                      {/* Video Status & Quick Generate / Device Upload Button */}
                       <td className="p-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <button
                             onClick={() => handleGenerateProductVideo(prod)}
                             disabled={isCurrentlyGenerating}
@@ -1292,7 +1294,7 @@ export const AdminPage: React.FC = () => {
                                   ? 'bg-emerald-950/70 text-emerald-300 border-emerald-700 hover:bg-emerald-900'
                                   : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border-purple-400 shadow-md'
                             }`}
-                            title={hasVideo ? 'إعادة توليد وتحديث الفيديو الترويجي' : 'توليد فيديو ترويجي جديد بالذكاء الاصطناعي'}
+                            title={hasVideo ? 'إعادة توليد وتحديث الفيديو الافتراضي' : 'توليد فيديو ترويجي بالذكاء الاصطناعي'}
                           >
                             {isCurrentlyGenerating ? (
                               <>
@@ -1307,9 +1309,18 @@ export const AdminPage: React.FC = () => {
                             ) : (
                               <>
                                 <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-                                <span>توليد فيديو ✨</span>
+                                <span>توليد افتراضي ✨</span>
                               </>
                             )}
+                          </button>
+
+                          <button
+                            onClick={() => openImportVideoModal(prod.id, 'upload', hasVideo)}
+                            className="px-2 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-700 text-purple-300 font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
+                            title={hasVideo ? 'استبدال الفيديو الحالي بفيديو حقيقي من جهازك' : 'رفع فيديو من جهازك وربطه بالمنتج'}
+                          >
+                            <Upload className="w-3 h-3 text-emerald-400" />
+                            <span>{hasVideo ? 'استبدال من جهازي' : 'رفع من جهازي'}</span>
                           </button>
                         </div>
                       </td>
@@ -1521,8 +1532,8 @@ export const AdminPage: React.FC = () => {
             <h4 className="text-xs font-bold text-slate-200">قائمة العلامات التجارية المسجلة حالياً:</h4>
             
             <div className="flex items-center gap-2 flex-wrap">
-              {brandsList.map(b => (
-                <span key={b} className="px-3 py-1.5 rounded-xl bg-purple-950 border border-purple-700 text-amber-300 font-bold text-xs flex items-center gap-2">
+              {Array.from(new Set(brandsList)).map((b, i) => (
+                <span key={`brand-tag-${b}-${i}`} className="px-3 py-1.5 rounded-xl bg-purple-950 border border-purple-700 text-amber-300 font-bold text-xs flex items-center gap-2">
                   <span>{b}</span>
                   <button 
                     onClick={() => setBrandsList(brandsList.filter(x => x !== b))}
@@ -2157,7 +2168,7 @@ export const AdminPage: React.FC = () => {
                       <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-2 border border-slate-100 dark:border-slate-800">
                         <span className="text-xs font-bold text-purple-600 block">الوسوم (Tags)</span>
                         <div className="flex flex-wrap gap-1">
-                          {aiGeneratedResult.tags.map((tag: string, idx: number) => (
+                          {(aiGeneratedResult.tags || []).map((tag: string, idx: number) => (
                             <span key={idx} className="px-2 py-1 rounded bg-purple-500/10 text-purple-500 font-bold text-[10px]">
                               {tag}
                             </span>
@@ -2169,7 +2180,7 @@ export const AdminPage: React.FC = () => {
                       <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-2 border border-slate-100 dark:border-slate-800">
                         <span className="text-xs font-bold text-pink-600 block">الهاشتاقات (Hashtags)</span>
                         <div className="flex flex-wrap gap-1">
-                          {aiGeneratedResult.hashtags.map((hash: string, idx: number) => (
+                          {(aiGeneratedResult.hashtags || []).map((hash: string, idx: number) => (
                             <span key={idx} className="px-2 py-1 rounded bg-pink-500/10 text-pink-500 font-bold text-[10px]">
                               {hash}
                             </span>
@@ -2181,7 +2192,7 @@ export const AdminPage: React.FC = () => {
                       <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-2 border border-slate-100 dark:border-slate-800">
                         <span className="text-xs font-bold text-sky-600 block">الكلمات المفتاحية (Keywords)</span>
                         <div className="flex flex-wrap gap-1">
-                          {aiGeneratedResult.keywords.map((kw: string, idx: number) => (
+                          {(aiGeneratedResult.keywords || []).map((kw: string, idx: number) => (
                             <span key={idx} className="px-2 py-1 rounded bg-sky-500/10 text-sky-500 font-bold text-[10px]">
                               {kw}
                             </span>
@@ -2364,8 +2375,8 @@ export const AdminPage: React.FC = () => {
                     className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white font-bold placeholder:text-slate-500 focus:border-purple-400 focus:outline-none"
                   />
                   <datalist id="admin-brands-list">
-                    {brandsList.map(b => (
-                      <option key={b} value={b} />
+                    {Array.from(new Set(brandsList)).map((b, i) => (
+                      <option key={`brand-opt-${b}-${i}`} value={b} />
                     ))}
                   </datalist>
                   <span className="text-[10px] text-slate-400 mt-0.5 block">
@@ -2637,11 +2648,11 @@ export const AdminPage: React.FC = () => {
                 <span>مشاهد الفيديو الـ 5 المُولّدة بالذكاء الاصطناعي (Storyboard):</span>
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-[10px]">
-                {generatedVideoModal.videoAsset.script.scenes.map((scene) => (
-                  <div key={scene.sceneNumber} className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700 space-y-1">
+                {(generatedVideoModal.videoAsset?.script?.scenes || []).map((scene, scIdx) => (
+                  <div key={`modal-scene-${scene.sceneNumber || scIdx}-${scIdx}`} className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700 space-y-1">
                     <div className="flex items-center justify-between text-amber-400 font-bold">
-                      <span>مشهد {scene.sceneNumber}</span>
-                      <span>{scene.durationSeconds}ث</span>
+                      <span>مشهد {scene.sceneNumber || scIdx + 1}</span>
+                      <span>{scene.durationSeconds || 3}ث</span>
                     </div>
                     <p className="text-slate-300 font-semibold line-clamp-2">{scene.onScreenTextAr}</p>
                     <span className="text-[9px] text-purple-300 block">{scene.transition}</span>
@@ -2656,8 +2667,12 @@ export const AdminPage: React.FC = () => {
                 <span className="font-bold text-amber-300">نص المنشور الجاهز للنشر (Instagram / TikTok):</span>
                 <button
                   onClick={() => {
+                    const script = generatedVideoModal.videoAsset?.script;
+                    const hook = script?.hookAr || '';
+                    const cta = script?.callToActionAr || '';
+                    const tags = (script?.hashtags || []).map(h => `#${h}`).join(' ');
                     navigator.clipboard.writeText(
-                      `${generatedVideoModal.videoAsset.script.hookAr}\n\n${generatedVideoModal.videoAsset.script.callToActionAr}\n\n🔗 رابط الشراء والتخفيض المباشر: ${generatedVideoModal.product.amazonUrl}\n\n${generatedVideoModal.videoAsset.script.hashtags.map(h => `#${h}`).join(' ')}`
+                      `${hook}\n\n${cta}\n\n🔗 رابط الشراء والتخفيض المباشر: ${generatedVideoModal.product.amazonUrl}\n\n${tags}`
                     );
                     setCopiedCaption(true);
                     setTimeout(() => setCopiedCaption(false), 3000);
@@ -2669,10 +2684,10 @@ export const AdminPage: React.FC = () => {
                 </button>
               </div>
               <p className="text-slate-200 text-xs leading-relaxed font-medium bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
-                {generatedVideoModal.videoAsset.script.hookAr} {generatedVideoModal.videoAsset.script.callToActionAr}
+                {generatedVideoModal.videoAsset?.script?.hookAr || ''} {generatedVideoModal.videoAsset?.script?.callToActionAr || ''}
               </p>
               <div className="flex flex-wrap gap-1 text-[10px] text-purple-300">
-                {generatedVideoModal.videoAsset.script.hashtags.map((h, i) => (
+                {(generatedVideoModal.videoAsset?.script?.hashtags || []).map((h, i) => (
                   <span key={i} className="bg-purple-950/60 border border-purple-800 px-2 py-0.5 rounded-md">
                     #{h}
                   </span>

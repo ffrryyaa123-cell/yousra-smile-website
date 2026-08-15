@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   X, 
@@ -6,37 +6,51 @@ import {
   Sparkles, 
   Plus, 
   Youtube, 
-  Video,
-  Instagram,
-  Ghost,
+  Video, 
+  Instagram, 
+  Ghost, 
   CheckCircle2, 
-  AlertCircle,
-  Upload,
-  Film,
-  FileVideo,
-  Wand2,
-  Play,
-  Check,
-  Globe
+  AlertCircle, 
+  Upload, 
+  Film, 
+  FileVideo, 
+  Wand2, 
+  Play, 
+  Globe, 
+  RefreshCw, 
+  HardDrive, 
+  Check, 
+  Trash2,
+  Sliders
 } from 'lucide-react';
 
 interface VideoImportModalProps {
   isOpen: boolean;
   onClose: () => void;
+  preselectedProductId?: string | null;
+  isReplacing?: boolean;
+  defaultMode?: 'upload' | 'link';
 }
 
-export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onClose }) => {
-  const { products, addVideo, updateProduct, language } = useApp();
+export const VideoImportModal: React.FC<VideoImportModalProps> = ({ 
+  isOpen, 
+  onClose,
+  preselectedProductId,
+  isReplacing = false,
+  defaultMode = 'upload'
+}) => {
+  const { products, addVideo, updateProduct, replaceProductVideo, language, formatPrice } = useApp();
 
-  const [importMode, setImportMode] = useState<'link' | 'upload'>('link');
+  const [importMode, setImportMode] = useState<'link' | 'upload'>(defaultMode);
   const [videoUrl, setVideoUrl] = useState('');
-  const [selectedProductId, setSelectedProductId] = useState(products[0]?.id || '');
+  const [selectedProductId, setSelectedProductId] = useState<string>(preselectedProductId || products[0]?.id || '');
   const [customTitle, setCustomTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
-  const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'pinterest' | 'instagram' | 'snapchat' | 'direct' | 'local'>('youtube');
+  const [platform, setPlatform] = useState<'youtube' | 'tiktok' | 'pinterest' | 'instagram' | 'snapchat' | 'direct' | 'local'>('local');
   const [customDuration, setCustomDuration] = useState('00:45');
   const [syncWithProduct, setSyncWithProduct] = useState(true);
+  const [replaceExistingVideo, setReplaceExistingVideo] = useState(isReplacing);
   
   // Local File Upload states
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -45,9 +59,30 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
   const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Sync props when opening
+  useEffect(() => {
+    if (isOpen) {
+      if (preselectedProductId) {
+        setSelectedProductId(preselectedProductId);
+      } else if (!selectedProductId && products[0]?.id) {
+        setSelectedProductId(products[0].id);
+      }
+      setImportMode(defaultMode);
+      setReplaceExistingVideo(isReplacing);
+      setErrorMessage('');
+      setFileError('');
+
+      const curProd = products.find(p => p.id === (preselectedProductId || selectedProductId || products[0]?.id));
+      if (curProd && !customTitle) {
+        setCustomTitle(`مراجعة وتجربة حقيقية لـ ${curProd.titleAr}`);
+      }
+    }
+  }, [isOpen, preselectedProductId, defaultMode, isReplacing, products]);
 
   if (!isOpen) return null;
 
@@ -73,12 +108,8 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
     }
   };
 
-  // Handle local video file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const processSelectedFile = (file: File) => {
     setFileError('');
-    if (!file) return;
-
     if (!file.type.startsWith('video/')) {
       setFileError('يرجى اختيار ملف فيديو صالح (MP4, WebM, MOV, Ogg)');
       return;
@@ -95,8 +126,37 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
     setPlatform('local');
     setVideoUrl(objectUrl);
 
-    if (!customTitle && currentProduct) {
-      setCustomTitle(`فيديو استعراض وحصري لـ ${currentProduct.titleAr}`);
+    if (currentProduct) {
+      setCustomTitle(`فيديو استعراض وتجربة شاملة لـ ${currentProduct.titleAr}`);
+    }
+  };
+
+  // Handle local video file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processSelectedFile(file);
+    }
+  };
+
+  // Drag and Drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      setImportMode('upload');
+      processSelectedFile(file);
     }
   };
 
@@ -128,7 +188,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
         'مراجعة_منتجات',
         'يسرى_سمايل',
         'تخفيضات_أمازون',
-        'smart_home',
+        'smart_choice',
         'viral'
       ];
 
@@ -153,6 +213,10 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
     }
 
     const linkedProd = currentProduct;
+    if (!linkedProd) {
+      setErrorMessage('يرجى اختيار منتج لربطه بالفيديو');
+      return;
+    }
 
     // Extract embed ID if Youtube
     let embedId = `vid-${Date.now()}`;
@@ -166,29 +230,34 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
     const finalVideoUrl = importMode === 'upload' ? uploadedVideoPreviewUrl : videoUrl.trim();
     const finalTitle = customTitle.trim() || `مراجعة شاملة لـ ${linkedProd.titleAr}`;
 
-    // 1. Add video to VideoReviews state
-    addVideo({
-      productId: linkedProd.id,
-      productTitle: linkedProd.titleAr,
-      productImage: linkedProd.image,
-      thumbnailUrl: linkedProd.image,
-      platform,
-      embedId,
-      videoUrl: finalVideoUrl,
-      title: finalTitle,
-      duration: customDuration || '00:45'
-    });
+    if (replaceExistingVideo) {
+      // Direct replace helper keeping all product attributes completely intact
+      replaceProductVideo(linkedProd.id, finalVideoUrl, platform, finalTitle);
+    } else {
+      // 1. Add video to VideoReviews state
+      addVideo({
+        productId: linkedProd.id,
+        productTitle: linkedProd.titleAr,
+        productImage: linkedProd.image,
+        thumbnailUrl: linkedProd.image,
+        platform,
+        embedId,
+        videoUrl: finalVideoUrl,
+        title: finalTitle,
+        duration: customDuration || '00:45'
+      });
 
-    // 2. Optionally sync with product entry
-    if (syncWithProduct && linkedProd) {
-      const updated: any = { ...linkedProd };
-      if (platform === 'youtube') updated.youtubeUrl = finalVideoUrl;
-      else if (platform === 'tiktok') updated.tiktokUrl = finalVideoUrl;
-      else if (platform === 'pinterest') updated.pinterestUrl = finalVideoUrl;
-      else {
-        updated.youtubeUrl = finalVideoUrl;
+      // 2. Sync with product entry
+      if (syncWithProduct && linkedProd) {
+        const updated: any = { ...linkedProd, videoUrl: finalVideoUrl };
+        if (platform === 'youtube') updated.youtubeUrl = finalVideoUrl;
+        else if (platform === 'tiktok') updated.tiktokUrl = finalVideoUrl;
+        else if (platform === 'pinterest') updated.pinterestUrl = finalVideoUrl;
+        else {
+          updated.youtubeUrl = finalVideoUrl;
+        }
+        updateProduct(updated);
       }
-      updateProduct(updated);
     }
 
     setIsSuccess(true);
@@ -204,26 +273,41 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn overflow-y-auto"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div 
-        className="relative w-full max-w-2xl bg-[#111113] border border-purple-500/40 rounded-3xl shadow-2xl text-white overflow-hidden my-auto max-h-[92vh] flex flex-col"
+        className={`relative w-full max-w-2xl bg-[#111113] border rounded-3xl shadow-2xl text-white overflow-hidden my-auto max-h-[92vh] flex flex-col transition-all ${
+          isDragging ? 'border-amber-400 ring-4 ring-amber-400/20' : 'border-purple-500/40'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-gradient-to-r from-purple-600 via-amber-500 to-red-600 h-1.5 w-full shrink-0" />
+        <div className="bg-gradient-to-r from-purple-600 via-amber-500 to-emerald-500 h-1.5 w-full shrink-0" />
 
         {/* Modal Header */}
-        <div className="p-5 sm:p-6 pb-3 flex items-center justify-between border-b border-slate-800 shrink-0">
+        <div className="p-4 sm:p-6 pb-3 flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center shrink-0">
-              <Film className="w-5 h-5 text-purple-400" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600/30 to-amber-500/30 border border-purple-500/40 flex items-center justify-center shrink-0">
+              {isReplacing ? (
+                <RefreshCw className="w-5 h-5 text-amber-400 animate-spin-slow" />
+              ) : (
+                <Film className="w-5 h-5 text-purple-400" />
+              )}
             </div>
             <div>
               <div className="text-[11px] font-mono font-bold text-amber-400 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-400" />
-                <span>مركز استيراد ورفع الفيديوهات الذكي (Video Hub)</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>
+                  {isReplacing 
+                    ? 'استبدال الفيديو بفيديو حقيقي من جهازك' 
+                    : 'مركز استيراد ورفع الفيديوهات من الجهاز (Video Hub)'}
+                </span>
               </div>
-              <h3 className="text-lg sm:text-xl font-black font-['Tajawal'] text-white">
-                استيراد أو رفع فيديو للمنتج ومكتبة المراجعات
+              <h3 className="text-base sm:text-lg font-black font-['Tajawal'] text-white">
+                {isReplacing ? 'استبدال الفيديو الافتراضي بملف فيديو من الكمبيوتر / الهاتف' : 'استيراد أو رفع فيديو للمنتج وربطه ببيانات المتجر'}
               </h3>
             </div>
           </div>
@@ -236,9 +320,49 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
           </button>
         </div>
 
+        {/* Target Product Summary Card */}
+        {currentProduct && (
+          <div className="px-4 sm:px-6 pt-3 shrink-0">
+            <div className="p-3 rounded-2xl bg-gradient-to-r from-purple-950/40 to-slate-900 border border-purple-800/40 flex items-center gap-3">
+              <img 
+                src={currentProduct.image} 
+                alt={currentProduct.titleAr} 
+                className="w-12 h-12 rounded-xl object-cover border border-purple-700/50 shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-amber-300 font-bold uppercase">{currentProduct.brand}</span>
+                  <span className="text-[10px] text-emerald-400 font-black font-mono">
+                    {formatPrice(currentProduct.discountPrice)}
+                  </span>
+                </div>
+                <h4 className="text-xs font-bold text-white truncate font-['Tajawal']">
+                  {currentProduct.titleAr}
+                </h4>
+                <span className="text-[10px] text-slate-400 block truncate">
+                  {currentProduct.features?.slice(0, 2).join(' • ') || currentProduct.description}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Navigation Tabs (Link vs Upload) */}
-        <div className="px-5 sm:px-6 pt-4 shrink-0">
+        <div className="px-4 sm:px-6 pt-3 shrink-0">
           <div className="grid grid-cols-2 gap-2 p-1 bg-slate-900 rounded-2xl border border-slate-800">
+            <button
+              type="button"
+              onClick={() => setImportMode('upload')}
+              className={`py-2.5 px-4 rounded-xl font-['Tajawal'] font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                importMode === 'upload'
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <HardDrive className="w-4 h-4 text-emerald-400" />
+              <span>1. رفع فيديو من جهازك (كمبيوتر / هاتف)</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setImportMode('link')}
@@ -249,36 +373,23 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
               }`}
             >
               <LinkIcon className="w-4 h-4 text-amber-400" />
-              <span>1. استيراد عبر رابط منصة (YouTube / TikTok / IG)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setImportMode('upload')}
-              className={`py-2.5 px-4 rounded-xl font-['Tajawal'] font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                importMode === 'upload'
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <Upload className="w-4 h-4 text-emerald-400" />
-              <span>2. رفع ملف فيديو من جهاز الكمبيوتر (Upload)</span>
+              <span>2. استيراد عبر رابط (YouTube / TikTok)</span>
             </button>
           </div>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleImport} className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1">
+        <form onSubmit={handleImport} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
           {/* Target Product Selection */}
-          <div className="bg-slate-900/90 p-3.5 rounded-2xl border border-slate-800 space-y-2">
+          <div className="bg-slate-900/90 p-3 rounded-2xl border border-slate-800 space-y-1.5">
             <label className="block text-xs font-bold text-amber-300 font-['Tajawal'] flex items-center justify-between">
-              <span>اختر المنتج المرتبط بالفيديو من المتجر:</span>
-              <span className="text-[10px] text-slate-300 font-normal">يتم ربط العملة والأسعار بالدولار ($)</span>
+              <span>المنتج المرتبط بالفيديو:</span>
+              <span className="text-[10px] text-slate-400">تظل كل تفاصيل المنتج والمميزات محفوظة بالكامل</span>
             </label>
             <select
               value={selectedProductId}
               onChange={(e) => setSelectedProductId(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-400 font-['Tajawal'] font-bold cursor-pointer"
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-400 font-['Tajawal'] font-bold cursor-pointer"
             >
               {products.map(p => (
                 <option key={p.id} value={p.id} className="bg-slate-950 text-white">
@@ -288,12 +399,87 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
             </select>
           </div>
 
-          {/* Mode 1: URL Input */}
+          {/* Mode 1: Local Video File Upload */}
+          {importMode === 'upload' && (
+            <div className="space-y-3">
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                accept="video/*,video/mp4,video/webm,video/ogg,video/quicktime"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all space-y-2 group ${
+                  isDragging 
+                    ? 'border-amber-400 bg-amber-500/10 scale-102' 
+                    : 'border-purple-500/40 hover:border-purple-400 bg-slate-900/60 hover:bg-slate-900'
+                }`}
+              >
+                <div className="w-12 h-12 rounded-2xl bg-purple-950/80 border border-purple-700/60 text-purple-400 flex items-center justify-center mx-auto group-hover:scale-105 transition-transform">
+                  <Upload className="w-6 h-6 text-purple-300" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-white">
+                    {uploadedFile ? uploadedFile.name : 'انقر هنا لاختيار ملف فيديو أو اسحبه إلى هنا مباشرة'}
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-1">
+                    يدعم جميع صيغ الفيديو: MP4, WebM, QuickTime MOV (حتى 200 ميجابايت)
+                  </p>
+                </div>
+                {uploadedFile && (
+                  <span className="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-full text-xs font-mono font-bold">
+                    حجم الملف: {(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB ✓
+                  </span>
+                )}
+              </div>
+
+              {fileError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{fileError}</span>
+                </div>
+              )}
+
+              {/* Local Video Live Player Preview */}
+              {uploadedVideoPreviewUrl && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs text-emerald-400 font-bold">
+                    <span>معاينة الفيديو المرفوع من جهازك:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUploadedFile(null);
+                        setUploadedVideoPreviewUrl('');
+                      }}
+                      className="text-red-400 hover:text-red-300 flex items-center gap-1 text-[11px]"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      إزالة واختيار ملف آخر
+                    </button>
+                  </div>
+                  <div className="rounded-2xl overflow-hidden border border-slate-700 bg-black aspect-video max-h-52 mx-auto relative shadow-lg">
+                    <video 
+                      ref={videoRef}
+                      src={uploadedVideoPreviewUrl} 
+                      controls 
+                      onLoadedMetadata={handleLoadedMetadata}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Mode 2: URL Input */}
           {importMode === 'link' && (
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-white font-['Tajawal']">
-                  رابط الفيديو من يوتيوب، تيك توك، انستغرام، سناب شات، أو بينترست:
+                  رابط الفيديو من يوتيوب، تيك توك، انستغرام، سناب شات، أو رابط MP4 مباشر:
                 </label>
                 <input 
                   type="url" 
@@ -301,7 +487,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
                   value={videoUrl}
                   onChange={(e) => handleUrlChange(e.target.value)}
                   placeholder="https://www.youtube.com/watch?v=... أو https://www.tiktok.com/@... أو https://instagram.com/reel/..."
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 font-medium"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-purple-400 font-medium"
                 />
               </div>
 
@@ -341,66 +527,11 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
             </div>
           )}
 
-          {/* Mode 2: Local Video File Upload */}
-          {importMode === 'upload' && (
-            <div className="space-y-3">
-              <input 
-                type="file" 
-                ref={fileInputRef}
-                accept="video/*,video/mp4,video/webm,video/ogg,video/quicktime"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-purple-500/40 hover:border-purple-400 bg-slate-900/60 hover:bg-slate-900 rounded-2xl p-6 text-center cursor-pointer transition-all space-y-3 group"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-purple-950/80 border border-purple-700/60 text-purple-400 flex items-center justify-center mx-auto group-hover:scale-105 transition-transform">
-                  <FileVideo className="w-7 h-7 text-purple-300" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-white">
-                    {uploadedFile ? uploadedFile.name : 'انقر هنا لاختيار ملف فيديو من جهاز الكمبيوتر'}
-                  </h4>
-                  <p className="text-xs text-slate-400 mt-1">
-                    يدعم تنسيقات MP4, WebM, QuickTime MOV (حتى 200 ميجابايت)
-                  </p>
-                </div>
-                {uploadedFile && (
-                  <span className="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-full text-xs font-mono font-bold">
-                    حجم الملف: {(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB ✓
-                  </span>
-                )}
-              </div>
-
-              {fileError && (
-                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{fileError}</span>
-                </div>
-              )}
-
-              {/* Local Video Live Player Preview */}
-              {uploadedVideoPreviewUrl && (
-                <div className="rounded-2xl overflow-hidden border border-slate-700 bg-black aspect-video max-h-48 mx-auto relative shadow-lg">
-                  <video 
-                    ref={videoRef}
-                    src={uploadedVideoPreviewUrl} 
-                    controls 
-                    onLoadedMetadata={handleLoadedMetadata}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
           {/* AI SEO Generator Quick Button */}
           <div className="flex items-center justify-between bg-gradient-to-r from-purple-950/60 to-indigo-950/60 p-3 rounded-2xl border border-purple-500/30">
             <div className="text-xs text-purple-200">
-              <span className="font-bold block">مساعد الـ SEO الذكي:</span>
-              <span className="text-[11px] text-slate-300">توليد عنوان وكلمات مفتاحية وكابشن تسويقي للمنتج بضغطة واحدة</span>
+              <span className="font-bold block">مساعد الـ SEO والوصف الذكي:</span>
+              <span className="text-[11px] text-slate-300">توليد عنوان جذاب وكابشن تسويقي مع هاشتاقات للمنتج بضغطة واحدة</span>
             </div>
             <button
               type="button"
@@ -459,16 +590,28 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
             </div>
           )}
 
-          {/* Auto Sync Checkbox */}
-          <label className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-bold text-emerald-300 cursor-pointer">
-            <input 
-              type="checkbox"
-              checked={syncWithProduct}
-              onChange={(e) => setSyncWithProduct(e.target.checked)}
-              className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 bg-slate-950 border-slate-700 cursor-pointer"
-            />
-            <span>تحديث وحفظ الفيديو مباشرة في صفحة وبطاقة المنتج بالمتجر</span>
-          </label>
+          {/* Replacement & Sync Checkboxes */}
+          <div className="space-y-2 pt-1">
+            <label className="flex items-center gap-2.5 p-3 rounded-xl bg-purple-950/40 border border-purple-700/50 text-xs font-bold text-amber-300 cursor-pointer">
+              <input 
+                type="checkbox"
+                checked={replaceExistingVideo}
+                onChange={(e) => setReplaceExistingVideo(e.target.checked)}
+                className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 bg-slate-950 border-slate-700 cursor-pointer"
+              />
+              <span>🔄 استبدال أي فيديو افتراضي حالي لهذا المنتج بالفيديو الجديد من جهازي</span>
+            </label>
+
+            <label className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-bold text-emerald-300 cursor-pointer">
+              <input 
+                type="checkbox"
+                checked={syncWithProduct}
+                onChange={(e) => setSyncWithProduct(e.target.checked)}
+                className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 bg-slate-950 border-slate-700 cursor-pointer"
+              />
+              <span>حفظ وتثبيت الفيديو مباشرة في بطاقة وتفاصيل المنتج بالمتجر</span>
+            </label>
+          </div>
 
           {errorMessage && (
             <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs flex items-center gap-2">
@@ -480,7 +623,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
           {/* Modal Footer Actions */}
           <div className="pt-3 flex items-center justify-between border-t border-slate-800">
             <span className="text-[11px] text-slate-400">
-              {importMode === 'upload' ? 'جاهز للرفع والتثبيت' : 'جاهز للاستيراد والربط'}
+              {importMode === 'upload' ? 'جاهز للرفع والتثبيت من جهازك' : 'جاهز للاستيراد والربط'}
             </span>
 
             <div className="flex items-center gap-2">
@@ -495,17 +638,25 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({ isOpen, onCl
               <button
                 type="submit"
                 disabled={isSuccess}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-amber-500 to-purple-600 hover:opacity-95 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-amber-500 to-emerald-500 hover:opacity-95 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
               >
                 {isSuccess ? (
                   <>
                     <CheckCircle2 className="w-4 h-4 text-slate-950" />
-                    <span>تم الاستيراد والربط بنجاح!</span>
+                    <span>تم التثبيت والاستبدال بنجاح!</span>
                   </>
                 ) : (
                   <>
-                    <Plus className="w-4 h-4 text-slate-950" />
-                    <span>{importMode === 'upload' ? 'رفع وتثبيت الفيديو 🚀' : 'استيراد وربط الفيديو 🚀'}</span>
+                    {replaceExistingVideo ? (
+                      <RefreshCw className="w-4 h-4 text-slate-950" />
+                    ) : (
+                      <Plus className="w-4 h-4 text-slate-950" />
+                    )}
+                    <span>
+                      {replaceExistingVideo 
+                        ? 'تأكيد واستبدال الفيديو الآن 🚀' 
+                        : (importMode === 'upload' ? 'رفع وتثبيت الفيديو 🚀' : 'استيراد وربط الفيديو 🚀')}
+                    </span>
                   </>
                 )}
               </button>

@@ -24,7 +24,13 @@ import {
   Globe,
   Bell,
   Copy,
-  TrendingDown
+  TrendingDown,
+  Upload,
+  RefreshCw,
+  HardDrive,
+  Plus,
+  Play,
+  Film
 } from 'lucide-react';
 
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
@@ -77,7 +83,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
     filterByBrand,
     setPage,
     setSelectedCategory,
-    getAffiliateUrl
+    getAffiliateUrl,
+    videos,
+    openImportVideoModal,
+    replaceProductVideo
   } = useApp();
 
   if (!product) return null;
@@ -792,7 +801,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white mb-3">أهم المميزات الفريدة:</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {product.features.map((feat, i) => (
+                    {(product.features || []).map((feat, i) => (
                       <div key={i} className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
                         <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                         <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{feat}</span>
@@ -820,41 +829,130 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               </div>
             )}
 
-            {/* Tab 2: Videos (YouTube, TikTok, Pinterest) */}
-            {activeTab === 'videos' && (
-              <div className="space-y-4">
-                <div className="bg-purple-50 dark:bg-purple-950/40 p-4 rounded-2xl border border-purple-100 dark:border-purple-900/60 flex items-center gap-3">
-                  <PlaySquare className="w-6 h-6 text-red-500 shrink-0" />
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">مراجعة يسرى سمايل الحصرية</h4>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">تعرف على أداء ومميزات وسلبيات هذا المنتج بالتفصيل بالفيديو المباشر.</p>
-                  </div>
-                </div>
+            {/* Tab 2: Videos (YouTube, TikTok, Local Upload, Replacement) */}
+            {activeTab === 'videos' && (() => {
+              const linkedVideoReviews = videos.filter(v => v.productId === product.id);
+              const primaryVideoUrl = product.videoUrl || product.youtubeUrl || linkedVideoReviews[0]?.videoUrl;
+              const hasVideo = Boolean(primaryVideoUrl || linkedVideoReviews.length > 0);
+              const isDirectOrLocal = primaryVideoUrl?.startsWith('blob:') || primaryVideoUrl?.endsWith('.mp4') || primaryVideoUrl?.endsWith('.webm') || linkedVideoReviews[0]?.platform === 'local' || linkedVideoReviews[0]?.platform === 'direct';
 
-                {product.youtubeUrl ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-200">
-                      <Youtube className="w-5 h-5 text-red-600" />
-                      <span>مراجعة يوتيوب الرسمية:</span>
+              return (
+                <div className="space-y-4">
+                  {/* Video Actions Header */}
+                  <div className="bg-gradient-to-r from-purple-950/60 to-slate-900 p-4 rounded-2xl border border-purple-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center shrink-0">
+                        <PlaySquare className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">فيديوهات ومراجعات المنتج</h4>
+                        <p className="text-xs text-slate-400">شاهد الفيديو أو استبدله بملف فيديو قمت بإنشائه من جهازك.</p>
+                      </div>
                     </div>
-                    <div className="aspect-video w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-lg">
-                      <iframe 
-                        className="w-full h-full"
-                        src={product.youtubeUrl}
-                        title={product.titleAr}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      ></iframe>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => openImportVideoModal(product.id, 'upload', false)}
+                        className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md cursor-pointer transition-transform active:scale-95"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>📁 رفع فيديو من جهازي</span>
+                      </button>
+
+                      {hasVideo && (
+                        <button
+                          onClick={() => openImportVideoModal(product.id, 'upload', true)}
+                          className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-transform active:scale-95"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                          <span>🔄 استبدال الفيديو الحالي</span>
+                        </button>
+                      )}
                     </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/40 rounded-2xl">
-                    <Video className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                    <p className="text-xs text-slate-500">فيديو المراجعة متاح قريباً على القناة!</p>
-                  </div>
-                )}
-              </div>
-            )}
+
+                  {/* Video Player Display */}
+                  {hasVideo ? (
+                    <div className="space-y-3">
+                      <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-2xl relative">
+                        {isDirectOrLocal ? (
+                          <video 
+                            src={primaryVideoUrl} 
+                            controls 
+                            playsInline
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <iframe 
+                            className="w-full h-full"
+                            src={primaryVideoUrl}
+                            title={product.titleAr}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        )}
+                      </div>
+
+                      {/* Video Quick Actions Bar */}
+                      <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                        <span className="text-slate-300 font-bold flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <span>الفيديو مربوط ببيانات المنتج الحالية</span>
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => openImportVideoModal(product.id, 'upload', true)}
+                            className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 text-[11px]"
+                          >
+                            <RefreshCw className="w-3 h-3" />
+                            استبدال بفيديو من الكمبيوتر
+                          </button>
+                          <span className="text-slate-600">|</span>
+                          <button
+                            onClick={() => openImportVideoModal(product.id, 'link', false)}
+                            className="text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1 text-[11px]"
+                          >
+                            <Globe className="w-3 h-3" />
+                            استيراد رابط
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* No Video State -> Offer Upload Immediately */
+                    <div className="text-center py-10 px-4 bg-slate-900/60 border-2 border-dashed border-slate-800 rounded-2xl space-y-4">
+                      <div className="w-14 h-14 rounded-2xl bg-purple-950/60 border border-purple-800/40 text-purple-400 flex items-center justify-center mx-auto">
+                        <Upload className="w-7 h-7 text-purple-300" />
+                      </div>
+                      <div className="max-w-md mx-auto">
+                        <h4 className="text-sm font-bold text-white">لم يتم ربط فيديو بهذا المنتج بعد</h4>
+                        <p className="text-xs text-slate-400 mt-1">
+                          يمكنك رفع فيديو قمت بتسجيله من جهازك أو استيراد رابط فيديو من يوتيوب / تيك توك لتثبيته في بيانات هذا المنتج.
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                        <button
+                          onClick={() => openImportVideoModal(product.id, 'upload', false)}
+                          className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs flex items-center gap-2 shadow-lg cursor-pointer"
+                        >
+                          <HardDrive className="w-4 h-4 text-emerald-400" />
+                          <span>رفع فيديو من جهازي (كمبيوتر / هاتف)</span>
+                        </button>
+
+                        <button
+                          onClick={() => openImportVideoModal(product.id, 'link', false)}
+                          className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center gap-2 border border-slate-700 cursor-pointer"
+                        >
+                          <Globe className="w-4 h-4 text-amber-400" />
+                          <span>استيراد برابط (YouTube / TikTok)</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Tab 3: Specs Table */}
             {activeTab === 'specs' && (

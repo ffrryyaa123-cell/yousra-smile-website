@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { PlaySquare, Youtube, Video, Sparkles, ExternalLink, ShoppingBag, Pencil, Share2, Plus } from 'lucide-react';
+import { PlaySquare, Youtube, Video, Sparkles, ExternalLink, ShoppingBag, Pencil, Share2, Plus, Upload, RefreshCw, HardDrive } from 'lucide-react';
 import { VideoReview } from '../types';
-import { VideoImportModal } from '../components/VideoImportModal';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 
 export const VideosPage: React.FC = () => {
-  const { videos, products, openVideoModal, openProductDetail, openThumbnailEditor, logAffiliateClick, language, formatPrice, getAffiliateUrl } = useApp();
+  const { videos, products, openVideoModal, openProductDetail, openThumbnailEditor, logAffiliateClick, language, formatPrice, getAffiliateUrl, openImportVideoModal } = useApp();
   const [platformFilter, setPlatformFilter] = useState<'all' | 'youtube' | 'tiktok' | 'pinterest'>('all');
-  const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedExportVideo, setSelectedExportVideo] = useState<VideoReview | null>(null);
 
   const filteredVideos = videos.filter(vid => {
@@ -25,25 +23,36 @@ export const VideosPage: React.FC = () => {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 bg-red-600/30 text-red-300 border border-red-500/30 px-3 py-1 rounded-full text-xs font-bold">
               <PlaySquare className="w-4 h-4 text-red-400" />
-              مركز مراجعات الفيديو الحصرية والاستيراد
+              مركز مراجعات الفيديو ورفع الملفات
             </div>
             <h1 className="text-3xl sm:text-4xl font-black font-['Tajawal']">
               شاهد مراجعات يسرى سمايل قبل الشراء 🎥
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              تجميعة لكافة فيديوهات التقييمات المنشورة على YouTube وTikTok وPinterest مع إمكانية استيراد وتصدير أفرع الفيديو بنقرة واحدة!
+              ارفع فيديوهاتك الخاصة من جهازك أو استورد روابط من YouTube وTikTok مع الحفاظ الكامل على كافة تفاصيل وأسعار المنتجات.
             </p>
           </div>
 
-          {/* Import Video Trigger Button */}
-          <button
-            type="button"
-            onClick={() => setIsImportOpen(true)}
-            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-amber-500 to-purple-600 hover:opacity-95 text-slate-950 font-black text-xs flex items-center gap-2 shadow-xl hover:scale-105 transition-all cursor-pointer shrink-0"
-          >
-            <Plus className="w-4 h-4 text-slate-950" />
-            <span>استيراد فيديو برابط جديد 🚀</span>
-          </button>
+          {/* Import / Upload Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => openImportVideoModal(undefined, 'upload', false)}
+              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 via-amber-500 to-emerald-500 hover:opacity-95 text-slate-950 font-black text-xs flex items-center gap-2 shadow-xl hover:scale-105 transition-all cursor-pointer"
+            >
+              <Upload className="w-4 h-4 text-slate-950" />
+              <span>📁 رفع فيديو من جهازي</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => openImportVideoModal(undefined, 'link', false)}
+              className="px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold text-xs flex items-center gap-2 shadow transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-amber-400" />
+              <span>🔗 استيراد رابط</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -158,15 +167,30 @@ export const VideosPage: React.FC = () => {
                     {video.title}
                   </h3>
                   <div className="flex items-center justify-between text-xs text-slate-400 pt-2">
-                    <span>{video.views}</span>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedExportVideo(video)}
-                      className="text-amber-500 hover:text-amber-400 font-bold flex items-center gap-1 cursor-pointer"
-                    >
-                      <Share2 className="w-3 h-3" />
-                      تصدير
-                    </button>
+                    <span className="font-mono">{video.views} مشاهدة</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openImportVideoModal(video.productId, 'upload', true);
+                        }}
+                        className="text-purple-600 dark:text-purple-400 hover:underline font-bold flex items-center gap-1 text-[11px] cursor-pointer"
+                        title="استبدال هذا الفيديو بفيديو من جهازك"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        استبدال من جهازي
+                      </button>
+                      <span>•</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedExportVideo(video)}
+                        className="text-amber-500 hover:text-amber-400 font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        <Share2 className="w-3 h-3" />
+                        تصدير
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -199,12 +223,6 @@ export const VideosPage: React.FC = () => {
           );
         })}
       </div>
-
-      {/* Import Modal */}
-      <VideoImportModal 
-        isOpen={isImportOpen} 
-        onClose={() => setIsImportOpen(false)} 
-      />
 
       {/* Export Modal */}
       {selectedExportVideo && (

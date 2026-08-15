@@ -22,7 +22,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
   onClose,
   onProductPublished
 }) => {
-  const { siteSettings, addProduct, addVideo, formatPrice } = useApp();
+  const { siteSettings, addProduct, addVideo, formatPrice, openImportVideoModal } = useApp();
   
   // Single input state - ONLY the link!
   const [productLink, setProductLink] = useState(
@@ -406,7 +406,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
           onScreenTextAr: s.screenText || '',
           onScreenTextEn: s.screenText || '',
           transition: 'fade',
-          callToAction: idx === (campaignData.videoScript.scenes.length - 1) ? 'اطلب الآن بخصم خاص' : undefined
+          callToAction: idx === ((campaignData.videoScript?.scenes?.length || 1) - 1) ? 'اطلب الآن بخصم خاص' : undefined
         })) || [],
         affiliateUrl: campaignData.affiliateLink,
         aspectRatio: aspectRatio,
@@ -1097,13 +1097,28 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
               </div>
             </div>
 
-            {/* 🚀 1-CLICK ACTION: Publish to Store & Video Catalog */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+            {/* 🚀 1-CLICK ACTIONS */}
+            <div className="pt-2 space-y-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (initialProduct?.id) {
+                    openImportVideoModal(initialProduct.id, 'upload', true);
+                  } else {
+                    handlePublishToStore();
+                  }
+                }}
+                className="w-full py-3.5 px-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 via-emerald-500 to-purple-600 hover:opacity-95 text-slate-950 shadow-xl cursor-pointer border border-amber-400/50"
+              >
+                <Video className="w-4 h-4 text-slate-950" />
+                <span>📁 رفع واستبدال بفيديو من جهازي (مع الاحتفاظ بجميع بيانات وسعر المنتج) 🔥</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handlePublishToStore}
                 disabled={isPublishing || publishSuccess}
-                className={`w-full flex-1 py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                className={`w-full py-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   publishSuccess
                     ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/40'
                     : 'bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600 hover:from-emerald-400 hover:to-indigo-500 text-slate-950 font-black shadow-xl shadow-emerald-500/30'

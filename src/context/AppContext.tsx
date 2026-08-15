@@ -67,6 +67,16 @@ interface AppContextType {
   updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
   addVideo: (videoData: Omit<VideoReview, 'id' | 'views' | 'date'>) => void;
   deleteVideo: (videoId: string) => void;
+  
+  // Video Import & Replacement Modal (from device or link)
+  importVideoModalOpen: boolean;
+  importVideoPreselectedProductId: string | null;
+  importVideoDefaultMode: 'upload' | 'link';
+  importVideoIsReplacing: boolean;
+  openImportVideoModal: (productId?: string, defaultMode?: 'upload' | 'link', isReplacing?: boolean) => void;
+  closeImportVideoModal: () => void;
+  replaceProductVideo: (productId: string, newVideoUrl: string, platform?: VideoReview['platform'], customTitle?: string) => void;
+
   toggleDarkMode: () => void;
   toggleLanguage: () => void;
   setLanguage: (lang: Language) => void;
@@ -120,27 +130,35 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const normalizeProduct = (p: any): Product => ({
+    ...p,
+    features: Array.isArray(p.features) ? p.features : (typeof p.features === 'string' ? p.features.split(',').map((s: string) => s.trim()).filter(Boolean) : []),
+    images: Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image ? [p.image] : []),
+    reviews: Array.isArray(p.reviews) ? p.reviews : [],
+    keywords: Array.isArray(p.keywords) ? p.keywords : [],
+    tags: Array.isArray(p.tags) ? p.tags : [],
+    specs: p.specs && typeof p.specs === 'object' ? p.specs : {},
+    amazonUrl: p.amazonUrl ? p.amazonUrl.replace('amazon.sa', 'amazon.com') : (p.amazonUrl || '')
+  });
+
   const [products, setProducts] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_PRODUCTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length >= INITIAL_PRODUCTS.length) {
-          return parsed.map((p: Product) => ({
-            ...p,
-            amazonUrl: p.amazonUrl ? p.amazonUrl.replace('amazon.sa', 'amazon.com') : p.amazonUrl
-          }));
+          return parsed.map(normalizeProduct);
         } else if (Array.isArray(parsed) && parsed.length > 0) {
           // Merge newly added default products that aren't in localStorage
           const existingIds = new Set(parsed.map((p: Product) => p.id));
           const newDefaults = INITIAL_PRODUCTS.filter(p => !existingIds.has(p.id));
-          return [...parsed, ...newDefaults];
+          return [...parsed.map(normalizeProduct), ...newDefaults.map(normalizeProduct)];
         }
       }
     } catch (e) {
       console.error('Error loading products from localStorage:', e);
     }
-    return INITIAL_PRODUCTS;
+    return INITIAL_PRODUCTS.map(normalizeProduct);
   });
 
   const [videos, setVideos] = useState<VideoReview[]>(() => {
@@ -161,7 +179,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [favorites, setFavorites] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_FAVS_KEY);
-      return saved ? JSON.parse(saved) : ['prod-1', 'prod-6'];
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : ['prod-1', 'prod-6'];
     } catch (e) {
       return ['prod-1', 'prod-6'];
     }
@@ -170,7 +189,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_CART_KEY);
-      return saved ? JSON.parse(saved) : [
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : [
         { productId: 'prod-1', quantity: 1, addedAt: new Date().toISOString() }
       ];
     } catch (e) {
@@ -183,7 +203,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [compareList, setCompareList] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_COMPARE_KEY);
-      return saved ? JSON.parse(saved) : [];
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
       return [];
     }
@@ -192,7 +213,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_PRICE_ALERTS_KEY);
-      return saved ? JSON.parse(saved) : [
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : [
         {
           id: 'alert-sample-1',
           productId: 'prod-1',
@@ -347,10 +369,73 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<VideoReview | null>(null);
 
+  // Video Import & Replacement Modal (Device / Link)
+  const [importVideoModalOpen, setImportVideoModalOpen] = useState<boolean>(false);
+  const [importVideoPreselectedProductId, setImportVideoPreselectedProductId] = useState<string | null>(null);
+  const [importVideoDefaultMode, setImportVideoDefaultMode] = useState<'upload' | 'link'>('upload');
+  const [importVideoIsReplacing, setImportVideoIsReplacing] = useState<boolean>(false);
+
+  const openImportVideoModal = (productId?: string, defaultMode: 'upload' | 'link' = 'upload', isReplacing: boolean = false) => {
+    setImportVideoPreselectedProductId(productId || null);
+    setImportVideoDefaultMode(defaultMode);
+    setImportVideoIsReplacing(isReplacing);
+    setImportVideoModalOpen(true);
+  };
+
+  const closeImportVideoModal = () => {
+    setImportVideoModalOpen(false);
+    setImportVideoPreselectedProductId(null);
+    setImportVideoIsReplacing(false);
+  };
+
+  const replaceProductVideo = (productId: string, newVideoUrl: string, platform: VideoReview['platform'] = 'local', customTitle?: string) => {
+    const prod = products.find(p => p.id === productId);
+    if (!prod) return;
+
+    // Update Product object with new video url
+    const updatedProd: Product = {
+      ...prod,
+      videoUrl: newVideoUrl,
+      youtubeUrl: platform === 'youtube' ? newVideoUrl : (prod.youtubeUrl || newVideoUrl)
+    };
+    updateProduct(updatedProd);
+
+    // Update or Add to videos feed
+    const existingVideoIndex = videos.findIndex(v => v.productId === productId);
+    const videoTitle = customTitle || `مراجعة وتجربة حصرية لـ ${prod.titleAr}`;
+    
+    if (existingVideoIndex >= 0) {
+      setVideos(prev => prev.map((v, i) => i === existingVideoIndex ? {
+        ...v,
+        platform,
+        videoUrl: newVideoUrl,
+        title: videoTitle,
+        date: 'اليوم (محدث)'
+      } : v));
+    } else {
+      addVideo({
+        productId,
+        productTitle: prod.titleAr,
+        productImage: prod.image,
+        thumbnailUrl: prod.image,
+        platform,
+        embedId: `vid-${Date.now()}`,
+        videoUrl: newVideoUrl,
+        title: videoTitle,
+        duration: '01:00'
+      });
+    }
+
+    if (selectedProduct && selectedProduct.id === productId) {
+      setSelectedProduct(updatedProd);
+    }
+  };
+
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_RECENTLY_VIEWED_KEY);
-      return saved ? JSON.parse(saved) : ['prod-1', 'prod-2', 'prod-6'];
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : ['prod-1', 'prod-2', 'prod-6'];
     } catch (e) {
       return ['prod-1', 'prod-2', 'prod-6'];
     }
@@ -730,6 +815,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateVideoThumbnail,
         addVideo,
         deleteVideo,
+        importVideoModalOpen,
+        importVideoPreselectedProductId,
+        importVideoDefaultMode,
+        importVideoIsReplacing,
+        openImportVideoModal,
+        closeImportVideoModal,
+        replaceProductVideo,
         toggleDarkMode,
         toggleLanguage,
         setLanguage,
