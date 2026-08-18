@@ -106,10 +106,23 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
   const [progressPercent, setProgressPercent] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9'>('9:16');
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
+  const [videoPlayerMode, setVideoPlayerMode] = useState<'storyboard' | 'device_video' | 'rendered_video' | 'youtube'>('storyboard');
   
+  const deviceVideoInputRef = useRef<HTMLInputElement>(null);
   const playTimerRef = useRef<any>(null);
   const startTimeRef = useRef<number>(0);
   const totalDurationSeconds = 32;
+
+  // Direct Device Video File Handler
+  const handleDeviceVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const objectUrl = URL.createObjectURL(file);
+    setUploadedVideoUrl(objectUrl);
+    setVideoPlayerMode('device_video');
+    setIsPlaying(false);
+  };
 
   // TTS Voice Synthesis
   const speakCurrentScene = (text: string) => {
@@ -223,18 +236,21 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
         platform: 'tiktok'
       });
 
-      // 3. Pick image
-      let chosenImage = initialProduct?.image || 'https://images.unsplash.com/photo-1558002038-1055907df827?w=800&auto=format&fit=crop&q=80';
-      if (/airfryer|fryer|قلاية/i.test(productLink)) {
-        chosenImage = 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&auto=format&fit=crop&q=80';
-      } else if (/vacuum|cleaner|مكنسة/i.test(productLink)) {
-        chosenImage = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?w=800&auto=format&fit=crop&q=80';
-      } else if (/lock|قفل/i.test(productLink)) {
+      // 3. Pick image - ALWAYS prioritize the genuine extracted product image
+      let chosenImage = campaign.product.image || campaign.heroImage || initialProduct?.image || '';
+      if (!chosenImage || !chosenImage.startsWith('http')) {
         chosenImage = 'https://images.unsplash.com/photo-1558002038-1055907df827?w=800&auto=format&fit=crop&q=80';
-      } else if (/watch|ساعة/i.test(productLink)) {
-        chosenImage = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80';
-      } else if (/camera|كاميرا/i.test(productLink)) {
-        chosenImage = 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80';
+        if (/airfryer|fryer|قلاية/i.test(productLink)) {
+          chosenImage = 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&auto=format&fit=crop&q=80';
+        } else if (/vacuum|cleaner|مكنسة/i.test(productLink)) {
+          chosenImage = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?w=800&auto=format&fit=crop&q=80';
+        } else if (/lock|قفل/i.test(productLink)) {
+          chosenImage = 'https://images.unsplash.com/photo-1558002038-1055907df827?w=800&auto=format&fit=crop&q=80';
+        } else if (/watch|ساعة/i.test(productLink)) {
+          chosenImage = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80';
+        } else if (/camera|كاميرا/i.test(productLink)) {
+          chosenImage = 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80';
+        }
       }
 
       const effectiveBrand = customBrand.trim() || campaign.product.brand || parsedInfo.brand || 'Amazon Choice';
@@ -250,6 +266,9 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
         features: campaign.product.features || ['جودة واعتمادية عالية', 'سعر مخفض لفترة محدودة', 'ضمان معتمد'],
         affiliateLink: campaign.product.affiliateLink || builtAffiliate,
         image: chosenImage,
+        beforeImage: campaign.beforeImage || chosenImage,
+        afterImage: campaign.afterImage || chosenImage,
+        suggestedVideoUrl: campaign.product.youtubeUrl || (campaign as any).suggestedVideoUrl,
         socialCaption: campaign.socialCaption,
         hashtags: campaign.hashtags,
         videoScript: campaign.videoScript
@@ -627,30 +646,57 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
           {/* Left Column: Interactive Simulated Video Player (TikTok/Reels format) */}
           <div className="lg:col-span-5 flex flex-col items-center">
             
-            {/* Aspect Ratio Switcher */}
-            <div className="flex items-center gap-2 mb-3 bg-slate-900 p-1 rounded-xl border border-slate-800">
+            {/* Video Mode Tabs */}
+            <div className="flex items-center gap-1.5 mb-3 w-full max-w-[340px] overflow-x-auto pb-1">
               <button
                 type="button"
-                onClick={() => setAspectRatio('9:16')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  aspectRatio === '9:16'
-                    ? 'bg-red-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
+                onClick={() => setVideoPlayerMode('storyboard')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 ${
+                  videoPlayerMode === 'storyboard'
+                    ? 'bg-gradient-to-r from-red-600 to-amber-500 text-white shadow-md'
+                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                 }`}
               >
-                📱 تيك توك وريلز (9:16)
+                <span>⚡ العرض الذكي</span>
               </button>
-              <button
-                type="button"
-                onClick={() => setAspectRatio('16:9')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  aspectRatio === '16:9'
-                    ? 'bg-red-600 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                🖥️ شاشة عريضة (16:9)
-              </button>
+
+              {uploadedVideoUrl ? (
+                <button
+                  type="button"
+                  onClick={() => setVideoPlayerMode('device_video')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 ${
+                    videoPlayerMode === 'device_video'
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/80 hover:text-white'
+                  }`}
+                >
+                  <span>📁 فيديو من جهازي</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => deviceVideoInputRef.current?.click()}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 text-amber-300 hover:bg-slate-800 border border-amber-500/30 transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1"
+                  title="استيراد فيديو من الكمبيوتر أو الهاتف"
+                >
+                  <span>📁 رفع فيديو من جهازي</span>
+                </button>
+              )}
+
+              {renderedBlobUrl && (
+                <button
+                  type="button"
+                  onClick={() => setVideoPlayerMode('rendered_video')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 ${
+                    videoPlayerMode === 'rendered_video'
+                      ? 'bg-purple-600 text-white shadow-md'
+                      : 'bg-purple-950/60 text-purple-300 border border-purple-800/80 hover:text-white'
+                  }`}
+                >
+                  <span>🎥 فيديو MP4 مصيّر</span>
+                </button>
+              )}
             </div>
 
             {/* Aspect Ratio Switcher & Before/After Toggle */}
@@ -684,6 +730,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
               <button
                 type="button"
                 onClick={() => {
+                  setVideoPlayerMode('storyboard');
                   const baIdx = scenes.findIndex((s: any) => s.sceneType === 'before_after');
                   if (baIdx >= 0) {
                     setCurrentSceneIdx(baIdx);
@@ -696,150 +743,190 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
               </button>
             </div>
 
+            {/* Hidden Video File Picker */}
+            <input
+              type="file"
+              ref={deviceVideoInputRef}
+              accept="video/mp4,video/webm,video/quicktime,video/*"
+              onChange={handleDeviceVideoFileChange}
+              className="hidden"
+            />
+
             {/* Video Canvas Phone Frame */}
             <div 
               className={`relative bg-black rounded-3xl overflow-hidden border-4 border-slate-800 shadow-2xl w-full transition-all duration-300 flex flex-col justify-between ${
                 aspectRatio === '9:16' ? 'max-w-[340px] aspect-[9/16] min-h-[500px]' : 'aspect-video max-w-full'
               }`}
             >
-              {/* Video Background with Dynamic Scene Image and Transformation View */}
-              <div className="absolute inset-0 z-0 overflow-hidden">
-                {currentScene?.sceneType === 'before_after' ? (
-                  <div className="relative w-full h-full flex">
-                    {/* Split View Before & After */}
-                    <div className="w-1/2 h-full relative overflow-hidden border-r-2 border-amber-400">
-                      <img
-                        src={currentScene?.beforeImage || 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80'}
-                        alt="Before"
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover filter grayscale contrast-125 scale-105"
-                      />
-                      <div className="absolute top-12 left-2 bg-red-600/90 text-white font-black text-[10px] px-2 py-0.5 rounded-md backdrop-blur-sm shadow">
-                        قبل ❌
-                      </div>
-                    </div>
-                    <div className="w-1/2 h-full relative overflow-hidden">
-                      <img
-                        src={currentScene?.afterImage || currentScene?.sceneImage || campaignData.image}
-                        alt="After"
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover scale-105"
-                      />
-                      <div className="absolute top-12 right-2 bg-emerald-600/90 text-white font-black text-[10px] px-2 py-0.5 rounded-md backdrop-blur-sm shadow">
-                        بعد ✅
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <img
-                    src={currentScene?.sceneImage || campaignData.image}
-                    alt={campaignData.productTitleAr}
-                    referrerPolicy="no-referrer"
-                    className={`w-full h-full object-cover transition-all duration-1000 ${
-                      isPlaying ? 'scale-110' : 'scale-100'
-                    } ${currentScene?.sceneType === 'before_problem' ? 'filter sepia-[0.3] contrast-125' : ''}`}
+              {/* If playing user-uploaded video from device */}
+              {videoPlayerMode === 'device_video' && uploadedVideoUrl ? (
+                <div className="relative w-full h-full flex flex-col justify-between z-10">
+                  <video
+                    src={uploadedVideoUrl}
+                    controls
+                    autoPlay
+                    loop
+                    className="w-full h-full object-cover"
                   />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none"></div>
-              </div>
-
-              {/* Video Top Bar: Brand, Duration, Voice status */}
-              <div className="relative z-10 p-3.5 flex items-center justify-between text-white text-xs">
-                <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
-                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                  <span className="font-bold text-[11px]">{campaignData.brand}</span>
+                  <div className="absolute top-3 right-3 bg-emerald-600/90 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg pointer-events-none">
+                    فيديو من جهازك 📁
+                  </div>
                 </div>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setIsMuted(!isMuted)}
-                    className="p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/10 cursor-pointer"
-                    title={isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
-                  >
-                    {isMuted ? <VolumeX className="w-3.5 h-3.5 text-red-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
-                  </button>
-
-                  <span className="bg-black/60 px-2 py-1 rounded-full text-[10px] font-mono font-bold text-slate-300 border border-white/10">
-                    {Math.floor((progressPercent / 100) * totalDurationSeconds)}s / {totalDurationSeconds}s
-                  </span>
+              ) : videoPlayerMode === 'rendered_video' && renderedBlobUrl ? (
+                <div className="relative w-full h-full flex flex-col justify-between z-10">
+                  <video
+                    src={renderedBlobUrl}
+                    controls
+                    autoPlay
+                    loop
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 right-3 bg-purple-600/90 text-white text-[10px] font-black px-2.5 py-1 rounded-full shadow-lg pointer-events-none">
+                    فيديو مصيّر MP4 🎥
+                  </div>
                 </div>
-              </div>
-
-              {/* Center Play Button Overlay if Paused */}
-              {!isPlaying && (
-                <div className="relative z-20 flex flex-col items-center justify-center my-auto">
-                  <button
-                    type="button"
-                    onClick={togglePlay}
-                    className="w-16 h-16 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center shadow-2xl shadow-red-600/50 cursor-pointer transform hover:scale-105 transition-all"
-                  >
-                    <Play className="w-8 h-8 fill-white ml-1" />
-                  </button>
-                  <span className="mt-2 text-xs font-bold text-white bg-black/70 px-3 py-1 rounded-full backdrop-blur-sm">
-                    اضغط لتشغيل الفيديو بالصوت 🔊
-                  </span>
-                </div>
-              )}
-
-              {/* Video Captions & Animated Scene Box */}
-              <div className="relative z-10 p-3.5 space-y-2.5 mt-auto">
-                
-                {/* Onscreen Badge */}
-                <div className="inline-block px-3 py-1 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-lg animate-bounce">
-                  {currentScene?.screenText || 'عرض خاص وحصري 🔥'}
-                </div>
-
-                {/* Subtitle / Voiceover text */}
-                <div className="bg-black/80 backdrop-blur-md p-3 rounded-2xl border border-white/20 text-right space-y-1">
-                  <div className="text-[10px] text-amber-400 font-bold flex items-center justify-between">
-                    <span className="flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-amber-400" />
-                      المشهد {currentSceneIdx + 1} من {scenes.length}
-                    </span>
-                    {currentScene?.transformationNote && (
-                      <span className="text-[9px] text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-800">
-                        {currentScene.transformationNote}
-                      </span>
+              ) : (
+                /* Interactive Storyboard Mode with Scraped Product Images */
+                <>
+                  <div className="absolute inset-0 z-0 overflow-hidden">
+                    {currentScene?.sceneType === 'before_after' ? (
+                      <div className="relative w-full h-full flex">
+                        {/* Split View Before & After */}
+                        <div className="w-1/2 h-full relative overflow-hidden border-r-2 border-amber-400">
+                          <img
+                            src={currentScene?.beforeImage || 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80'}
+                            alt="Before"
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover filter grayscale contrast-125 scale-105"
+                          />
+                          <div className="absolute top-12 left-2 bg-red-600/90 text-white font-black text-[10px] px-2 py-0.5 rounded-md backdrop-blur-sm shadow">
+                            قبل ❌
+                          </div>
+                        </div>
+                        <div className="w-1/2 h-full relative overflow-hidden">
+                          <img
+                            src={currentScene?.afterImage || currentScene?.sceneImage || campaignData.image}
+                            alt="After"
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover scale-105"
+                          />
+                          <div className="absolute top-12 right-2 bg-emerald-600/90 text-white font-black text-[10px] px-2 py-0.5 rounded-md backdrop-blur-sm shadow">
+                            بعد ✅
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img
+                        src={currentScene?.sceneImage || campaignData.image}
+                        alt={campaignData.productTitleAr}
+                        referrerPolicy="no-referrer"
+                        className={`w-full h-full object-cover transition-all duration-1000 ${
+                          isPlaying ? 'scale-110' : 'scale-100'
+                        } ${currentScene?.sceneType === 'before_problem' ? 'filter sepia-[0.3] contrast-125' : ''}`}
+                      />
                     )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none"></div>
                   </div>
-                  <p className="text-xs sm:text-sm font-bold text-white font-['Tajawal'] leading-relaxed">
-                    "{currentScene?.voiceoverText || ''}"
-                  </p>
-                </div>
 
-                {/* Price Tag in Video */}
-                <div className="flex items-center justify-between bg-slate-900/90 backdrop-blur-md p-2 rounded-xl border border-indigo-500/40">
-                  <div>
-                    <span className="text-[10px] text-slate-300 block">السعر بالدولار ($):</span>
-                    <span className="text-sm font-black text-emerald-400 font-['Tajawal']">
-                      ${campaignData.discountPrice} USD
-                    </span>
+                  {/* Video Top Bar: Brand, Duration, Voice status */}
+                  <div className="relative z-10 p-3.5 flex items-center justify-between text-white text-xs">
+                    <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
+                      <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                      <span className="font-bold text-[11px]">{campaignData.brand}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setIsMuted(!isMuted)}
+                        className="p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/10 cursor-pointer"
+                        title={isMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
+                      >
+                        {isMuted ? <VolumeX className="w-3.5 h-3.5 text-red-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
+                      </button>
+
+                      <span className="bg-black/60 px-2 py-1 rounded-full text-[10px] font-mono font-bold text-slate-300 border border-white/10">
+                        {Math.floor((progressPercent / 100) * totalDurationSeconds)}s / {totalDurationSeconds}s
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-[10px] bg-red-500 text-white font-bold px-2 py-0.5 rounded-md">
-                    وفر {campaignData.discountPercent}%
-                  </span>
-                </div>
 
-                {/* Affiliate Direct CTA in Video */}
-                <a
-                  href={campaignData.affiliateLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg cursor-pointer"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>اطلب الآن عبر رابط الأفلييت بالخصم 🛒</span>
-                </a>
+                  {/* Center Play Button Overlay if Paused */}
+                  {!isPlaying && (
+                    <div className="relative z-20 flex flex-col items-center justify-center my-auto">
+                      <button
+                        type="button"
+                        onClick={togglePlay}
+                        className="w-16 h-16 rounded-full bg-red-600/90 hover:bg-red-500 text-white flex items-center justify-center shadow-2xl shadow-red-600/50 cursor-pointer transform hover:scale-105 transition-all"
+                      >
+                        <Play className="w-8 h-8 fill-white ml-1" />
+                      </button>
+                      <span className="mt-2 text-xs font-bold text-white bg-black/70 px-3 py-1 rounded-full backdrop-blur-sm">
+                        اضغط لتشغيل العرض بالصوت 🔊
+                      </span>
+                    </div>
+                  )}
 
-                {/* Video Timeline Progress Bar */}
-                <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
-                  <div 
-                    className="bg-red-500 h-full transition-all duration-100"
-                    style={{ width: `${progressPercent}%` }}
-                  ></div>
-                </div>
-              </div>
+                  {/* Video Captions & Animated Scene Box */}
+                  <div className="relative z-10 p-3.5 space-y-2.5 mt-auto">
+                    
+                    {/* Onscreen Badge */}
+                    <div className="inline-block px-3 py-1 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-lg animate-bounce">
+                      {currentScene?.screenText || 'عرض خاص وحصري 🔥'}
+                    </div>
+
+                    {/* Subtitle / Voiceover text */}
+                    <div className="bg-black/80 backdrop-blur-md p-3 rounded-2xl border border-white/20 text-right space-y-1">
+                      <div className="text-[10px] text-amber-400 font-bold flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-amber-400" />
+                          المشهد {currentSceneIdx + 1} من {scenes.length}
+                        </span>
+                        {currentScene?.transformationNote && (
+                          <span className="text-[9px] text-emerald-400 bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-800">
+                            {currentScene.transformationNote}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs sm:text-sm font-bold text-white font-['Tajawal'] leading-relaxed">
+                        "{currentScene?.voiceoverText || ''}"
+                      </p>
+                    </div>
+
+                    {/* Price Tag in Video */}
+                    <div className="flex items-center justify-between bg-slate-900/90 backdrop-blur-md p-2 rounded-xl border border-indigo-500/40">
+                      <div>
+                        <span className="text-[10px] text-slate-300 block">السعر بالدولار ($):</span>
+                        <span className="text-sm font-black text-emerald-400 font-['Tajawal']">
+                          ${campaignData.discountPrice} USD
+                        </span>
+                      </div>
+                      <span className="text-[10px] bg-red-500 text-white font-bold px-2 py-0.5 rounded-md">
+                        وفر {campaignData.discountPercent}%
+                      </span>
+                    </div>
+
+                    {/* Affiliate Direct CTA in Video */}
+                    <a
+                      href={campaignData.affiliateLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg cursor-pointer"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>اطلب الآن عبر رابط الأفلييت بالخصم 🛒</span>
+                    </a>
+
+                    {/* Video Timeline Progress Bar */}
+                    <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-red-500 h-full transition-all duration-100"
+                        style={{ width: `${progressPercent}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Video Controls Bar */}
@@ -1102,11 +1189,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  if (initialProduct?.id) {
-                    openImportVideoModal(initialProduct.id, 'upload', true);
-                  } else {
-                    handlePublishToStore();
-                  }
+                  deviceVideoInputRef.current?.click();
                 }}
                 className="w-full py-3.5 px-4 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 via-emerald-500 to-purple-600 hover:opacity-95 text-slate-950 shadow-xl cursor-pointer border border-amber-400/50"
               >

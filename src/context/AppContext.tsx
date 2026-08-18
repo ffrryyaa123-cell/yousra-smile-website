@@ -76,6 +76,7 @@ interface AppContextType {
   openImportVideoModal: (productId?: string, defaultMode?: 'upload' | 'link', isReplacing?: boolean) => void;
   closeImportVideoModal: () => void;
   replaceProductVideo: (productId: string, newVideoUrl: string, platform?: VideoReview['platform'], customTitle?: string) => void;
+  removeProductVideo: (productId: string) => void;
 
   toggleDarkMode: () => void;
   toggleLanguage: () => void;
@@ -428,6 +429,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (selectedProduct && selectedProduct.id === productId) {
       setSelectedProduct(updatedProd);
+    }
+  };
+
+  const removeProductVideo = (productId: string) => {
+    // 1. Remove videoUrl and youtubeUrl from the Product
+    setProducts(prev => prev.map(p => {
+      if (p.id === productId) {
+        return {
+          ...p,
+          videoUrl: undefined,
+          youtubeUrl: undefined
+        };
+      }
+      return p;
+    }));
+
+    // 2. Remove any associated video review from the global videos feed
+    setVideos(prev => prev.filter(v => v.productId !== productId));
+
+    // 3. Update currently viewed product if active
+    if (selectedProduct && selectedProduct.id === productId) {
+      setSelectedProduct(prev => prev ? ({
+        ...prev,
+        videoUrl: undefined,
+        youtubeUrl: undefined
+      }) : null);
     }
   };
 
@@ -822,6 +849,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         openImportVideoModal,
         closeImportVideoModal,
         replaceProductVideo,
+        removeProductVideo,
         toggleDarkMode,
         toggleLanguage,
         setLanguage,

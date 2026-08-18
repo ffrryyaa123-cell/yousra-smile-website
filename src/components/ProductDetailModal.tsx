@@ -30,7 +30,8 @@ import {
   HardDrive,
   Plus,
   Play,
-  Film
+  Film,
+  Trash2
 } from 'lucide-react';
 
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
@@ -86,7 +87,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
     getAffiliateUrl,
     videos,
     openImportVideoModal,
-    replaceProductVideo
+    replaceProductVideo,
+    removeProductVideo
   } = useApp();
 
   if (!product) return null;
@@ -860,13 +862,28 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       </button>
 
                       {hasVideo && (
-                        <button
-                          onClick={() => openImportVideoModal(product.id, 'upload', true)}
-                          className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-transform active:scale-95"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
-                          <span>🔄 استبدال الفيديو الحالي</span>
-                        </button>
+                        <>
+                          <button
+                            onClick={() => openImportVideoModal(product.id, 'upload', true)}
+                            className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-transform active:scale-95"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                            <span>🔄 استبدال الفيديو الحالي</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              if (window.confirm('هل أنتِ متأكدة من حذف الفيديو المرفق بهذا المنتج؟ يمكنك رفع أو توليد فيديو آخر في أي وقت.')) {
+                                removeProductVideo(product.id);
+                              }
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-transform active:scale-95"
+                            title="حذف الفيديو المرفق"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                            <span>🗑️ حذف الفيديو</span>
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -894,7 +911,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       </div>
 
                       {/* Video Quick Actions Bar */}
-                      <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                      <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
                         <span className="text-slate-300 font-bold flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                           <span>الفيديو مربوط ببيانات المنتج الحالية</span>
@@ -903,7 +920,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => openImportVideoModal(product.id, 'upload', true)}
-                            className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 text-[11px]"
+                            className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 text-[11px] cursor-pointer"
                           >
                             <RefreshCw className="w-3 h-3" />
                             استبدال بفيديو من الكمبيوتر
@@ -911,10 +928,22 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                           <span className="text-slate-600">|</span>
                           <button
                             onClick={() => openImportVideoModal(product.id, 'link', false)}
-                            className="text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1 text-[11px]"
+                            className="text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1 text-[11px] cursor-pointer"
                           >
                             <Globe className="w-3 h-3" />
                             استيراد رابط
+                          </button>
+                          <span className="text-slate-600">|</span>
+                          <button
+                            onClick={() => {
+                              if (window.confirm('هل أنتِ متأكدة من حذف الفيديو المرفق بهذا المنتج؟')) {
+                                removeProductVideo(product.id);
+                              }
+                            }}
+                            className="text-red-400 hover:text-red-300 font-bold flex items-center gap-1 text-[11px] cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            حذف الفيديو
                           </button>
                         </div>
                       </div>

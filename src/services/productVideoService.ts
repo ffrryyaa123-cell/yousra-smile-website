@@ -412,27 +412,34 @@ export async function generateProductVideoCampaign(
           }
         );
 
-        let heroImage = 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80';
-        let beforeImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80';
-        let afterImage = 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80';
+        let heroImage = raw.image || raw.imageUrl || raw.heroImage || '';
+        let beforeImage = raw.beforeImage || raw.imageUrl || raw.image || '';
+        let afterImage = raw.afterImage || raw.imageUrl || raw.image || '';
 
-        const lowerUrl = input.productUrl.toLowerCase();
-        if (lowerUrl.includes('karcher') || lowerUrl.includes('كارشر') || lowerUrl.includes('steam') || lowerUrl.includes('easyfix')) {
-          heroImage = 'https://m.media-amazon.com/images/I/71Yyv-m2zFL._AC_SL1500_.jpg';
-          beforeImage = 'https://m.media-amazon.com/images/I/81xU-UvDqGL._AC_SL1500_.jpg';
-          afterImage = 'https://m.media-amazon.com/images/I/71n5S3+kUoL._AC_SL1500_.jpg';
-        } else if (lowerUrl.includes('fryer') || lowerUrl.includes('قلاية') || lowerUrl.includes('ninja')) {
-          heroImage = 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80';
-          beforeImage = 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80';
-          afterImage = 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=800&q=80';
-        } else if (lowerUrl.includes('vacuum') || lowerUrl.includes('مكنسة') || lowerUrl.includes('dyson')) {
-          heroImage = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80';
+        // Only use fallback if no real image was extracted
+        if (!heroImage || !heroImage.startsWith('http')) {
+          heroImage = 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80';
           beforeImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80';
-          afterImage = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80';
-        } else if (lowerUrl.includes('coffee') || lowerUrl.includes('قهوة')) {
-          heroImage = 'https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80';
-          beforeImage = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80';
-          afterImage = 'https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80';
+          afterImage = 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80';
+
+          const lowerUrl = input.productUrl.toLowerCase();
+          if (lowerUrl.includes('karcher') || lowerUrl.includes('كارشر') || lowerUrl.includes('steam') || lowerUrl.includes('easyfix')) {
+            heroImage = 'https://m.media-amazon.com/images/I/71Yyv-m2zFL._AC_SL1500_.jpg';
+            beforeImage = 'https://m.media-amazon.com/images/I/81xU-UvDqGL._AC_SL1500_.jpg';
+            afterImage = 'https://m.media-amazon.com/images/I/71n5S3+kUoL._AC_SL1500_.jpg';
+          } else if (lowerUrl.includes('fryer') || lowerUrl.includes('قلاية') || lowerUrl.includes('ninja')) {
+            heroImage = 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80';
+            beforeImage = 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80';
+            afterImage = 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=800&q=80';
+          } else if (lowerUrl.includes('vacuum') || lowerUrl.includes('مكنسة') || lowerUrl.includes('dyson')) {
+            heroImage = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80';
+            beforeImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80';
+            afterImage = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80';
+          } else if (lowerUrl.includes('coffee') || lowerUrl.includes('قهوة')) {
+            heroImage = 'https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80';
+            beforeImage = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80';
+            afterImage = 'https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80';
+          }
         }
 
         const product: ExtractedProductInfo = {
@@ -448,7 +455,10 @@ export async function generateProductVideoCampaign(
           currency: 'USD',
           features: Array.isArray(raw.features) ? raw.features : ['أداء ذكي فائق وتوفير 75% من الوقت', 'ضمان معتمد لمدة سنتين'],
           affiliateLink: mergedAffiliateLink,
-          sourceUrl: input.productUrl
+          sourceUrl: input.productUrl,
+          image: heroImage,
+          images: [heroImage, beforeImage, afterImage].filter(Boolean),
+          youtubeUrl: raw.suggestedVideoUrl || 'https://www.youtube.com/watch?v=p7H2N8r_f5E'
         };
 
         const mappedScenes = (Array.isArray(raw.videoScript?.scenes) ? raw.videoScript.scenes : []).map((sc: any, idx: number) => {
@@ -483,7 +493,10 @@ export async function generateProductVideoCampaign(
             description: raw.seoDescription || product.description,
             keywords: Array.isArray(raw.keywords) ? raw.keywords : [product.nameAr, 'أجهزة ذكية', 'قبل وبعد']
           },
-          suggestedVideoUrl: raw.suggestedVideoUrl || 'https://www.youtube.com/watch?v=p7H2N8r_f5E'
+          suggestedVideoUrl: raw.suggestedVideoUrl || 'https://www.youtube.com/watch?v=p7H2N8r_f5E',
+          heroImage,
+          beforeImage,
+          afterImage
         };
       }
     }

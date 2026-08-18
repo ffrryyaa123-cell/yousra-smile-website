@@ -191,6 +191,9 @@ export interface ExtractedProductInfo {
   features: string[];
   affiliateLink: string;
   sourceUrl: string;
+  image?: string;
+  images?: string[];
+  youtubeUrl?: string;
 }
 
 export interface ProductVideoCampaignResult {
@@ -204,6 +207,9 @@ export interface ProductVideoCampaignResult {
     keywords: string[];
   };
   suggestedVideoUrl?: string;
+  heroImage?: string;
+  beforeImage?: string;
+  afterImage?: string;
 }
 
 export interface ProductVideoServiceInput {

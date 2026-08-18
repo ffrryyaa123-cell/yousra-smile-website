@@ -75,7 +75,8 @@ export const AdminPage: React.FC = () => {
     addVideo,
     getAffiliateUrl,
     openImportVideoModal,
-    replaceProductVideo
+    replaceProductVideo,
+    removeProductVideo
   } = useApp();
 
   const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
@@ -1233,7 +1234,7 @@ export const AdminPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-800">
                 {products.map(prod => {
-                  const hasVideo = !!prod.youtubeUrl || videos.some(v => v.productId === prod.id);
+                  const hasVideo = !!prod.youtubeUrl || !!prod.videoUrl || videos.some(v => v.productId === prod.id);
                   const isCurrentlyGenerating = generatingVideoProductId === prod.id;
 
                   return (
@@ -1281,7 +1282,7 @@ export const AdminPage: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Video Status & Quick Generate / Device Upload Button */}
+                      {/* Video Status & Quick Generate / Device Upload / Delete Video Button */}
                       <td className="p-3">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <button
@@ -1322,6 +1323,21 @@ export const AdminPage: React.FC = () => {
                             <Upload className="w-3 h-3 text-emerald-400" />
                             <span>{hasVideo ? 'استبدال من جهازي' : 'رفع من جهازي'}</span>
                           </button>
+
+                          {hasVideo && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`هل أنتِ متأكدة من حذف الفيديو المرفق بالمنتج "${prod.titleAr}"؟ يمكنك رفع فيديو جديد من جهازك في أي وقت.`)) {
+                                  removeProductVideo(prod.id);
+                                }
+                              }}
+                              className="px-2 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
+                              title="حذف الفيديو المرفق بهذا المنتج"
+                            >
+                              <Trash2 className="w-3 h-3 text-red-400" />
+                              <span>حذف الفيديو</span>
+                            </button>
+                          )}
                         </div>
                       </td>
 
