@@ -102,6 +102,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   const displaySubcategory = language === 'en' ? (product.subcategoryEn || product.category) : product.subcategory;
 
   const [activeImage, setActiveImage] = useState<string>(product.image);
+  const [showInlineVideo, setShowInlineVideo] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'videos' | 'specs' | 'reviews' | 'seo'>('overview');
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedJsonLd, setCopiedJsonLd] = useState(false);
@@ -146,6 +147,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   });
   const [hoverStar, setHoverStar] = useState<number>(0);
   const [ratingSubmittedMsg, setRatingSubmittedMsg] = useState(false);
+
+  const primaryProductVideoUrl = product.videoUrl || product.youtubeUrl || product.tiktokUrl || product.pinterestUrl;
+  const hasDirectProductVideo = Boolean(primaryProductVideoUrl && (
+    primaryProductVideoUrl.startsWith('blob:') ||
+    primaryProductVideoUrl.endsWith('.mp4') ||
+    primaryProductVideoUrl.endsWith('.webm')
+  ));
 
   const currentUserRating = userRatings[product.id] || 0;
 
@@ -419,12 +427,40 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
             {/* Gallery Left/Right Side */}
             <div className="space-y-4">
               <div className="relative w-full h-80 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200/60 dark:border-slate-800 group">
-                <img 
-                  src={activeImage} 
-                  alt={product.titleAr}
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+                {showInlineVideo && hasDirectProductVideo ? (
+                  <video
+                    src={primaryProductVideoUrl}
+                    poster={product.videoThumbnailUrl || product.image}
+                    controls
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-contain bg-black"
+                  />
+                ) : (
+                  <>
+                    <img 
+                      src={hasDirectProductVideo && product.videoThumbnailUrl ? product.videoThumbnailUrl : activeImage}
+                      alt={product.titleAr}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    {hasDirectProductVideo && (
+                      <button
+                        type="button"
+                        onClick={() => setShowInlineVideo(true)}
+                        className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-slate-950/25 hover:bg-slate-950/10 transition-colors cursor-pointer"
+                        aria-label={language === 'ar' ? 'تشغيل فيديو المنتج' : 'Play product video'}
+                      >
+                        <span className="w-20 h-20 rounded-full bg-red-600 hover:bg-red-500 border-4 border-white text-white shadow-2xl flex items-center justify-center transition-transform hover:scale-110">
+                          <Play className="w-9 h-9 fill-white text-white" />
+                        </span>
+                        <span className="px-4 py-2 rounded-xl bg-slate-950/90 border border-amber-400/60 text-white font-black text-sm shadow-xl">
+                          {language === 'ar' ? 'شاهد فيديو المنتج' : 'Watch Product Video'}
+                        </span>
+                      </button>
+                    )}
+                  </>
+                )}
                 {product.discountPercent > 0 && (
                   <span className="absolute top-4 right-4 bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-base px-4 py-2 rounded-2xl shadow-xl border border-red-400/40 tracking-wider z-10 flex items-center gap-1.5">
                     خصم {product.discountPercent}%
@@ -432,7 +468,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 )}
 
                 {/* Floating Share Quick Pill Bar on Product Image */}
-                <div className="absolute bottom-3 right-3 left-3 bg-slate-950/85 backdrop-blur-md border border-white/15 p-2 rounded-2xl flex items-center justify-between gap-1 text-white shadow-xl z-20">
+                {!showInlineVideo && <div className="absolute bottom-3 right-3 left-3 bg-slate-950/85 backdrop-blur-md border border-white/15 p-2 rounded-2xl flex items-center justify-between gap-1 text-white shadow-xl z-20">
                   <div className="flex items-center gap-1.5 text-amber-400 text-xs font-bold px-1 shrink-0">
                     <Share2 className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">مشاركة:</span>
@@ -478,7 +514,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
-                </div>
+                </div>}
               </div>
 
               {/* Multi Image Thumbnails */}
@@ -487,7 +523,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   {product.images.map((img, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setActiveImage(img)}
+                      onClick={() => { setActiveImage(img); setShowInlineVideo(false); }}
                       className={`w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
                         activeImage === img ? 'border-purple-600 scale-105 shadow-sm' : 'border-transparent opacity-60 hover:opacity-100'
                       }`}

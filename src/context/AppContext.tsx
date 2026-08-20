@@ -206,7 +206,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = localStorage.getItem(LOCAL_STORAGE_VIDEOS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const existingIds = new Set(parsed.map((video: VideoReview) => video.id));
+          const newlyPublishedVideos = SAMPLE_VIDEOS.filter(video => !existingIds.has(video.id));
+          return [...newlyPublishedVideos, ...parsed];
+        }
       }
     } catch (e) {
       console.error('Error loading videos from localStorage:', e);

@@ -2,6 +2,20 @@ import { VideoReview } from '../types';
 
 export const SAMPLE_VIDEOS: VideoReview[] = [
   {
+    id: 'vid-tineco-s6-stretch-steam',
+    productId: 'prod-tineco-s6-stretch-steam',
+    productTitle: 'Tineco FLOOR ONE S6 Stretch Steam Wet Dry Vacuum Mop',
+    productImage: '/videos/tineco-s6-thumbnail.jpg',
+    thumbnailUrl: '/videos/tineco-s6-thumbnail.jpg',
+    platform: 'direct',
+    embedId: 'tineco-s6-stretch-steam',
+    videoUrl: '/videos/tineco-s6-stretch-steam-25s-en.mp4',
+    title: 'Tineco FLOOR ONE S6 Stretch Steam — Before & After Floor Cleaning Demo',
+    views: 'New',
+    date: 'Latest video',
+    duration: '00:25'
+  },
+  {
     id: 'vid-karcher-sc3',
     productId: 'prod-karcher-sc3',
     productTitle: 'مكنسة وجهاز التنظيف بالبخار كارشر Kärcher SC 3 EasyFix',
