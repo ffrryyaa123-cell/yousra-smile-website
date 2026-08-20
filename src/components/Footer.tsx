@@ -29,7 +29,7 @@ export const Footer: React.FC = () => {
               <img src={siteSettings.siteLogo || logoImg} alt="Yousra Smile" className="w-12 h-12 rounded-xl object-cover border-2 border-purple-500/40" referrerPolicy="no-referrer" />
               <div>
                 <span className="text-xl font-extrabold text-white font-['Tajawal'] tracking-wide">
-                  {siteSettings.siteName || t.siteTitle}
+                  {t.siteTitle}
                 </span>
                 <p className="text-xs text-white font-medium">{t.footerBrandBio}</p>
               </div>
@@ -210,9 +210,9 @@ export const Footer: React.FC = () => {
 
         {/* Copyright Notice */}
         <div className="pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-white">
-          <p className="text-white">© {new Date().getFullYear()} {siteSettings.siteName || 'Yousra Smile'}. {t.allRightsReserved}.</p>
+          <p className="text-white">© {new Date().getFullYear()} {t.siteTitle}. {t.allRightsReserved}.</p>
           <p className="flex items-center gap-1 text-white">
-            {t.craftedWith} <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" /> {siteSettings.siteName || 'Yousra Smile'} Reviews
+            {t.craftedWith} <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" /> {t.siteTitle} Reviews
           </p>
         </div>
       </div>
