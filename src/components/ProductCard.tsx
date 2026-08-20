@@ -69,7 +69,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
 
   const handleWatchVideo = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (product.youtubeUrl || product.tiktokUrl || product.pinterestUrl) {
+    if (product.videoUrl || product.youtubeUrl || product.tiktokUrl || product.pinterestUrl) {
       // Extract real YouTube embed ID from product.youtubeUrl
       let embedId = '';
       if (product.youtubeUrl) {
@@ -82,9 +82,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
         productId: product.id,
         productTitle: displayTitle,
         productImage: product.image,
-        platform: product.youtubeUrl ? 'youtube' : product.tiktokUrl ? 'tiktok' : 'pinterest',
+        platform: product.videoUrl ? 'direct' : product.youtubeUrl ? 'youtube' : product.tiktokUrl ? 'tiktok' : 'pinterest',
         embedId: embedId || 'nB6r6qL0xQc',
-        videoUrl: product.youtubeUrl || product.tiktokUrl || product.pinterestUrl || '',
+        videoUrl: product.videoUrl || product.youtubeUrl || product.tiktokUrl || product.pinterestUrl || '',
         title: language === 'en' ? `Yousra's Review for ${displayTitle}` : `مراجعة يسرى سمايل لـ ${displayTitle}`,
         views: language === 'en' ? 'Over 15K views' : 'أكثر من 15K مشاهدة',
         date: language === 'en' ? 'Latest video' : 'أحدث فيديو',
@@ -170,7 +170,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
 
             {/* Actions */}
             <div className="flex items-center gap-2">
-              {(product.youtubeUrl || product.tiktokUrl || product.pinterestUrl) && (
+              {(product.videoUrl || product.youtubeUrl || product.tiktokUrl || product.pinterestUrl) && (
                 <button
                   onClick={handleWatchVideo}
                   className="px-3 py-1.5 rounded-xl bg-red-950/70 text-red-300 hover:bg-red-900 border border-red-800/60 text-xs font-bold flex items-center gap-1 transition-colors"
@@ -305,7 +305,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
         </div>
 
         {/* Video Review Ribbon indicator */}
-        {(product.youtubeUrl || product.tiktokUrl || product.pinterestUrl) && (
+        {(product.videoUrl || product.youtubeUrl || product.tiktokUrl || product.pinterestUrl) && (
           <button
             onClick={handleWatchVideo}
             className="absolute bottom-2.5 right-2.5 bg-slate-950/85 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-md flex items-center gap-1 transition-colors shadow border border-slate-700/50"

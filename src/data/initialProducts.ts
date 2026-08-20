@@ -2,6 +2,69 @@ import { Product } from '../types';
 
 export const INITIAL_PRODUCTS: Product[] = [
   {
+    id: 'prod-tineco-s6-stretch-steam',
+    titleAr: 'مكنسة تينيكو FLOOR ONE S6 Stretch Steam للتنظيف الرطب والجاف بالبخار',
+    titleEn: 'Tineco FLOOR ONE S6 Stretch Steam Wet Dry Vacuum Mop',
+    description: 'مكنسة ومسّاحة سلكية 3 في 1 تنظف الأوساخ الرطبة والجافة وتستخدم بخارًا عالي الحرارة للبقع العنيدة.',
+    descriptionEn: 'A corded 3-in-1 floor washer that vacuums, mops, and uses high-temperature steam to tackle stubborn everyday messes.',
+    longDescription: 'يجمع جهاز Tineco FLOOR ONE S6 Stretch Steam بين الشفط والمسح والتنظيف بالبخار في تمريرة واحدة. توفر تقنية BoostSteam بخارًا عالي الحرارة للمساعدة في تفكيك الدهون والأوساخ، بينما يسهّل التصميم المسطح بزاوية 180° الوصول أسفل الأثاث. كما يساعد تصميم DualBlock المضاد للتشابك والتنظيف الذاتي بلمسة واحدة على جعل العناية اليومية بالجهاز أسهل.',
+    longDescriptionEn: 'The Tineco FLOOR ONE S6 Stretch Steam combines vacuuming, mopping, and steam cleaning in one pass. BoostSteam technology helps loosen grease and stubborn dirt, while the 180-degree lay-flat design reaches under low furniture. Its DualBlock anti-tangle system, dual-sided edge cleaning, and one-touch self-cleaning make everyday floor care more convenient.',
+    category: 'smart-home',
+    subcategory: 'مكانس ومسّاحات بالبخار',
+    subcategoryEn: 'Steam Floor Washers',
+    brand: 'Tineco',
+    image: 'https://m.media-amazon.com/images/I/61YxVL4HTtL._AC_SL1500_.jpg',
+    images: [
+      'https://m.media-amazon.com/images/I/61YxVL4HTtL._AC_SL1500_.jpg',
+      'https://m.media-amazon.com/images/I/71qUhuyWgxL._AC_SL1500_.jpg',
+      'https://m.media-amazon.com/images/I/81slzOvppcL._AC_SL1500_.jpg'
+    ],
+    videoUrl: '/videos/tineco-s6-stretch-steam-en.mp4',
+    amazonUrl: 'https://amzn.to/4qonjnW',
+    originalPrice: 499,
+    discountPrice: 499,
+    discountPercent: 0,
+    currency: 'USD',
+    rating: 4.2,
+    reviewCount: 102,
+    features: [
+      'تقنية BoostSteam ببخار عالي الضغط للمساعدة في تفكيك الدهون والبقع العنيدة',
+      'تنظيف 3 في 1: شفط ومسح وتنظيف بالبخار في تمريرة واحدة',
+      'تصميم مسطح 180° بارتفاع 5.1 بوصة للوصول أسفل الأثاث',
+      'تصميم DualBlock مضاد لتشابك الشعر والوبر',
+      'سلك طويل 8.3 متر وتنظيف ذاتي بلمسة واحدة'
+    ],
+    featuresEn: [
+      'BoostSteam high-pressure steam helps loosen grease and stubborn stains',
+      '3-in-1 vacuuming, mopping, and steam cleaning in one pass',
+      '180-degree lay-flat design reaches under furniture at just 5.1 inches high',
+      'DualBlock anti-tangle design handles hair and pet fur',
+      '8.3-meter power cord and one-touch self-cleaning'
+    ],
+    specs: {
+      'نوع الطاقة': 'سلكية',
+      'طول السلك': '8.3 متر (326 بوصة)',
+      'حرارة البخار القصوى': '320°F',
+      'سعة خزان الماء النظيف': '1 لتر',
+      'سعة خزان الماء المتسخ': '0.72 لتر',
+      'التصميم المسطح': '180°'
+    },
+    specsEn: {
+      'Power type': 'Corded',
+      'Cord length': '8.3 m (326 in)',
+      'Maximum steam temperature': '320°F',
+      'Clean water tank': '1 L',
+      'Dirty water tank': '0.72 L',
+      'Lay-flat design': '180°'
+    },
+    keywords: ['Tineco', 'FLOOR ONE S6', 'steam mop', 'wet dry vacuum', 'floor washer', 'corded vacuum'],
+    isFeatured: true,
+    isTopSelling: false,
+    isLatest: true,
+    viewsCount: 0,
+    createdAt: '2026-08-20'
+  },
+  {
     id: 'prod-karcher-sc3',
     titleAr: 'مكنسة وجهاز التنظيف والتعقيم بالبخار كارشر Kärcher SC 3 EasyFix الألمانية الأصلية',
     titleEn: 'Kärcher SC 3 EasyFix Steam Cleaner with Descaling Cartridge & Floor Nozzle',
