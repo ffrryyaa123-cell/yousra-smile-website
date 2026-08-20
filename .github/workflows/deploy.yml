@@ -1,0 +1,55 @@
+name: Deploy Yousra Smile
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: yousra-smile-production
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check TypeScript
+        run: npm run lint
+
+      - name: Build production site
+        run: npm run build
+
+      - name: Prepare GitHub Pages files
+        run: |
+          git show origin/gh-pages:CNAME > dist/CNAME
+          git show origin/gh-pages:robots.txt > dist/robots.txt
+          git show origin/gh-pages:sitemap.xml > dist/sitemap.xml
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+          rm -f dist/server.cjs dist/server.cjs.map
+
+      - name: Publish to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: dist
+          clean: true
+          commit-message: Deploy latest Yousra Smile updates
