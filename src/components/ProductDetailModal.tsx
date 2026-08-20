@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Product } from '../types';
 import { useApp } from '../context/AppContext';
 import { PriceHistoryChart } from './PriceHistoryChart';
@@ -31,7 +31,8 @@ import {
   Plus,
   Play,
   Film,
-  Trash2
+  Trash2,
+  ArrowLeft
 } from 'lucide-react';
 
 const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = "w-4 h-4" }) => (
@@ -111,6 +112,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   const [reviewerRating, setReviewerRating] = useState(5);
   const [reviewerComment, setReviewerComment] = useState('');
   const [reviewAddedSuccess, setReviewAddedSuccess] = useState(false);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
 
   const handleReviewSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,7 +208,28 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div className="fixed top-3 left-3 right-3 z-[70] flex items-center justify-between pointer-events-none">
+        <button
+          type="button"
+          onClick={onClose}
+          className="pointer-events-auto min-h-11 px-4 rounded-xl bg-slate-950 border border-amber-400/70 text-white shadow-2xl flex items-center gap-2 font-bold text-sm hover:bg-slate-800"
+        >
+          <ArrowLeft className="w-5 h-5 text-amber-300" />
+          <span>{language === 'ar' ? 'رجوع' : 'Back'}</span>
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={language === 'ar' ? 'إغلاق تفاصيل المنتج' : 'Close product details'}
+          className="pointer-events-auto w-12 h-12 rounded-full bg-red-600 hover:bg-red-500 border-2 border-white text-white shadow-2xl flex items-center justify-center"
+        >
+          <X className="w-7 h-7" />
+        </button>
+      </div>
       <div 
         className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden relative my-auto animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}

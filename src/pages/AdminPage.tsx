@@ -1360,10 +1360,11 @@ export const AdminPage: React.FC = () => {
                           {/* Edit Button */}
                           <button
                             onClick={() => handleOpenEditModal(prod)}
-                            className="p-1.5 bg-purple-950 text-purple-300 border border-purple-800 rounded-lg hover:bg-purple-900 transition-colors cursor-pointer"
+                            className="px-3 py-2 bg-purple-700 text-white border border-purple-400 rounded-lg hover:bg-purple-600 transition-colors cursor-pointer font-black text-xs flex items-center gap-1.5"
                             title="تعديل المنتج"
                           >
                             <Edit3 className="w-4 h-4" />
+                            <span>تعديل</span>
                           </button>
 
                           {/* Duplicate Button */}
@@ -1391,10 +1392,11 @@ export const AdminPage: React.FC = () => {
                                 deleteProduct(prod.id);
                               }
                             }}
-                            className="p-1.5 bg-red-950 text-red-300 border border-red-800 rounded-lg hover:bg-red-900 transition-colors cursor-pointer"
+                            className="px-3 py-2 bg-red-700 text-white border border-red-400 rounded-lg hover:bg-red-600 transition-colors cursor-pointer font-black text-xs flex items-center gap-1.5"
                             title="حذف المنتج"
                           >
                             <Trash2 className="w-4 h-4" />
+                            <span>حذف المنتج</span>
                           </button>
                         </div>
                       </td>

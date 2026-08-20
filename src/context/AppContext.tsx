@@ -104,6 +104,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_PRODUCTS_KEY = 'yousrasmile_products_v5';
+const LOCAL_STORAGE_DELETED_PRODUCTS_KEY = 'yousrasmile_deleted_products_v1';
 const LOCAL_STORAGE_FAVS_KEY = 'yousrasmile_favorites_v1';
 const LOCAL_STORAGE_CART_KEY = 'yousrasmile_cart_v1';
 const LOCAL_STORAGE_COMPARE_KEY = 'yousrasmile_compare_v1';
@@ -112,6 +113,7 @@ const LOCAL_STORAGE_LANG_KEY = 'yousrasmile_language_v1';
 const LOCAL_STORAGE_CURRENCY_KEY = 'yousrasmile_currency_v1';
 const LOCAL_STORAGE_PRICE_ALERTS_KEY = 'yousrasmile_price_alerts_v1';
 const LOCAL_STORAGE_VIDEOS_KEY = 'yousrasmile_videos_v5';
+const LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY = 'yousrasmile_deleted_product_videos_v1';
 const LOCAL_STORAGE_RECENTLY_VIEWED_KEY = 'yousrasmile_recently_viewed_v1';
 const LOCAL_STORAGE_SETTINGS_KEY = 'yousrasmile_settings_v4';
 
@@ -131,6 +133,16 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isProductVideoDeleted = (productId: string): boolean => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY);
+      const deletedIds = saved ? JSON.parse(saved) : [];
+      return Array.isArray(deletedIds) && deletedIds.includes(productId);
+    } catch {
+      return false;
+    }
+  };
+
   const normalizeProduct = (p: any): Product => {
     const englishTitle = p.titleEn || p.titleAr || 'Featured product';
     const englishCategory = String(p.category || 'products')
@@ -151,8 +163,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       'Full product details available before purchase'
     ],
     images: Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image ? [p.image] : []),
-    videoThumbnailUrl: p.videoThumbnailUrl || (p.id === 'prod-tineco-s6-stretch-steam' ? '/videos/tineco-s6-thumbnail.jpg' : undefined),
-    videoUrl: p.id === 'prod-tineco-s6-stretch-steam' ? '/videos/tineco-s6-stretch-steam-25s-en.mp4' : p.videoUrl,
+    videoThumbnailUrl: isProductVideoDeleted(p.id) ? undefined : (p.videoThumbnailUrl || (p.id === 'prod-tineco-s6-stretch-steam' ? '/videos/tineco-s6-thumbnail.jpg' : undefined)),
+    videoUrl: isProductVideoDeleted(p.id) ? undefined : (p.id === 'prod-tineco-s6-stretch-steam' ? '/videos/tineco-s6-stretch-steam-25s-en.mp4' : p.videoUrl),
     reviews: Array.isArray(p.reviews) ? p.reviews : [],
     keywords: Array.isArray(p.keywords) ? p.keywords : [],
     tags: Array.isArray(p.tags) ? p.tags : [],
@@ -167,21 +179,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [products, setProducts] = useState<Product[]>(() => {
     try {
+      const deletedIdsRaw = localStorage.getItem(LOCAL_STORAGE_DELETED_PRODUCTS_KEY);
+      const deletedIds = new Set<string>(deletedIdsRaw ? JSON.parse(deletedIdsRaw) : []);
       const saved = localStorage.getItem(LOCAL_STORAGE_PRODUCTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           // Always merge newly published catalog products without removing products
           // the administrator has already saved in this browser.
-          const existingIds = new Set(parsed.map((p: Product) => p.id));
-          const newDefaults = INITIAL_PRODUCTS.filter(p => !existingIds.has(p.id));
-          return [...parsed.map(normalizeProduct), ...newDefaults.map(normalizeProduct)];
+          const activeSaved = parsed.filter((p: Product) => !deletedIds.has(p.id));
+          const existingIds = new Set(activeSaved.map((p: Product) => p.id));
+          const newDefaults = INITIAL_PRODUCTS.filter(p => !existingIds.has(p.id) && !deletedIds.has(p.id));
+          return [...activeSaved.map(normalizeProduct), ...newDefaults.map(normalizeProduct)];
         }
       }
     } catch (e) {
       console.error('Error loading products from localStorage:', e);
     }
-    return INITIAL_PRODUCTS.map(normalizeProduct);
+    const deletedIdsRaw = localStorage.getItem(LOCAL_STORAGE_DELETED_PRODUCTS_KEY);
+    const deletedIds = new Set<string>(deletedIdsRaw ? JSON.parse(deletedIdsRaw) : []);
+    return INITIAL_PRODUCTS.filter(p => !deletedIds.has(p.id)).map(normalizeProduct);
   });
 
   const [videos, setVideos] = useState<VideoReview[]>(() => {
@@ -414,6 +431,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const replaceProductVideo = (productId: string, newVideoUrl: string, platform: VideoReview['platform'] = 'local', customTitle?: string) => {
     const prod = products.find(p => p.id === productId);
     if (!prod) return;
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY);
+      const deletedIds: string[] = saved ? JSON.parse(saved) : [];
+      localStorage.setItem(LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY, JSON.stringify(deletedIds.filter(id => id !== productId)));
+    } catch (e) {
+      console.error('Failed to restore product video state:', e);
+    }
 
     // Update Product object with new video url
     const updatedProd: Product = {
@@ -469,6 +493,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 2. Remove any associated video review from the global videos feed
     setVideos(prev => prev.filter(v => v.productId !== productId));
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY);
+      const deletedIds: string[] = saved ? JSON.parse(saved) : [];
+      if (!deletedIds.includes(productId)) {
+        localStorage.setItem(LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY, JSON.stringify([...deletedIds, productId]));
+      }
+    } catch (e) {
+      console.error('Failed to persist removed product video:', e);
+    }
 
     // 3. Update currently viewed product if active
     if (selectedProduct && selectedProduct.id === productId) {
@@ -791,6 +824,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProducts(prev => prev.filter(p => p.id !== id));
     setFavorites(prev => prev.filter(fId => fId !== id));
     setCompareList(prev => prev.filter(cId => cId !== id));
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_DELETED_PRODUCTS_KEY);
+      const deletedIds: string[] = saved ? JSON.parse(saved) : [];
+      if (!deletedIds.includes(id)) {
+        localStorage.setItem(LOCAL_STORAGE_DELETED_PRODUCTS_KEY, JSON.stringify([...deletedIds, id]));
+      }
+    } catch (e) {
+      console.error('Failed to persist deleted product:', e);
+    }
   };
 
   const resetCatalog = () => {
@@ -800,6 +842,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (window.confirm(confirmMsg)) {
       setProducts(INITIAL_PRODUCTS);
       localStorage.removeItem(LOCAL_STORAGE_PRODUCTS_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_DELETED_PRODUCTS_KEY);
     }
   };
 
