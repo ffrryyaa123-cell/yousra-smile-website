@@ -99,6 +99,53 @@ input::placeholder, textarea::placeholder {
   outline: none;
 }
 
+/* Admin controls must remain readable before hover/selection. */
+.admin-dashboard .bg-slate-950,
+.admin-dashboard .bg-slate-900,
+.admin-dashboard .bg-slate-800,
+.admin-dashboard .bg-purple-950,
+.admin-dashboard .bg-purple-900,
+.admin-dashboard [class*="from-purple-950"],
+.admin-dashboard [class*="to-slate-950"] {
+  color: #F8FAFC !important;
+}
+
+.admin-dashboard .bg-slate-950 .text-slate-900,
+.admin-dashboard .bg-slate-950 .text-slate-800,
+.admin-dashboard .bg-slate-950 .text-slate-700,
+.admin-dashboard .bg-slate-950 .text-slate-600,
+.admin-dashboard .bg-slate-900 .text-slate-900,
+.admin-dashboard .bg-slate-900 .text-slate-800,
+.admin-dashboard .bg-slate-900 .text-slate-700,
+.admin-dashboard .bg-slate-900 .text-slate-600,
+.admin-dashboard .bg-slate-800 .text-slate-900,
+.admin-dashboard .bg-slate-800 .text-slate-800,
+.admin-dashboard .bg-slate-800 .text-slate-700,
+.admin-dashboard .bg-slate-800 .text-slate-600,
+.admin-dashboard .bg-purple-950 .text-slate-900,
+.admin-dashboard .bg-purple-950 .text-slate-800,
+.admin-dashboard .bg-purple-950 .text-slate-700,
+.admin-dashboard .bg-purple-950 .text-slate-600 {
+  color: #E2E8F0 !important;
+}
+
+.admin-dashboard button[class*="bg-slate-"],
+.admin-dashboard label[class*="bg-slate-"],
+.admin-dashboard [role="tab"][class*="bg-slate-"] {
+  color: #F8FAFC !important;
+}
+
+.admin-dashboard button[class*="bg-slate-"] span,
+.admin-dashboard label[class*="bg-slate-"] span,
+.admin-dashboard [role="tab"][class*="bg-slate-"] span {
+  color: inherit !important;
+}
+
+.admin-dashboard option {
+  color: #F8FAFC;
+  background: #0F172A;
+}
+
 /* Ensure headings on dark/purple backgrounds are crisp white */
 .bg-slate-950 h1, .bg-slate-900 h1, .bg-purple-950 h1,
 .bg-slate-950 h2, .bg-slate-900 h2, .bg-purple-950 h2,
@@ -156,7 +203,6 @@ html, body, #root {
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
-
 
 
 
