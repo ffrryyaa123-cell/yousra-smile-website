@@ -93,6 +93,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
   if (!product) return null;
 
+  const displayTitle = language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr;
+  const displayDescription = language === 'en' ? (product.descriptionEn || '') : product.description;
+  const displayLongDescription = language === 'en' ? (product.longDescriptionEn || product.descriptionEn || '') : (product.longDescription || product.description);
+  const displayFeatures = language === 'en' ? (product.featuresEn || []) : (product.features || []);
+  const displaySpecs = language === 'en' ? (product.specsEn || {}) : (product.specs || {});
+  const displaySubcategory = language === 'en' ? (product.subcategoryEn || product.category) : product.subcategory;
+
   const [activeImage, setActiveImage] = useState<string>(product.image);
   const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'videos' | 'specs' | 'reviews' | 'seo'>('overview');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -536,7 +543,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
                 {/* Price Display */}
                 <div className="bg-slate-900 border border-amber-500/30 p-4 rounded-2xl mb-4 shadow-md">
-                  <span className="text-xs font-semibold text-slate-300 block mb-1">السعر الحالي عبر روابط التسويق بالعمولة:</span>
+                  <span className="text-xs font-semibold text-slate-300 block mb-1">{language === 'ar' ? 'السعر الحالي عبر روابط التسويق بالعمولة:' : 'Current price through affiliate links:'}</span>
                   <div className="flex items-baseline gap-3 flex-wrap">
                     <span className="text-3xl font-black text-amber-300 font-['Cairo'] tracking-tight">
                       {formatPrice(product.discountPrice)}
@@ -548,14 +555,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     )}
                     {product.discountPercent > 0 && (
                       <span className="text-xs font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-500/30">
-                        وفرت {formatPrice(product.originalPrice - product.discountPrice)}!
+                        {language === 'ar' ? 'وفرت' : 'You save'} {formatPrice(product.originalPrice - product.discountPrice)}!
                       </span>
                     )}
                   </div>
                 </div>
 
                 <p className="text-sm sm:text-base text-slate-100 leading-relaxed mb-4 font-normal">
-                  {product.description}
+                  {displayDescription}
                 </p>
 
                 {/* Price Drop Alert Card */}
@@ -566,10 +573,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-slate-100">
-                        تنبيه عند انخفاض السعر
+                        {language === 'ar' ? 'تنبيه عند انخفاض السعر' : 'Price drop alert'}
                       </h4>
                       <p className="text-[11px] text-slate-400">
-                        أدخل بريدك الإلكتروني ليصلك إشعار فوري عند هبوط السعر.
+                        {language === 'ar' ? 'أدخل بريدك الإلكتروني ليصلك إشعار فوري عند هبوط السعر.' : 'Enter your email to be notified when the price drops.'}
                       </p>
                     </div>
                   </div>
@@ -577,7 +584,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     onClick={() => openPriceAlertModal(product)}
                     className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shrink-0 shadow-md transition-colors cursor-pointer"
                   >
-                    {isSubscribedToAlert(product.id) ? '✓ التنبيه مفعل' : 'تفعيل التنبيه'}
+                    {isSubscribedToAlert(product.id)
+                      ? (language === 'ar' ? '✓ التنبيه مفعل' : '✓ Alert enabled')
+                      : (language === 'ar' ? 'تفعيل التنبيه' : 'Enable alert')}
                   </button>
                 </div>
               </div>
@@ -731,7 +740,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
                 }`}
               >
-                المميزات والوصف
+                {language === 'ar' ? 'المميزات والوصف' : 'Features & Description'}
               </button>
 
               <button
@@ -743,9 +752,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 }`}
               >
                 <TrendingDown className="w-4 h-4 text-emerald-500" />
-                تغير السعر (Recharts)
+                {language === 'ar' ? 'تغير السعر' : 'Price History'} (Recharts)
                 <span className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] px-1.5 py-0.5 rounded-md font-bold">
-                  تتبع مباشر 📈
+                  {language === 'ar' ? 'تتبع مباشر' : 'Live tracking'} 📈
                 </span>
               </button>
 
@@ -758,7 +767,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 }`}
               >
                 <PlaySquare className="w-4 h-4 text-red-500" />
-                مراجعات يسرى الفيديويّة
+                {language === 'ar' ? 'مراجعات يسرى الفيديويّة' : 'Yousra Video Reviews'}
               </button>
 
               <button
@@ -769,7 +778,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
                 }`}
               >
-                المواصفات التقنية
+                {language === 'ar' ? 'المواصفات التقنية' : 'Technical Specifications'}
               </button>
 
               <button
@@ -781,7 +790,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 }`}
               >
                 <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                آراء وتجارب العملاء ({product.reviewCount})
+                {language === 'ar' ? 'آراء وتجارب العملاء' : 'Customer Reviews'} ({product.reviewCount})
               </button>
 
               <button
@@ -801,9 +810,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
             {activeTab === 'overview' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-3">أهم المميزات الفريدة:</h3>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-3">{language === 'ar' ? 'أهم المميزات الفريدة:' : 'Key features:'}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {(product.features || []).map((feat, i) => (
+                    {displayFeatures.map((feat, i) => (
                       <div key={i} className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
                         <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
                         <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{feat}</span>
@@ -813,9 +822,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 </div>
 
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">الوصف التفصيلي للمنتج:</h3>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{language === 'ar' ? 'الوصف التفصيلي للمنتج:' : 'Detailed product description:'}</h3>
                   <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                    {product.longDescription || product.description}
+                    {displayLongDescription}
                   </p>
                 </div>
 
@@ -989,14 +998,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 <table className="w-full text-right text-xs sm:text-sm text-slate-100">
                   <tbody className="divide-y divide-slate-800">
                     <tr className="bg-slate-800/80">
-                      <td className="p-3.5 font-bold text-amber-300 w-1/3">العلامة التجارية</td>
+                      <td className="p-3.5 font-bold text-amber-300 w-1/3">{language === 'ar' ? 'العلامة التجارية' : 'Brand'}</td>
                       <td className="p-3.5 font-semibold text-white">{product.brand}</td>
                     </tr>
                     <tr>
-                      <td className="p-3.5 font-bold text-amber-300">القسم</td>
-                      <td className="p-3.5 text-slate-200">{product.category} ({product.subcategory})</td>
+                      <td className="p-3.5 font-bold text-amber-300">{language === 'ar' ? 'القسم' : 'Category'}</td>
+                      <td className="p-3.5 text-slate-200">{product.category} ({displaySubcategory})</td>
                     </tr>
-                    {product.specs && Object.entries(product.specs).map(([key, value], idx) => (
+                    {Object.entries(displaySpecs).map(([key, value], idx) => (
                       <tr key={idx} className={idx % 2 === 0 ? 'bg-slate-800/50' : 'bg-slate-900'}>
                         <td className="p-3.5 font-bold text-slate-200">{key}</td>
                         <td className="p-3.5 font-medium text-white">{value}</td>
