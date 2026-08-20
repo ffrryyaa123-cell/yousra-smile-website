@@ -131,16 +131,37 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const normalizeProduct = (p: any): Product => ({
+  const normalizeProduct = (p: any): Product => {
+    const englishTitle = p.titleEn || p.titleAr || 'Featured product';
+    const englishCategory = String(p.category || 'products')
+      .split('-')
+      .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+
+    return ({
     ...p,
+    titleEn: englishTitle,
+    descriptionEn: p.descriptionEn || `Discover ${englishTitle}, selected by Yousra Smile for its quality, useful features, and value.`,
+    longDescriptionEn: p.longDescriptionEn || `${englishTitle} is a carefully selected product for modern living. Review the current specifications, price, availability, and retailer details before purchasing.`,
+    subcategoryEn: p.subcategoryEn || englishCategory,
     features: Array.isArray(p.features) ? p.features : (typeof p.features === 'string' ? p.features.split(',').map((s: string) => s.trim()).filter(Boolean) : []),
+    featuresEn: Array.isArray(p.featuresEn) && p.featuresEn.length > 0 ? p.featuresEn : [
+      'Carefully selected for quality and everyday usefulness',
+      'Competitive price with current retailer offers',
+      'Full product details available before purchase'
+    ],
     images: Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image ? [p.image] : []),
     reviews: Array.isArray(p.reviews) ? p.reviews : [],
     keywords: Array.isArray(p.keywords) ? p.keywords : [],
     tags: Array.isArray(p.tags) ? p.tags : [],
     specs: p.specs && typeof p.specs === 'object' ? p.specs : {},
+    specsEn: p.specsEn && typeof p.specsEn === 'object' ? p.specsEn : {
+      Brand: p.brand || 'See retailer',
+      Category: englishCategory,
+      Availability: 'See retailer for current details'
+    },
     amazonUrl: p.amazonUrl ? p.amazonUrl.replace('amazon.sa', 'amazon.com') : (p.amazonUrl || '')
-  });
+  })};
 
   const [products, setProducts] = useState<Product[]>(() => {
     try {
