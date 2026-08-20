@@ -904,6 +904,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                         {isDirectOrLocal ? (
                           <video 
                             src={primaryVideoUrl} 
+                            poster={product.videoThumbnailUrl || product.image}
                             controls 
                             playsInline
                             className="w-full h-full object-contain"

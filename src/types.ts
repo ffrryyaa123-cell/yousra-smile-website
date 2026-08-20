@@ -54,6 +54,7 @@ export interface Product {
   tiktokUrl?: string;
   pinterestUrl?: string;
   videoUrl?: string;
+  videoThumbnailUrl?: string;
   amazonUrl: string;
   aliexpressUrl?: string;
   originalPrice: number;

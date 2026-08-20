@@ -20,6 +20,7 @@ export const INITIAL_PRODUCTS: Product[] = [
       'https://m.media-amazon.com/images/I/81slzOvppcL._AC_SL1500_.jpg'
     ],
     videoUrl: '/videos/tineco-s6-stretch-steam-en.mp4',
+    videoThumbnailUrl: '/videos/tineco-s6-thumbnail.jpg',
     amazonUrl: 'https://amzn.to/4qonjnW',
     originalPrice: 499,
     discountPrice: 499,
