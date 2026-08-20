@@ -168,10 +168,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = localStorage.getItem(LOCAL_STORAGE_PRODUCTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length >= INITIAL_PRODUCTS.length) {
-          return parsed.map(normalizeProduct);
-        } else if (Array.isArray(parsed) && parsed.length > 0) {
-          // Merge newly added default products that aren't in localStorage
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Always merge newly published catalog products without removing products
+          // the administrator has already saved in this browser.
           const existingIds = new Set(parsed.map((p: Product) => p.id));
           const newDefaults = INITIAL_PRODUCTS.filter(p => !existingIds.has(p.id));
           return [...parsed.map(normalizeProduct), ...newDefaults.map(normalizeProduct)];
