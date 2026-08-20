@@ -41,9 +41,12 @@ export interface Product {
   titleAr: string;
   titleEn: string;
   description: string;
+  descriptionEn?: string;
   longDescription: string;
+  longDescriptionEn?: string;
   category: CategoryId;
   subcategory: string;
+  subcategoryEn?: string;
   brand: string;
   image: string;
   images: string[];
@@ -61,7 +64,9 @@ export interface Product {
   reviewCount: number;
   reviews?: UserReview[];
   features: string[];
+  featuresEn?: string[];
   specs: Record<string, string>;
+  specsEn?: Record<string, string>;
   keywords: string[];
   isFeatured?: boolean;
   isTopSelling?: boolean;
@@ -238,4 +243,3 @@ export type PageView =
   | 'terms' 
   | 'cookies' 
   | 'disclosure';
-
