@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Scale, Trash2, ShoppingBag, ExternalLink, Star, ArrowLeft } from 'lucide-react';
 
 export const ComparePage: React.FC = () => {
-  const { products, compareList, toggleCompare, clearCompare, setPage, logAffiliateClick, formatPrice, getAffiliateUrl } = useApp();
+  const { products, compareList, toggleCompare, clearCompare, setPage, logAffiliateClick, formatPrice, getAffiliateUrl, language } = useApp();
 
   const comparedProducts = products.filter(p => compareList.includes(p.id));
 
@@ -15,13 +15,13 @@ export const ComparePage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 text-purple-600 text-xs font-bold mb-1">
             <Scale className="w-4 h-4" />
-            أداة المقارنة الذكية
+            {language === 'ar' ? 'أداة المقارنة الذكية' : 'Smart comparison tool'}
           </div>
           <h1 className="text-2xl sm:text-3xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-            مقارنة المنتجات والمواصفات ({comparedProducts.length}/4)
+            {language === 'ar' ? 'مقارنة المنتجات والمواصفات' : 'Compare Products & Specifications'} ({comparedProducts.length}/4)
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            قارني بين الأسعار، الخصومات، التقييمات والمواصفات التقنية جنبًا إلى جنب لاتخاذ القرار الأنسب.
+            {language === 'ar' ? 'قارني بين الأسعار، الخصومات، التقييمات والمواصفات التقنية جنبًا إلى جنب لاتخاذ القرار الأنسب.' : 'Compare prices, discounts, ratings, and specifications side by side.'}
           </p>
         </div>
 
@@ -31,7 +31,7 @@ export const ComparePage: React.FC = () => {
             className="px-4 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 font-bold text-xs flex items-center gap-1.5 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
-            تفريغ المقارنة
+            {language === 'ar' ? 'تفريغ المقارنة' : 'Clear comparison'}
           </button>
         )}
       </div>
@@ -64,7 +64,7 @@ export const ComparePage: React.FC = () => {
                         {prod.brand}
                       </span>
                       <h3 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 font-['Tajawal']">
-                        {prod.titleAr}
+                        {language === 'en' ? (prod.titleEn || prod.titleAr) : prod.titleAr}
                       </h3>
                     </div>
                   </th>
@@ -89,7 +89,7 @@ export const ComparePage: React.FC = () => {
                       )}
                       {prod.discountPercent > 0 && (
                         <span className="inline-block bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400 text-[10px] font-bold px-2 py-0.5 rounded-md">
-                          خصم {prod.discountPercent}%
+                          {language === 'ar' ? 'خصم' : 'Save'} {prod.discountPercent}%
                         </span>
                       )}
                     </div>
@@ -116,7 +116,7 @@ export const ComparePage: React.FC = () => {
                 <td className="p-4 font-bold text-slate-900 dark:text-white bg-slate-50/50 dark:bg-slate-800/30">القسم والتخصص</td>
                 {comparedProducts.map(prod => (
                   <td key={prod.id} className="p-4 font-semibold text-slate-700 dark:text-slate-300">
-                    {prod.subcategory}
+                    {language === 'en' ? (prod.subcategoryEn || prod.category) : prod.subcategory}
                   </td>
                 ))}
               </tr>
@@ -127,7 +127,7 @@ export const ComparePage: React.FC = () => {
                 {comparedProducts.map(prod => (
                   <td key={prod.id} className="p-4 align-top">
                     <ul className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-                      {(prod.features || []).slice(0, 3).map((feat, i) => (
+                      {(language === 'en' ? (prod.featuresEn || []) : (prod.features || [])).slice(0, 3).map((feat, i) => (
                         <li key={i} className="flex items-start gap-1">
                           <span className="text-purple-500 font-bold">•</span>
                           <span>{feat}</span>
