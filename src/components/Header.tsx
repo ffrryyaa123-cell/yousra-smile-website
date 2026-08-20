@@ -229,7 +229,7 @@ export const Header: React.FC = () => {
             </div>
             <div className={`hidden sm:block font-['Cairo'] ${language === 'ar' ? 'text-right' : 'text-left'}`}>
               <div className="flex items-center gap-1.5">
-                <span className="font-black text-amber-300 text-sm sm:text-base leading-none block">{siteSettings.siteName || t.siteTitle}</span>
+                <span className="font-black text-amber-300 text-sm sm:text-base leading-none block">{t.siteTitle}</span>
                 <span className="inline-flex items-center gap-0.5 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full text-[10px] font-extrabold leading-none shadow-sm">
                   <ShieldCheck className="w-3 h-3 text-emerald-400" />
                   {language === 'ar' ? 'نعم - موثوق' : 'Yes - Verified'}
@@ -575,7 +575,7 @@ export const Header: React.FC = () => {
               <div className="flex items-center gap-3">
                 <img src={siteSettings.siteLogo || logoImg} alt="Yousra Smile" className="w-10 h-10 rounded-xl border border-amber-400/50 shadow" referrerPolicy="no-referrer" />
                 <div>
-                  <span className="font-extrabold text-white text-base block font-['Cairo']">{siteSettings.siteName || t.siteTitle}</span>
+                  <span className="font-extrabold text-white text-base block font-['Cairo']">{t.siteTitle}</span>
                   <span className="text-[11px] text-amber-300 font-['Tajawal']">{language === 'ar' ? 'التصفح المنسدل والتسهيلات' : 'Dropdown Navigation & Services'}</span>
                 </div>
               </div>
