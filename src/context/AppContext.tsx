@@ -152,6 +152,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ],
     images: Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.image ? [p.image] : []),
     videoThumbnailUrl: p.videoThumbnailUrl || (p.id === 'prod-tineco-s6-stretch-steam' ? '/videos/tineco-s6-thumbnail.jpg' : undefined),
+    videoUrl: p.id === 'prod-tineco-s6-stretch-steam' ? '/videos/tineco-s6-stretch-steam-25s-en.mp4' : p.videoUrl,
     reviews: Array.isArray(p.reviews) ? p.reviews : [],
     keywords: Array.isArray(p.keywords) ? p.keywords : [],
     tags: Array.isArray(p.tags) ? p.tags : [],
