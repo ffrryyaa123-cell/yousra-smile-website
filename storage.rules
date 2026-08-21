@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function isOwner() { return signedIn() && request.auth.token.email == 'sarsar336699@gmail.com'; }
+    function isStaff() { return signedIn() && request.auth.token.role in ['owner', 'editor']; }
+
+    match /products/{productId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if (isOwner() || isStaff())
+        && request.resource.size < 200 * 1024 * 1024;
+      allow delete: if isOwner() || isStaff();
+    }
+  }
+}
