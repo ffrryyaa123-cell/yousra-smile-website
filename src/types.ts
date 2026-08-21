@@ -55,6 +55,7 @@ export interface Product {
   pinterestUrl?: string;
   videoUrl?: string;
   videoThumbnailUrl?: string;
+  videoStoragePath?: string;
   amazonUrl: string;
   aliexpressUrl?: string;
   originalPrice: number;
@@ -101,6 +102,9 @@ export interface VideoReview {
   views: string;
   date: string;
   duration: string;
+  storagePath?: string;
+  seoDescription?: string;
+  hashtags?: string[];
   scenes?: any[];
   script?: any;
 }
