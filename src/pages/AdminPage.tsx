@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { CATEGORIES } from '../data/categories';
 import { Product, VideoReview } from '../types';
@@ -47,14 +47,19 @@ import {
   Clapperboard,
   Loader2,
   Play,
-  Video
+  Video,
+  ArrowLeft
 } from 'lucide-react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { videoGenerator, RenderedVideoAsset, VideoGenerationProgress } from '../services/videoGenerator';
 import { VideoImportModal } from '../components/VideoImportModal';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 import { AgentAutomationHub } from '../components/AgentAutomationHub';
 import { GeminiApiKeyManager } from '../components/GeminiApiKeyManager';
 import { GoogleWorkspaceHub } from '../components/GoogleWorkspaceHub';
+import { auth, googleSignIn, logoutGoogle } from '../services/googleWorkspace';
+
+const OWNER_EMAIL = 'sarsar336699@gmail.com';
 
 export const AdminPage: React.FC = () => {
   const { 
@@ -79,8 +84,9 @@ export const AdminPage: React.FC = () => {
     removeProductVideo
   } = useApp();
 
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
-  const [passcode, setPasscode] = useState<string>('');
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
+  const [isSigningIn, setIsSigningIn] = useState<boolean>(true);
+  const [authError, setAuthError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'messages' | 'analytics' | 'settings' | 'ai-assistant' | 'agent-hub' | 'workspace'>('overview');
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -198,13 +204,41 @@ export const AdminPage: React.FC = () => {
     isHidden: false
   });
 
-  const handleUnlock = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passcode === 'yousra2026' || passcode === '1234' || passcode === '') {
+  useEffect(() => onAuthStateChanged(auth, async user => {
+    const email = user?.email?.toLowerCase();
+    if (email === OWNER_EMAIL) {
       setIsUnlocked(true);
+      setAuthError('');
     } else {
-      alert('كلمة المرور غير صحيحة! رمز الدخول الافتراضي: yousra2026');
+      setIsUnlocked(false);
+      if (user && email !== OWNER_EMAIL) {
+        await logoutGoogle();
+        setAuthError('هذا الحساب غير مصرح له بالدخول إلى لوحة التحكم.');
+      }
     }
+    setIsSigningIn(false);
+  }), []);
+
+  const handleOwnerSignIn = async () => {
+    setIsSigningIn(true);
+    setAuthError('');
+    try {
+      const result = await googleSignIn();
+      if (result?.user.email?.toLowerCase() !== OWNER_EMAIL) {
+        await logoutGoogle();
+        setAuthError(`يرجى الدخول بحساب المالك: ${OWNER_EMAIL}`);
+      }
+    } catch (error: any) {
+      setAuthError(error?.message || 'تعذر تسجيل الدخول بحساب Google.');
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const handleOwnerSignOut = async () => {
+    await logoutGoogle();
+    setIsUnlocked(false);
+    setPage('home');
   };
 
   const [loadingStep, setLoadingStep] = useState<number>(0);
@@ -632,28 +666,22 @@ export const AdminPage: React.FC = () => {
         <div className="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 flex items-center justify-center mx-auto">
           <Lock className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-          دخول لوحة تحكم يسرى سمايل
-        </h2>
+        <h2 className="text-xl font-black font-['Tajawal'] text-slate-900 dark:text-white">دخول مالك يسرى سمايل</h2>
         <p className="text-xs text-slate-500">
-          يرجى إدخال رمز المرور الإداري للتحكم بالمنتجات والروابط العفيلت.
+          لوحة التحكم خاصة بالمالك والحسابات التي يمنحها صلاحية فقط.
         </p>
-
-        <form onSubmit={handleUnlock} className="space-y-4">
-          <input 
-            type="password"
-            placeholder="كلمة المرور (رمز افتراضي: yousra2026)"
-            value={passcode}
-            onChange={(e) => setPasscode(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-center text-sm"
-          />
-          <button
-            type="submit"
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl shadow-md transition-colors"
-          >
-            فتح اللوحة الآن
-          </button>
-        </form>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200" dir="ltr">
+          {OWNER_EMAIL}
+        </div>
+        {authError && <p className="text-xs font-bold text-red-600">{authError}</p>}
+        <button
+          type="button"
+          disabled={isSigningIn}
+          onClick={handleOwnerSignIn}
+          className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl shadow-md transition-colors"
+        >
+          {isSigningIn ? 'جاري التحقق من الحساب...' : 'الدخول بحساب Google للمالك'}
+        </button>
       </div>
     );
   }
@@ -705,26 +733,79 @@ export const AdminPage: React.FC = () => {
         return;
       }
 
+      const delimiter = (lines[0].match(/;/g)?.length || 0) > (lines[0].match(/,/g)?.length || 0) ? ';' : ',';
+      const parseCsvLine = (line: string) => {
+        const values: string[] = [];
+        let current = '';
+        let quoted = false;
+        for (let index = 0; index < line.length; index += 1) {
+          const char = line[index];
+          if (char === '"') {
+            if (quoted && line[index + 1] === '"') {
+              current += '"';
+              index += 1;
+            } else {
+              quoted = !quoted;
+            }
+          } else if (char === delimiter && !quoted) {
+            values.push(current.trim());
+            current = '';
+          } else {
+            current += char;
+          }
+        }
+        values.push(current.trim());
+        return values;
+      };
+
+      const normalizeHeader = (value: string) => value
+        .replace(/^\uFEFF/, '')
+        .trim()
+        .toLowerCase()
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ');
+      const headers = parseCsvLine(lines[0]).map(normalizeHeader);
+      const getColumn = (cols: string[], aliases: string[], fallbackIndex?: number) => {
+        for (const alias of aliases) {
+          const index = headers.indexOf(normalizeHeader(alias));
+          if (index >= 0 && cols[index]?.trim()) return cols[index].trim();
+        }
+        return fallbackIndex !== undefined ? (cols[fallbackIndex]?.trim() || '') : '';
+      };
+      const parseNumber = (value: string, fallback: number) => {
+        const parsed = Number(value.replace(/[^0-9.-]/g, ''));
+        return Number.isFinite(parsed) ? parsed : fallback;
+      };
+
       const newProducts: Product[] = [];
       for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        const cols = line.match(/(?:\"[^\"]*\"|[^,])+/g)?.map(c => c.replace(/^\"|\"$/g, '').replace(/\"\"/g, '"').trim()) || [];
+        const cols = parseCsvLine(lines[i]);
         
         if (cols.length >= 8) {
-          const id = cols[0] || `prod-${Date.now()}-${i}`;
-          const titleAr = cols[1] || 'منتج جديد';
-          const titleEn = cols[2] || 'New Product';
-          const category = (cols[3] || 'smart-home') as any;
-          const subcategory = cols[4] || 'المكانس الروبوتية';
-          const brand = cols[5] || 'ماركة ممتازة';
-          const originalPrice = parseFloat(cols[6]) || 1000;
-          const discountPrice = parseFloat(cols[7]) || 800;
-          const currency = cols[8] || 'SAR';
-          const amazonUrl = cols[9] || 'https://www.amazon.com';
-          const aliexpressUrl = cols[10] || '';
-          const image = cols[11] || 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80';
-          const rating = parseFloat(cols[12]) || 4.8;
-          const reviewCount = parseInt(cols[13]) || 50;
+          const id = getColumn(cols, ['id'], 0) || `prod-${Date.now()}-${i}`;
+          const titleAr = getColumn(cols, ['titleAr'], 1) || 'منتج جديد';
+          const titleEn = getColumn(cols, ['titleEn'], 2) || 'New Product';
+          const category = (getColumn(cols, ['category'], 3) || 'smart-home') as any;
+          const subcategory = getColumn(cols, ['subcategory'], 4) || 'المنتجات';
+          const brand = getColumn(cols, ['brand'], 5) || 'ماركة ممتازة';
+          const originalPrice = parseNumber(getColumn(cols, ['originalPrice'], 6), 1000);
+          const discountPrice = parseNumber(getColumn(cols, ['discountPrice'], 7), 800);
+          const currency = getColumn(cols, ['currency', 'currency $'], 8) || 'USD';
+          // Always publish the user's affiliate link. The regular product URL is only a fallback.
+          const amazonUrl = getColumn(cols, [
+            'amazon Share affiliate link',
+            'amazon affiliate link',
+            'affiliateUrl',
+            'amazonUrl'
+          ], 9) || 'https://www.amazon.com';
+          const aliexpressUrl = getColumn(cols, [
+            'aliexpressTracking affiliate link',
+            'aliexpress affiliate link',
+            'aliexpressUrl'
+          ], 10);
+          const image = getColumn(cols, ['image'], 11) || 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80';
+          const rating = parseNumber(getColumn(cols, ['rating'], 12), 4.8);
+          const reviewCount = parseNumber(getColumn(cols, ['reviewCount'], 13), 50);
 
           const discountPercent = originalPrice > discountPrice 
             ? Math.round(((originalPrice - discountPrice) / originalPrice) * 100)
@@ -775,6 +856,11 @@ export const AdminPage: React.FC = () => {
 
   return (
     <div className="admin-dashboard space-y-8 pb-16 text-white">
+      <div className="flex justify-end">
+        <button type="button" onClick={handleOwnerSignOut} className="rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700">
+          تسجيل خروج المالك
+        </button>
+      </div>
       
       {/* Admin Main Header Bar */}
       <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-slate-950 text-white rounded-3xl p-6 sm:p-8 border border-purple-800/40 shadow-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
@@ -2582,8 +2668,17 @@ export const AdminPage: React.FC = () => {
 
       {/* Generated Video Review & Preview Modal */}
       {generatedVideoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-          <div className="bg-slate-900 border border-purple-500/40 rounded-3xl max-w-2xl w-full p-6 text-white space-y-5 shadow-2xl relative my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto" onClick={() => setGeneratedVideoModal(null)}>
+          <div className="fixed top-3 left-3 right-3 z-[80] flex items-center justify-between pointer-events-none">
+            <button type="button" onClick={() => setGeneratedVideoModal(null)} className="pointer-events-auto min-h-11 px-4 rounded-xl bg-slate-950 border border-amber-400/70 text-white shadow-2xl flex items-center gap-2 font-bold text-sm">
+              <ArrowLeft className="w-5 h-5 text-amber-300" />
+              <span>رجوع</span>
+            </button>
+            <button type="button" onClick={() => setGeneratedVideoModal(null)} className="pointer-events-auto w-12 h-12 rounded-full bg-red-600 hover:bg-red-500 border-2 border-white text-white shadow-2xl flex items-center justify-center" aria-label="إغلاق معاينة الفيديو">
+              <X className="w-7 h-7" />
+            </button>
+          </div>
+          <div className="bg-slate-900 border border-purple-500/40 rounded-3xl max-w-2xl w-full p-6 text-white space-y-5 shadow-2xl relative my-8" onClick={(event) => event.stopPropagation()}>
             <button
               onClick={() => setGeneratedVideoModal(null)}
               className="absolute top-5 left-5 p-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
