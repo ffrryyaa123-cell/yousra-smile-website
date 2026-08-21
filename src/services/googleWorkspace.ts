@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { 
   getAuth, 
   signInWithPopup, 
+  signInWithRedirect,
   GoogleAuthProvider, 
   onAuthStateChanged, 
   signOut,
@@ -15,6 +16,8 @@ export const auth = getAuth(app);
 
 // Complete Google Workspace Provider configured with requested scopes
 export const provider = new GoogleAuthProvider();
+const ownerProvider = new GoogleAuthProvider();
+ownerProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/drive',
@@ -75,6 +78,12 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
   } finally {
     isSigningIn = false;
   }
+};
+
+// Lightweight owner login. It deliberately avoids Drive/Sheets/Calendar scopes,
+// so opening the private admin area does not trigger a large permissions prompt.
+export const ownerGoogleSignIn = async (): Promise<void> => {
+  await signInWithRedirect(auth, ownerProvider);
 };
 
 export const getAccessToken = async (): Promise<string | null> => {
