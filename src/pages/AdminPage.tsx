@@ -57,7 +57,7 @@ import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 import { AgentAutomationHub } from '../components/AgentAutomationHub';
 import { GeminiApiKeyManager } from '../components/GeminiApiKeyManager';
 import { GoogleWorkspaceHub } from '../components/GoogleWorkspaceHub';
-import { auth, googleSignIn, logoutGoogle } from '../services/googleWorkspace';
+import { auth, ownerGoogleSignIn, logoutGoogle } from '../services/googleWorkspace';
 
 const OWNER_EMAIL = 'sarsar336699@gmail.com';
 
@@ -223,14 +223,9 @@ export const AdminPage: React.FC = () => {
     setIsSigningIn(true);
     setAuthError('');
     try {
-      const result = await googleSignIn();
-      if (result?.user.email?.toLowerCase() !== OWNER_EMAIL) {
-        await logoutGoogle();
-        setAuthError(`يرجى الدخول بحساب المالك: ${OWNER_EMAIL}`);
-      }
+      await ownerGoogleSignIn();
     } catch (error: any) {
       setAuthError(error?.message || 'تعذر تسجيل الدخول بحساب Google.');
-    } finally {
       setIsSigningIn(false);
     }
   };
@@ -670,9 +665,6 @@ export const AdminPage: React.FC = () => {
         <p className="text-xs text-slate-500">
           لوحة التحكم خاصة بالمالك والحسابات التي يمنحها صلاحية فقط.
         </p>
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200" dir="ltr">
-          {OWNER_EMAIL}
-        </div>
         {authError && <p className="text-xs font-bold text-red-600">{authError}</p>}
         <button
           type="button"
@@ -680,7 +672,7 @@ export const AdminPage: React.FC = () => {
           onClick={handleOwnerSignIn}
           className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl shadow-md transition-colors"
         >
-          {isSigningIn ? 'جاري التحقق من الحساب...' : 'الدخول بحساب Google للمالك'}
+          {isSigningIn ? 'جاري فتح تسجيل الدخول...' : 'الدخول إلى لوحة التحكم'}
         </button>
       </div>
     );
