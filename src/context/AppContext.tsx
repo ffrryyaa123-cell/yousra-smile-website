@@ -5,6 +5,7 @@ import { SAMPLE_VIDEOS } from '../data/sampleVideos';
 import { SAMPLE_BLOG_POSTS } from '../data/blogPosts';
 import { translations, Language } from '../utils/i18n';
 import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../utils/currency';
+import { catalogDatabase } from '../services/catalogDatabase';
 
 interface AppContextType {
   products: Product[];
@@ -217,6 +218,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return SAMPLE_VIDEOS;
   });
+
+  // Live catalog shared across every device. Static data remains the safe fallback
+  // until Firestore is enabled or while the visitor is offline.
+  useEffect(() => {
+    const stopProducts = catalogDatabase.subscribeProducts(remoteProducts => {
+      if (remoteProducts.length > 0) setProducts(remoteProducts.map(normalizeProduct));
+    }, error => console.warn('Firestore products unavailable; using local catalog.', error));
+    const stopVideos = catalogDatabase.subscribeVideos(remoteVideos => {
+      if (remoteVideos.length > 0) setVideos(remoteVideos);
+    }, error => console.warn('Firestore videos unavailable; using local catalog.', error));
+    return () => { stopProducts(); stopVideos(); };
+  }, []);
 
   const [editingThumbnailVideo, setEditingThumbnailVideo] = useState<VideoReview | null>(null);
 
@@ -456,13 +469,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const videoTitle = customTitle || `مراجعة وتجربة حصرية لـ ${prod.titleAr}`;
     
     if (existingVideoIndex >= 0) {
-      setVideos(prev => prev.map((v, i) => i === existingVideoIndex ? {
-        ...v,
-        platform,
-        videoUrl: newVideoUrl,
-        title: videoTitle,
-        date: 'اليوم (محدث)'
-      } : v));
+      setVideos(prev => prev.map((v, i) => {
+        if (i !== existingVideoIndex) return v;
+        const updatedVideo = { ...v, platform, videoUrl: newVideoUrl, title: videoTitle, date: 'اليوم (محدث)' };
+        void catalogDatabase.saveVideo(updatedVideo).catch(console.error);
+        return updatedVideo;
+      }));
     } else {
       addVideo({
         productId,
@@ -483,6 +495,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const removeProductVideo = (productId: string) => {
+    const productVideo = products.find(product => product.id === productId);
+    const matchingVideos = videos.filter(video => video.productId === productId);
     // 1. Remove videoUrl and youtubeUrl from the Product
     setProducts(prev => prev.map(p => {
       if (p.id === productId) {
@@ -497,6 +511,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 2. Remove any associated video review from the global videos feed
     setVideos(prev => prev.filter(v => v.productId !== productId));
+    void catalogDatabase.clearProductVideo(productId).catch(console.error);
+    matchingVideos.forEach(video => {
+      void catalogDatabase.deleteVideo(video.id).catch(console.error);
+      void catalogDatabase.deleteStoredFile(video.storagePath || video.videoUrl).catch(console.error);
+    });
+    void catalogDatabase.deleteStoredFile(productVideo?.videoStoragePath).catch(console.error);
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY);
       const deletedIds: string[] = saved ? JSON.parse(saved) : [];
@@ -740,9 +760,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const closeThumbnailEditor = () => setEditingThumbnailVideo(null);
 
   const updateVideoThumbnail = (videoId: string, newThumbnailUrl: string) => {
-    setVideos(prev => 
-      prev.map(v => v.id === videoId ? { ...v, thumbnailUrl: newThumbnailUrl } : v)
-    );
+    setVideos(prev => prev.map(v => {
+      if (v.id !== videoId) return v;
+      const updated = { ...v, thumbnailUrl: newThumbnailUrl };
+      void catalogDatabase.saveVideo(updated).catch(console.error);
+      return updated;
+    }));
   };
 
   const addVideo = (videoData: Omit<VideoReview, 'id' | 'views' | 'date'>) => {
@@ -753,10 +776,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       date: 'اليوم'
     };
     setVideos(prev => [newVideo, ...prev]);
+    void catalogDatabase.saveVideo(newVideo).catch(console.error);
   };
 
   const deleteVideo = (videoId: string) => {
+    const existing = videos.find(video => video.id === videoId);
     setVideos(prev => prev.filter(v => v.id !== videoId));
+    void catalogDatabase.deleteVideo(videoId).catch(console.error);
+    void catalogDatabase.deleteStoredFile(existing?.storagePath || existing?.videoUrl).catch(console.error);
   };
 
   const isSubscribedToAlert = (productId: string) => {
@@ -776,15 +803,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toISOString().split('T')[0]
     };
     setProducts(prev => [newProd, ...prev]);
+    void catalogDatabase.saveProduct(newProd).catch(console.error);
   };
 
   const importProductsBulk = (importedList: Product[]) => {
     if (!importedList || importedList.length === 0) return;
     setProducts(prev => {
-      const existingIds = new Set(prev.map(p => p.id));
-      const newItems = importedList.filter(p => !existingIds.has(p.id));
-      return [...newItems, ...prev];
+      const importedById = new Map(importedList.map(product => [product.id, product]));
+      const updatedExisting = prev.map(product => importedById.get(product.id) || product);
+      const existingIds = new Set(prev.map(product => product.id));
+      const newItems = importedList.filter(product => !existingIds.has(product.id));
+      return [...newItems, ...updatedExisting];
     });
+    importedList.forEach(product => void catalogDatabase.saveProduct(product).catch(console.error));
   };
 
   const addReview = (productId: string, userName: string, rating: number, comment: string) => {
@@ -822,10 +853,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateProduct = (updatedProduct: Product) => {
     setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+    void catalogDatabase.saveProduct(updatedProduct).catch(console.error);
   };
 
   const deleteProduct = (id: string) => {
+    const existing = products.find(product => product.id === id);
+    const matchingVideos = videos.filter(video => video.productId === id);
     setProducts(prev => prev.filter(p => p.id !== id));
+    setVideos(prev => prev.filter(video => video.productId !== id));
     setFavorites(prev => prev.filter(fId => fId !== id));
     setCompareList(prev => prev.filter(cId => cId !== id));
     try {
@@ -837,6 +872,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {
       console.error('Failed to persist deleted product:', e);
     }
+    void catalogDatabase.deleteProduct(id).catch(console.error);
+    matchingVideos.forEach(video => {
+      void catalogDatabase.deleteVideo(video.id).catch(console.error);
+      void catalogDatabase.deleteStoredFile(video.storagePath || video.videoUrl).catch(console.error);
+    });
+    void catalogDatabase.deleteStoredFile(existing?.videoStoragePath).catch(console.error);
   };
 
   const resetCatalog = () => {
