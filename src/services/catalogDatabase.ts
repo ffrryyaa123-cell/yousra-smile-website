@@ -20,7 +20,8 @@ import firebaseConfig from '../../firebase-applet-config.json';
 import { Product, VideoReview } from '../types';
 
 const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
+const FIRESTORE_DATABASE_ID = 'ai-studio-yousrasmile-a5551c6d-57e2-46b9-bc5e-1d53b9d471f1';
+const db = getFirestore(firebaseApp, FIRESTORE_DATABASE_ID);
 const storage = getStorage(firebaseApp);
 
 const cleanForFirestore = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
