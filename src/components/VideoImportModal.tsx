@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { catalogDatabase } from '../services/catalogDatabase';
 import { 
   X, 
+  ArrowLeft,
   Link as LinkIcon, 
   Sparkles, 
   Plus, 
@@ -58,6 +60,8 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
   const [fileError, setFileError] = useState<string>('');
   const [isGeneratingSeo, setIsGeneratingSeo] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   
@@ -199,7 +203,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
     }, 600);
   };
 
-  const handleImport = (e: React.FormEvent) => {
+  const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (importMode === 'link' && !videoUrl.trim()) {
@@ -227,12 +231,23 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       }
     }
 
-    const finalVideoUrl = importMode === 'upload' ? uploadedVideoPreviewUrl : videoUrl.trim();
+    let finalVideoUrl = importMode === 'upload' ? uploadedVideoPreviewUrl : videoUrl.trim();
+    let storagePath: string | undefined;
     const finalTitle = customTitle.trim() || `مراجعة شاملة لـ ${linkedProd.titleAr}`;
+
+    try {
+      if (importMode === 'upload' && uploadedFile) {
+        setIsUploading(true);
+        setUploadProgress(0);
+        const uploaded = await catalogDatabase.uploadVideo(linkedProd.id, uploadedFile, setUploadProgress);
+        finalVideoUrl = uploaded.url;
+        storagePath = uploaded.storagePath;
+      }
 
     if (replaceExistingVideo) {
       // Direct replace helper keeping all product attributes completely intact
       replaceProductVideo(linkedProd.id, finalVideoUrl, platform, finalTitle);
+      if (storagePath) updateProduct({ ...linkedProd, videoUrl: finalVideoUrl, videoStoragePath: storagePath });
     } else {
       // 1. Add video to VideoReviews state
       addVideo({
@@ -243,13 +258,16 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
         platform,
         embedId,
         videoUrl: finalVideoUrl,
+        storagePath,
         title: finalTitle,
-        duration: customDuration || '00:45'
+        duration: customDuration || '00:45',
+        seoDescription,
+        hashtags
       });
 
       // 2. Sync with product entry
       if (syncWithProduct && linkedProd) {
-        const updated: any = { ...linkedProd, videoUrl: finalVideoUrl };
+        const updated: any = { ...linkedProd, videoUrl: finalVideoUrl, videoStoragePath: storagePath };
         if (platform === 'youtube') updated.youtubeUrl = finalVideoUrl;
         else if (platform === 'tiktok') updated.tiktokUrl = finalVideoUrl;
         else if (platform === 'pinterest') updated.pinterestUrl = finalVideoUrl;
@@ -270,15 +288,30 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       setUploadedVideoPreviewUrl('');
       onClose();
     }, 1200);
+    } catch (error: any) {
+      setErrorMessage(error?.message || 'فشل رفع الفيديو إلى التخزين. تأكدي من تسجيل الدخول بحساب المالك.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn overflow-y-auto"
+      onClick={onClose}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      <div className="fixed top-3 left-3 right-3 z-[80] flex items-center justify-between pointer-events-none">
+        <button type="button" onClick={onClose} className="pointer-events-auto min-h-11 px-4 rounded-xl bg-slate-950 border border-amber-400/70 text-white shadow-2xl flex items-center gap-2 font-bold text-sm">
+          <ArrowLeft className="w-5 h-5 text-amber-300" />
+          <span>{language === 'ar' ? 'رجوع' : 'Back'}</span>
+        </button>
+        <button type="button" onClick={onClose} className="pointer-events-auto w-12 h-12 rounded-full bg-red-600 hover:bg-red-500 border-2 border-white text-white shadow-2xl flex items-center justify-center" aria-label={language === 'ar' ? 'إغلاق نافذة الفيديو' : 'Close video window'}>
+          <X className="w-7 h-7" />
+        </button>
+      </div>
       <div 
         className={`relative w-full max-w-2xl bg-[#111113] border rounded-3xl shadow-2xl text-white overflow-hidden my-auto max-h-[92vh] flex flex-col transition-all ${
           isDragging ? 'border-amber-400 ring-4 ring-amber-400/20' : 'border-purple-500/40'
@@ -619,6 +652,12 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
               <span>{errorMessage}</span>
             </div>
           )}
+          {isUploading && (
+            <div className="space-y-2 rounded-xl border border-purple-500/40 bg-purple-950/40 p-3">
+              <div className="flex justify-between text-xs font-bold text-white"><span>جاري رفع الفيديو فعليًا</span><span>{uploadProgress}%</span></div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-800"><div className="h-full bg-purple-500 transition-all" style={{ width: `${uploadProgress}%` }} /></div>
+            </div>
+          )}
 
           {/* Modal Footer Actions */}
           <div className="pt-3 flex items-center justify-between border-t border-slate-800">
@@ -637,7 +676,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
 
               <button
                 type="submit"
-                disabled={isSuccess}
+                disabled={isSuccess || isUploading}
                 className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-amber-500 to-emerald-500 hover:opacity-95 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
               >
                 {isSuccess ? (
