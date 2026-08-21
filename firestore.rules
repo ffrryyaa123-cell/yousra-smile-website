@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isOwner() { return signedIn() && request.auth.token.email == 'sarsar336699@gmail.com'; }
+    function isStaff() { return signedIn() && request.auth.token.role in ['owner', 'editor']; }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isOwner() || isStaff();
+    }
+    match /videos/{videoId} {
+      allow read: if true;
+      allow write: if isOwner() || isStaff();
+    }
+  }
+}
