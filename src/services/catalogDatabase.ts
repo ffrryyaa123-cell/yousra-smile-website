@@ -7,7 +7,8 @@ import {
   getFirestore,
   onSnapshot,
   setDoc,
-  updateDoc
+  updateDoc,
+  writeBatch
 } from 'firebase/firestore';
 import {
   deleteObject,
@@ -45,6 +46,13 @@ export const catalogDatabase = {
 
   saveVideo(video: VideoReview) {
     return setDoc(doc(db, 'videos', video.id), cleanForFirestore(video), { merge: true });
+  },
+
+  saveProductAndVideo(product: Product, video: VideoReview) {
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'products', product.id), cleanForFirestore(product), { merge: true });
+    batch.set(doc(db, 'videos', video.id), cleanForFirestore(video), { merge: true });
+    return batch.commit();
   },
 
   deleteProduct(productId: string) {
