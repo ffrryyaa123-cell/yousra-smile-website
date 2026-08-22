@@ -1,4 +1,11 @@
 {
-  "firestore": { "rules": "firestore.rules" },
-  "storage": { "rules": "storage.rules" }
+  "firestore": [
+    {
+      "database": "ai-studio-yousrasmile-a5551c6d-57e2-46b9-bc5e-1d53b9d471f1",
+      "rules": "firestore.rules"
+    }
+  ],
+  "storage": {
+    "rules": "storage.rules"
+  }
 }
