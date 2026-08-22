@@ -67,7 +67,7 @@ interface AppContextType {
   closeThumbnailEditor: () => void;
   updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
   addVideo: (videoData: Omit<VideoReview, 'id' | 'views' | 'date'>) => Promise<VideoReview>;
-  deleteVideo: (videoId: string) => void;
+  deleteVideo: (videoId: string) => Promise<void>;
   
   // Video Import & Replacement Modal (from device or link)
   importVideoModalOpen: boolean;
@@ -77,7 +77,7 @@ interface AppContextType {
   openImportVideoModal: (productId?: string, defaultMode?: 'upload' | 'link', isReplacing?: boolean) => void;
   closeImportVideoModal: () => void;
   replaceProductVideo: (productId: string, newVideoUrl: string, platform?: VideoReview['platform'], customTitle?: string, storagePath?: string) => Promise<void>;
-  removeProductVideo: (productId: string) => void;
+  removeProductVideo: (productId: string) => Promise<void>;
 
   toggleDarkMode: () => void;
   toggleLanguage: () => void;
@@ -86,10 +86,10 @@ interface AppContextType {
   filterByBrand: (brandName: string) => void;
   
   // Admin CRUD
-  addProduct: (newProduct: Omit<Product, 'id' | 'createdAt' | 'viewsCount'>) => void;
-  importProductsBulk: (newProducts: Product[]) => void;
+  addProduct: (newProduct: Omit<Product, 'id' | 'createdAt' | 'viewsCount'>) => Promise<Product>;
+  importProductsBulk: (newProducts: Product[]) => Promise<void>;
   updateProduct: (updatedProduct: Product) => Promise<void>;
-  deleteProduct: (id: string) => void;
+  deleteProduct: (id: string) => Promise<void>;
   resetCatalog: () => void;
   addReview: (productId: string, userName: string, rating: number, comment: string) => void;
   
@@ -514,44 +514,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const removeProductVideo = (productId: string) => {
+  const removeProductVideo = async (productId: string) => {
     const productVideo = products.find(product => product.id === productId);
     const matchingVideos = videos.filter(video => video.productId === productId);
-    // 1. Remove videoUrl and youtubeUrl from the Product
-    setProducts(prev => prev.map(p => {
-      if (p.id === productId) {
-        return {
-          ...p,
-          videoUrl: undefined,
-          youtubeUrl: undefined
-        };
-      }
-      return p;
-    }));
 
-    // 2. Remove any associated video review from the global videos feed
-    setVideos(prev => prev.filter(v => v.productId !== productId));
-    void catalogDatabase.clearProductVideo(productId).catch(console.error);
-    matchingVideos.forEach(video => {
-      void catalogDatabase.deleteVideo(video.id).catch(console.error);
-      void catalogDatabase.deleteStoredFile(video.storagePath || video.videoUrl).catch(console.error);
+    await catalogDatabase.removeProductVideoMetadata(
+      productId,
+      matchingVideos.map(video => video.id)
+    );
+
+    setProducts(prev => prev.map(product => product.id === productId ? {
+      ...product,
+      videoUrl: undefined,
+      videoThumbnailUrl: undefined,
+      videoStoragePath: undefined,
+      youtubeUrl: undefined
+    } : product));
+    setVideos(prev => prev.filter(video => video.productId !== productId));
+
+    const cleanupResults = await Promise.allSettled([
+      ...matchingVideos.map(video => catalogDatabase.deleteStoredFile(video.storagePath || video.videoUrl)),
+      catalogDatabase.deleteStoredFile(productVideo?.videoStoragePath)
+    ]);
+    cleanupResults.forEach(result => {
+      if (result.status === 'rejected') console.error('Failed to delete stored video:', result.reason);
     });
-    void catalogDatabase.deleteStoredFile(productVideo?.videoStoragePath).catch(console.error);
+
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY);
       const deletedIds: string[] = saved ? JSON.parse(saved) : [];
       if (!deletedIds.includes(productId)) {
         localStorage.setItem(LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY, JSON.stringify([...deletedIds, productId]));
       }
-    } catch (e) {
-      console.error('Failed to persist removed product video:', e);
+    } catch (error) {
+      console.error('Failed to persist removed product video:', error);
     }
 
-    // 3. Update currently viewed product if active
-    if (selectedProduct && selectedProduct.id === productId) {
-      setSelectedProduct(prev => prev ? ({
-        ...prev,
+    if (selectedProduct?.id === productId) {
+      setSelectedProduct(previous => previous ? ({
+        ...previous,
         videoUrl: undefined,
+        videoThumbnailUrl: undefined,
+        videoStoragePath: undefined,
         youtubeUrl: undefined
       }) : null);
     }
@@ -800,11 +804,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newVideo;
   };
 
-  const deleteVideo = (videoId: string) => {
+  const deleteVideo = async (videoId: string) => {
     const existing = videos.find(video => video.id === videoId);
-    setVideos(prev => prev.filter(v => v.id !== videoId));
-    void catalogDatabase.deleteVideo(videoId).catch(console.error);
-    void catalogDatabase.deleteStoredFile(existing?.storagePath || existing?.videoUrl).catch(console.error);
+    await catalogDatabase.deleteVideo(videoId);
+    setVideos(prev => prev.filter(video => video.id !== videoId));
+    try {
+      await catalogDatabase.deleteStoredFile(existing?.storagePath || existing?.videoUrl);
+    } catch (error) {
+      console.error('Failed to delete stored video:', error);
+    }
   };
 
   const isSubscribedToAlert = (productId: string) => {
@@ -816,19 +824,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const setLanguage = (lang: Language) => setLanguageState(lang);
 
   // Admin CRUD
-  const addProduct = (newProdData: Omit<Product, 'id' | 'createdAt' | 'viewsCount'>) => {
+  const addProduct = async (newProdData: Omit<Product, 'id' | 'createdAt' | 'viewsCount'>): Promise<Product> => {
     const newProd: Product = {
       ...newProdData,
       id: `prod-${Date.now()}`,
       viewsCount: 1,
       createdAt: new Date().toISOString().split('T')[0]
     };
+    await catalogDatabase.saveProduct(newProd);
     setProducts(prev => [newProd, ...prev]);
-    void catalogDatabase.saveProduct(newProd).catch(console.error);
+    return newProd;
   };
 
-  const importProductsBulk = (importedList: Product[]) => {
-    if (!importedList || importedList.length === 0) return;
+  const importProductsBulk = async (importedList: Product[]) => {
+    if (!importedList?.length) return;
+    await catalogDatabase.saveProducts(importedList);
     setProducts(prev => {
       const importedById = new Map(importedList.map(product => [product.id, product]));
       const updatedExisting = prev.map(product => importedById.get(product.id) || product);
@@ -836,7 +846,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const newItems = importedList.filter(product => !existingIds.has(product.id));
       return [...newItems, ...updatedExisting];
     });
-    importedList.forEach(product => void catalogDatabase.saveProduct(product).catch(console.error));
   };
 
   const addReview = (productId: string, userName: string, rating: number, comment: string) => {
@@ -877,28 +886,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
   };
 
-  const deleteProduct = (id: string) => {
+  const deleteProduct = async (id: string) => {
     const existing = products.find(product => product.id === id);
     const matchingVideos = videos.filter(video => video.productId === id);
-    setProducts(prev => prev.filter(p => p.id !== id));
+
+    await catalogDatabase.deleteProductAndVideos(
+      id,
+      matchingVideos.map(video => video.id)
+    );
+
+    setProducts(prev => prev.filter(product => product.id !== id));
     setVideos(prev => prev.filter(video => video.productId !== id));
-    setFavorites(prev => prev.filter(fId => fId !== id));
-    setCompareList(prev => prev.filter(cId => cId !== id));
+    setFavorites(prev => prev.filter(productId => productId !== id));
+    setCompareList(prev => prev.filter(productId => productId !== id));
+
+    const cleanupResults = await Promise.allSettled([
+      ...matchingVideos.map(video => catalogDatabase.deleteStoredFile(video.storagePath || video.videoUrl)),
+      catalogDatabase.deleteStoredFile(existing?.videoStoragePath)
+    ]);
+    cleanupResults.forEach(result => {
+      if (result.status === 'rejected') console.error('Failed to delete stored product media:', result.reason);
+    });
+
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_DELETED_PRODUCTS_KEY);
       const deletedIds: string[] = saved ? JSON.parse(saved) : [];
       if (!deletedIds.includes(id)) {
         localStorage.setItem(LOCAL_STORAGE_DELETED_PRODUCTS_KEY, JSON.stringify([...deletedIds, id]));
       }
-    } catch (e) {
-      console.error('Failed to persist deleted product:', e);
+    } catch (error) {
+      console.error('Failed to persist deleted product:', error);
     }
-    void catalogDatabase.deleteProduct(id).catch(console.error);
-    matchingVideos.forEach(video => {
-      void catalogDatabase.deleteVideo(video.id).catch(console.error);
-      void catalogDatabase.deleteStoredFile(video.storagePath || video.videoUrl).catch(console.error);
-    });
-    void catalogDatabase.deleteStoredFile(existing?.videoStoragePath).catch(console.error);
   };
 
   const resetCatalog = () => {
