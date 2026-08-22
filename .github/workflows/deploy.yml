@@ -35,6 +35,9 @@ jobs:
       - name: Check persistence safeguards
         run: npm run validate:persistence
 
+      - name: Check review-only agent safeguards
+        run: npm run agent:validate
+
       - name: Check TypeScript
         run: npm run lint
 
