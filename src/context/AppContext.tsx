@@ -66,7 +66,7 @@ interface AppContextType {
   openThumbnailEditor: (video: VideoReview) => void;
   closeThumbnailEditor: () => void;
   updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
-  addVideo: (videoData: Omit<VideoReview, 'id' | 'views' | 'date'>) => void;
+  addVideo: (videoData: Omit<VideoReview, 'id' | 'views' | 'date'>) => Promise<VideoReview>;
   deleteVideo: (videoId: string) => void;
   
   // Video Import & Replacement Modal (from device or link)
@@ -76,7 +76,7 @@ interface AppContextType {
   importVideoIsReplacing: boolean;
   openImportVideoModal: (productId?: string, defaultMode?: 'upload' | 'link', isReplacing?: boolean) => void;
   closeImportVideoModal: () => void;
-  replaceProductVideo: (productId: string, newVideoUrl: string, platform?: VideoReview['platform'], customTitle?: string) => void;
+  replaceProductVideo: (productId: string, newVideoUrl: string, platform?: VideoReview['platform'], customTitle?: string, storagePath?: string) => Promise<void>;
   removeProductVideo: (productId: string) => void;
 
   toggleDarkMode: () => void;
@@ -88,7 +88,7 @@ interface AppContextType {
   // Admin CRUD
   addProduct: (newProduct: Omit<Product, 'id' | 'createdAt' | 'viewsCount'>) => void;
   importProductsBulk: (newProducts: Product[]) => void;
-  updateProduct: (updatedProduct: Product) => void;
+  updateProduct: (updatedProduct: Product) => Promise<void>;
   deleteProduct: (id: string) => void;
   resetCatalog: () => void;
   addReview: (productId: string, userName: string, rating: number, comment: string) => void;
@@ -445,51 +445,71 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setImportVideoIsReplacing(false);
   };
 
-  const replaceProductVideo = (productId: string, newVideoUrl: string, platform: VideoReview['platform'] = 'local', customTitle?: string) => {
+  const replaceProductVideo = async (
+    productId: string,
+    newVideoUrl: string,
+    platform: VideoReview['platform'] = 'local',
+    customTitle?: string,
+    storagePath?: string
+  ) => {
     const prod = products.find(p => p.id === productId);
-    if (!prod) return;
-    try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY);
-      const deletedIds: string[] = saved ? JSON.parse(saved) : [];
-      localStorage.setItem(LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY, JSON.stringify(deletedIds.filter(id => id !== productId)));
-    } catch (e) {
-      console.error('Failed to restore product video state:', e);
-    }
+    if (!prod) throw new Error('تعذر العثور على المنتج المرتبط بالفيديو.');
 
-    // Update Product object with new video url
+    const videoTitle = customTitle || `مراجعة وتجربة حصرية لـ ${prod.titleAr}`;
+    const existingVideo = videos.find(video => video.productId === productId);
     const updatedProd: Product = {
       ...prod,
       videoUrl: newVideoUrl,
-      youtubeUrl: platform === 'youtube' ? newVideoUrl : (prod.youtubeUrl || newVideoUrl)
+      videoStoragePath: storagePath || prod.videoStoragePath,
+      youtubeUrl: platform === 'youtube' ? newVideoUrl : prod.youtubeUrl
     };
-    updateProduct(updatedProd);
+    const updatedVideo: VideoReview = existingVideo
+      ? {
+          ...existingVideo,
+          platform,
+          videoUrl: newVideoUrl,
+          storagePath: storagePath || existingVideo.storagePath,
+          title: videoTitle,
+          date: 'اليوم (محدث)'
+        }
+      : {
+          id: `v-${Date.now()}`,
+          productId,
+          productTitle: prod.titleAr,
+          productImage: prod.image,
+          thumbnailUrl: prod.image,
+          platform,
+          embedId: `vid-${Date.now()}`,
+          videoUrl: newVideoUrl,
+          storagePath,
+          title: videoTitle,
+          duration: '01:00',
+          views: '1.2K',
+          date: 'اليوم'
+        };
 
-    // Update or Add to videos feed
-    const existingVideoIndex = videos.findIndex(v => v.productId === productId);
-    const videoTitle = customTitle || `مراجعة وتجربة حصرية لـ ${prod.titleAr}`;
-    
-    if (existingVideoIndex >= 0) {
-      setVideos(prev => prev.map((v, i) => {
-        if (i !== existingVideoIndex) return v;
-        const updatedVideo = { ...v, platform, videoUrl: newVideoUrl, title: videoTitle, date: 'اليوم (محدث)' };
-        void catalogDatabase.saveVideo(updatedVideo).catch(console.error);
-        return updatedVideo;
-      }));
-    } else {
-      addVideo({
-        productId,
-        productTitle: prod.titleAr,
-        productImage: prod.image,
-        thumbnailUrl: prod.image,
-        platform,
-        embedId: `vid-${Date.now()}`,
-        videoUrl: newVideoUrl,
-        title: videoTitle,
-        duration: '01:00'
-      });
+    await catalogDatabase.saveProductAndVideo(updatedProd, updatedVideo);
+
+    setProducts(prev => prev.map(product => product.id === productId ? updatedProd : product));
+    setVideos(prev => {
+      const alreadyExists = prev.some(video => video.id === updatedVideo.id);
+      return alreadyExists
+        ? prev.map(video => video.id === updatedVideo.id ? updatedVideo : video)
+        : [updatedVideo, ...prev];
+    });
+
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY);
+      const deletedIds: string[] = saved ? JSON.parse(saved) : [];
+      localStorage.setItem(
+        LOCAL_STORAGE_DELETED_PRODUCT_VIDEOS_KEY,
+        JSON.stringify(deletedIds.filter(id => id !== productId))
+      );
+    } catch (error) {
+      console.error('Failed to restore product video state:', error);
     }
 
-    if (selectedProduct && selectedProduct.id === productId) {
+    if (selectedProduct?.id === productId) {
       setSelectedProduct(updatedProd);
     }
   };
@@ -768,15 +788,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  const addVideo = (videoData: Omit<VideoReview, 'id' | 'views' | 'date'>) => {
+  const addVideo = async (videoData: Omit<VideoReview, 'id' | 'views' | 'date'>): Promise<VideoReview> => {
     const newVideo: VideoReview = {
       ...videoData,
       id: `v-${Date.now()}`,
       views: '1.2K',
       date: 'اليوم'
     };
+    await catalogDatabase.saveVideo(newVideo);
     setVideos(prev => [newVideo, ...prev]);
-    void catalogDatabase.saveVideo(newVideo).catch(console.error);
+    return newVideo;
   };
 
   const deleteVideo = (videoId: string) => {
@@ -851,9 +872,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  const updateProduct = (updatedProduct: Product) => {
+  const updateProduct = async (updatedProduct: Product) => {
+    await catalogDatabase.saveProduct(updatedProduct);
     setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
-    void catalogDatabase.saveProduct(updatedProduct).catch(console.error);
   };
 
   const deleteProduct = (id: string) => {
