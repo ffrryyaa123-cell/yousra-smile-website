@@ -1,0 +1,52 @@
+name: Yousra Smile Owner Review Agent Pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      input_file:
+        description: JSON file inside agents/ to process
+        required: true
+        default: agents/sample-product.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: yousra-smile-agent-review-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare-owner-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run lint
+
+      - name: Validate review-only safety gate
+        run: npm run agent:validate
+
+      - name: Prepare owner review package
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AGENT_INPUT_PATH: ${{ inputs.input_file }}
+        run: npm run agent:pilot
+
+      - name: Upload owner review artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: yousra-smile-owner-review
+          path: artifacts/agent-review/*
+          if-no-files-found: error
+          retention-days: 7
