@@ -1,0 +1,28 @@
+{
+  "productId": "amazon-B01NBKTPTS",
+  "productName": "Instant Pot Duo Plus 9-in-1 Multicooker, 6 Quart",
+  "retailer": "amazon",
+  "sourceUrl": "https://www.amazon.com/Instant-Pot-Plus-60-Programmable/dp/B01NBKTPTS/",
+  "affiliateUrl": "https://amzn.to/4xskEMf",
+  "verifiedFacts": [
+    {
+      "name": "brand",
+      "value": "Instant Pot",
+      "sourceNote": "Owner-supplied Amazon product page"
+    },
+    {
+      "name": "capacity",
+      "value": "6 quarts",
+      "sourceNote": "Owner-supplied Amazon product page"
+    },
+    {
+      "name": "finish",
+      "value": "Stainless Steel/Black",
+      "sourceNote": "Owner-supplied Amazon product page"
+    }
+  ],
+  "referenceImageUrls": [],
+  "beforeAfterEvidenceProvided": false,
+  "targetLanguage": "bilingual",
+  "targetPlatforms": ["website", "youtube", "tiktok", "instagram", "pinterest"]
+}
