@@ -259,8 +259,8 @@ export async function generateProductVideoCampaign(
 
   const originalPrice = Number(raw.originalPrice) || 0;
   const discountPrice = Number(raw.discountPrice) || originalPrice;
-  const needsVerification = Array.isArray(raw.needsVerification)
-    ? raw.needsVerification.map(String)
+  const needsVerification: string[] = Array.isArray(raw.needsVerification)
+    ? raw.needsVerification.map((item: unknown) => String(item))
     : [];
 
   if (!originalPrice) needsVerification.push('price');
