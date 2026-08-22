@@ -28,7 +28,10 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Check persistence safeguards
+        run: npm run validate:persistence
 
       - name: Check TypeScript
         run: npm run lint
