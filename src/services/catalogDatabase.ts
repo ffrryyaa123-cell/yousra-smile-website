@@ -55,6 +55,35 @@ export const catalogDatabase = {
     return batch.commit();
   },
 
+  async saveProducts(products: Product[]) {
+    for (let index = 0; index < products.length; index += 400) {
+      const batch = writeBatch(db);
+      products.slice(index, index + 400).forEach(product => {
+        batch.set(doc(db, 'products', product.id), cleanForFirestore(product), { merge: true });
+      });
+      await batch.commit();
+    }
+  },
+
+  deleteProductAndVideos(productId: string, videoIds: string[]) {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'products', productId));
+    videoIds.forEach(videoId => batch.delete(doc(db, 'videos', videoId)));
+    return batch.commit();
+  },
+
+  removeProductVideoMetadata(productId: string, videoIds: string[]) {
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'products', productId), {
+      videoUrl: deleteField(),
+      videoThumbnailUrl: deleteField(),
+      videoStoragePath: deleteField(),
+      youtubeUrl: deleteField()
+    });
+    videoIds.forEach(videoId => batch.delete(doc(db, 'videos', videoId)));
+    return batch.commit();
+  },
+
   deleteProduct(productId: string) {
     return deleteDoc(doc(db, 'products', productId));
   },
