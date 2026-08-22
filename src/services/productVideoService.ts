@@ -145,7 +145,66 @@ export function buildAffiliateLink(
 }
 
 /**
- * Parses a given product link (Amazon, AliExpress, etc.) to extract platform, ID, and basic metadata
+ * Extracts only deterministic URL metadata. It never fabricates a product,
+ * affiliate destination, price, media URL, or product specification.
+ */
+export function extractBasicProductInfoFromUrl(
+  productUrl: string,
+  affiliateTag = ''
+): {
+  name: string;
+  brand: string;
+  cleanUrl: string;
+  affiliateUrl: string;
+  platform: 'amazon' | 'aliexpress' | 'noon' | 'shein' | 'other';
+  asinOrId?: string;
+} {
+  const sanitized = validateAndSanitizeUrl(productUrl);
+  if (!sanitized.isValid) {
+    return {
+      name: '',
+      brand: '',
+      cleanUrl: '',
+      affiliateUrl: '',
+      platform: 'other'
+    };
+  }
+
+  let name = '';
+  let brand = '';
+  try {
+    const parsed = new URL(sanitized.cleanUrl);
+    const candidates = parsed.pathname
+      .split('/')
+      .map(part => decodeURIComponent(part).trim())
+      .filter(part => part && !/^(dp|gp|product|item)$/i.test(part))
+      .filter(part => part !== sanitized.extractedId);
+    const slug = candidates.find(part => /[-_]/.test(part));
+    name = slug ? slug.replace(/[-_]+/g, ' ').replace(/\.html$/i, '').trim() : '';
+    brand = sanitized.platform === 'amazon'
+      ? 'Amazon'
+      : sanitized.platform === 'aliexpress'
+        ? 'AliExpress'
+        : parsed.hostname.replace(/^www\./, '');
+  } catch {
+    // The caller will require source verification before the draft can be saved.
+  }
+
+  return {
+    name,
+    brand,
+    cleanUrl: sanitized.cleanUrl,
+    affiliateUrl: buildAffiliateLink(sanitized.cleanUrl, {
+      affiliateTag: affiliateTag || undefined,
+      platform: sanitized.platform
+    }),
+    platform: sanitized.platform,
+    asinOrId: sanitized.extractedId
+  };
+}
+
+/**
+ * Prepares a campaign only after the server confirms a source match.
  */
 export async function generateProductVideoCampaign(
   input: ProductVideoServiceInput
@@ -236,7 +295,7 @@ export async function generateProductVideoCampaign(
     sourceUrl: sanitized.cleanUrl,
     image: heroImage,
     images: Array.isArray(raw.images)
-      ? raw.images.filter((url: unknown) => typeof url === 'string' && url.startsWith('https://'))
+      ? raw.images.filter((url: unknown): url is string => typeof url === 'string' && url.startsWith('https://'))
       : [heroImage],
     youtubeUrl: raw.suggestedVideoUrl ? String(raw.suggestedVideoUrl) : ''
   };
