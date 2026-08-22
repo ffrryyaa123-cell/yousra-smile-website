@@ -1,17 +1,43 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function isOwner() { return signedIn() && request.auth.token.email == 'sarsar336699@gmail.com'; }
-    function isStaff() { return signedIn() && request.auth.token.role in ['owner', 'editor']; }
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function hasVerifiedEmail() {
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner() {
+      return hasVerifiedEmail()
+        && request.auth.token.email == 'sarsar336699@gmail.com';
+    }
+
+    function isStaff() {
+      return hasVerifiedEmail()
+        && request.auth.token.keys().hasAny(['role'])
+        && request.auth.token.role in ['owner', 'editor'];
+    }
+
+    function canManageCatalog() {
+      return isOwner() || isStaff();
+    }
+
+    function documentIdMatches(documentId) {
+      return request.resource.data.id == documentId;
+    }
 
     match /products/{productId} {
       allow read: if true;
-      allow write: if isOwner() || isStaff();
+      allow create, update: if canManageCatalog() && documentIdMatches(productId);
+      allow delete: if canManageCatalog();
     }
+
     match /videos/{videoId} {
       allow read: if true;
-      allow write: if isOwner() || isStaff();
+      allow create, update: if canManageCatalog() && documentIdMatches(videoId);
+      allow delete: if canManageCatalog();
     }
   }
 }

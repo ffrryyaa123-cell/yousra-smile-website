@@ -3,6 +3,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import firebaseConfig from "./firebase-applet-config.json";
 
 dotenv.config();
 
@@ -778,19 +779,63 @@ async function startServer() {
     ] as Array<{ id: string; source: string; action: string; status: string; timestamp: string; details?: any }>
   };
 
-  // Helper: Verify Agent API Key
-  const verifyAgentAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const authHeader = req.headers.authorization;
-    const xApiKey = req.headers['x-agent-key'];
-    const providedKey = (xApiKey as string) || (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : '');
-    const configuredKey = process.env.AGENT_API_KEY || 'ys_agent_secret_key_2026';
+  // Agent APIs are authenticated with the signed-in Firebase user's ID token.
+  // Shared browser API keys are intentionally unsupported because anything shipped
+  // to the browser is public and cannot protect privileged product workflows.
+  const OWNER_EMAIL = 'sarsar336699@gmail.com';
+  const AGENT_EDITOR_EMAILS = new Set(
+    (process.env.AGENT_EDITOR_EMAILS || '')
+      .split(',')
+      .map(email => email.trim().toLowerCase())
+      .filter(Boolean)
+  );
 
-    // Allow access if keys match or if using the default system development token
-    if (!providedKey || (providedKey !== configuredKey && providedKey !== 'ys_agent_2026' && providedKey !== 'yousra2026')) {
-      // In dev mode, we log but still allow with warning to ensure seamless agent testing
-      console.warn(`[Agent Auth] Access with key: ${providedKey ? '***' : 'none'}`);
+  const verifyAgentAuth = async (
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    const authHeader = req.headers.authorization;
+    const idToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : '';
+
+    if (!idToken) {
+      return res.status(401).json({ error: 'يلزم تسجيل الدخول إلى لوحة التحكم.' });
     }
-    next();
+
+    try {
+      const lookupResponse = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseConfig.apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        }
+      );
+
+      if (!lookupResponse.ok) {
+        return res.status(401).json({ error: 'جلسة الدخول غير صالحة أو انتهت.' });
+      }
+
+      const lookupData = await lookupResponse.json() as {
+        users?: Array<{ localId?: string; email?: string; emailVerified?: boolean }>;
+      };
+      const firebaseUser = lookupData.users?.[0];
+      const email = firebaseUser?.email?.trim().toLowerCase();
+
+      if (!email || firebaseUser?.emailVerified !== true) {
+        return res.status(403).json({ error: 'يلزم بريد إلكتروني موثّق.' });
+      }
+
+      if (email !== OWNER_EMAIL && !AGENT_EDITOR_EMAILS.has(email)) {
+        return res.status(403).json({ error: 'هذا الحساب لا يملك صلاحية تشغيل الوكلاء.' });
+      }
+
+      res.locals.agentUser = { uid: firebaseUser.localId, email };
+      next();
+    } catch (error) {
+      console.error('[Agent Auth] Firebase token verification failed.');
+      return res.status(503).json({ error: 'تعذر التحقق من جلسة الدخول الآن.' });
+    }
   };
 
   // ==========================================
@@ -801,15 +846,16 @@ async function startServer() {
       success: true,
       service: "Yousra Smile AI Agent Core Engine",
       version: "2.5.0",
-      domain: "yusrasmail.com",
-      status: "operational",
+      domain: "yousrasmile.com",
+      status: "review-only",
       authentication: {
-        headerOptions: ["x-agent-key: <YOUR_KEY>", "Authorization: Bearer <YOUR_KEY>"],
-        defaultDevKey: "ys_agent_secret_key_2026"
+        method: "Firebase ID token",
+        header: "Authorization: Bearer <FIREBASE_ID_TOKEN>",
+        browserSecretRequired: false
       },
       endpoints: {
         curateProduct: { method: "POST", path: "/api/agent/auto-curate", description: "Takes a raw product name or link and returns full Arabic/English SEO product specs and descriptions using Gemini AI." },
-        uploadProduct: { method: "POST", path: "/api/agent/products", description: "Directly adds or updates a product in the catalog with automatic price discount calculation and affiliate formatting." },
+        stageProductDraft: { method: "POST", path: "/api/agent/products", description: "Validates and stages a product draft for owner review. It does not write to the catalog." },
         generateVideoScript: { method: "POST", path: "/api/agent/generate-video-script", description: "Generates high-converting short-form video review scripts (TikTok, Shorts, Reels, Pinterest) with visual hooks & audio lines." },
         generateComparison: { method: "POST", path: "/api/agent/compare", description: "Generates an in-depth smart AI comparison matrix and verdict between 2 or 3 products." },
         trackEvent: { method: "POST", path: "/api/agent/track", description: "Logs website visits, product views, affiliate link clicks, and conversion metrics." },
@@ -1088,49 +1134,47 @@ async function startServer() {
   });
 
   // =========================================================================
-  // 2.6 SOCIAL BROADCAST API: Send approved products/videos to Social Media
+  // 2.6 SOCIAL REVIEW PLAN: publishing connectors are deliberately disabled.
   // =========================================================================
   app.post("/api/agent/broadcast-social", verifyAgentAuth, async (req, res) => {
     try {
-      const { 
-        products = [], 
+      const {
+        products = [],
         platforms = ['tiktok', 'youtube', 'pinterest', 'instagram', 'snapchat'],
         customMessage = ''
       } = req.body;
 
-      if (!products || products.length === 0) {
-        return res.status(400).json({ error: "لا توجد منتجات معتمدة للإرسال إلى حسابات التواصل." });
+      if (!Array.isArray(products) || products.length === 0) {
+        return res.status(400).json({ error: "لا توجد منتجات لتجهيز خطة مراجعتها." });
       }
 
-      // Log broadcast to channels
-      const broadcastLog = {
-        id: `broadcast-${Date.now()}`,
-        source: "AI-Social-Media-Broadcaster",
-        action: `Broadcasted ${products.length} approved products to [${platforms.join(', ')}]`,
-        status: "success",
-        timestamp: new Date().toISOString(),
-        details: {
-          platforms,
-          productCount: products.length,
-          customMessage: customMessage || "تم النشر والتوجيه للرابط في البايو تلقائياً."
-        }
+      const reviewPlan = {
+        id: `social-review-${Date.now()}`,
+        status: 'waiting_owner_review',
+        publicationAttempted: false,
+        publishingConnectorsEnabled: false,
+        productCount: products.length,
+        platforms,
+        customMessage
       };
 
-      agentTrackingStore.agentLogs.unshift(broadcastLog);
+      agentTrackingStore.agentLogs.unshift({
+        id: reviewPlan.id,
+        source: "AI-Social-Media-Planner",
+        action: `Prepared a review-only plan for ${products.length} products`,
+        status: "pending_review",
+        timestamp: new Date().toISOString(),
+        details: reviewPlan
+      });
 
-      return res.json({
+      return res.status(202).json({
         success: true,
-        message: `تم إرسال وجدولة نشر ${products.length} منتج بنجاح إلى حسابات التواصل الاجتماعي (${platforms.join(', ')}).`,
-        data: {
-          broadcastId: broadcastLog.id,
-          sentCount: products.length,
-          platforms,
-          publishedAt: new Date().toISOString()
-        }
+        message: "تم تجهيز خطة مسودة للمراجعة فقط. لم يتم النشر أو الجدولة على أي منصة.",
+        data: reviewPlan
       });
     } catch (error: any) {
-      console.error("Social Broadcast Error:", error);
-      return res.status(500).json({ error: error.message || "فشلت عملية الإرسال لشبكات التواصل." });
+      console.error("Social Review Plan Error:", error);
+      return res.status(500).json({ error: error.message || "فشل تجهيز خطة المراجعة." });
     }
   });
 
@@ -1232,7 +1276,7 @@ async function startServer() {
   });
 
   // =========================================================================
-  // 3.5 AGENT API: URL / Affiliate Link to Video & Full Marketing Campaign
+  // 3.5 AGENT API: Verified URL intake and review-only media plan
   // =========================================================================
   app.post("/api/agent/url-to-video-campaign", verifyAgentAuth, async (req, res) => {
     try {
@@ -1245,184 +1289,154 @@ async function startServer() {
         customNotes
       } = req.body;
 
-      if (!productUrl || productUrl.trim() === "") {
-        return res.status(400).json({ error: "يرجى تزويد رابط المنتج أو رابطه الترويجي." });
+      if (typeof productUrl !== 'string' || !productUrl.trim()) {
+        return res.status(400).json({ error: "يرجى تزويد رابط HTTPS للمنتج." });
       }
 
-      let campaignData: any = null;
-      const aiClient = getGeminiAI(req.headers['x-gemini-key'] as string);
+      let parsedUrl: URL;
+      try {
+        parsedUrl = new URL(productUrl.trim());
+      } catch {
+        return res.status(400).json({ error: "رابط المنتج غير صالح." });
+      }
 
-      // 1. Scrape real product information and genuine Amazon images first
-      const scraped = await scrapeRealProductDetails(productUrl, aiClient);
+      if (parsedUrl.protocol !== 'https:') {
+        return res.status(400).json({ error: "يُسمح بروابط HTTPS فقط." });
+      }
 
-      if (aiClient) {
-        try {
-          const prompt = `
-          أنت وكيل تسويق بالعمولة وخبير فيديوهات فيرال (Viral Video & Affiliate Intelligence Agent) لمنصة "يسرى سمايل" (Yousra Smile).
-          
-          بيانات المنتج الحقيقية المستخرجة من الرابط:
-          - رابط المصدر: ${productUrl}
-          - اسم المنتج الأصلي: ${scraped?.title || productUrl}
-          - البراند: ${scraped?.brand || 'يسرى سمايل'}
-          - السعر التقديري: $${scraped?.originalPrice || 149}
-          - ميزات المنتج: ${scraped?.features?.join(', ') || 'منتج عالي الجودة متوافق مع أعلى المعايير'}
-          - رابط الصورة الحقيقية: ${scraped?.imageUrl || 'مستخرجة تلقائياً'}
-          - رابط الأفلييت المخصص: ${affiliateLink || "قم بتركيبه باستخدام الوسم: " + (affiliateTag || "yousrasmile-20")}
-          - المنصة المستهدفة للفيديو: ${platform} (TikTok / Instagram Reels / YouTube Shorts / Pinterest)
-          - الجمهور المستهدف: ${targetAudience}
-          - ملاحظات إضافية: ${customNotes || "ركز على إبراز الفرق بين قبل وبعد استخدام المنتج والتحول الحقيقي والمميزات التي تدفع للشراء فوراً مع رابط الخصم بالدولار"}
+      const aiClient = getGeminiAI();
+      const scraped = await scrapeRealProductDetails(parsedUrl.toString(), aiClient);
+      const verifiedTitle = scraped?.title || scraped?.titleEn || scraped?.titleAr;
+      const verifiedImage = scraped?.imageUrl;
 
-          المطلوب: قم بتوليد حزمة تسويقية متكاملة تشمل:
-          1. الاسم والعنوان الجذاب باللغتين العربية والإنجليزية للمنتج الفعلي أعلاه.
-          2. الأسعار التقديرية بالدولار الأمريكي (USD) وسعر الخصم الحصري.
-          3. كابشن جذاب جداً لمنصات التواصل مع هوك قوي وتوجيه للشراء بالرابط.
-          4. سكريبت فيديو ترويجي قصير (30-45 ثانية) مقسم إلى 5 مشاهد رئيسية (مشهد المشكلة والمعاناة قبل المنتج، مشهد التشغيل والانبهار، مشهد المواصفات والذكاء الاصطناعي، مشهد المقارنة والتحول قبل وبعد Before & After، ومشهد دعوة الشراء بالخصم CTA).
-          5. بيانات الـ SEO (العنوان، الوصف، الكلمات المفتاحية).
-          6. الهاشتاقات الفعالة لتصدر الترند.
-          7. رابط الأفلييت النهائي مع وسم العمولة المعتمد.
-          `;
+      if (!verifiedTitle || !verifiedImage?.startsWith('https://')) {
+        return res.status(422).json({
+          error: "تعذر مطابقة عنوان المنتج وصورته مع المصدر. لم يتم إنشاء بيانات أو فيديو بديل.",
+          verificationStatus: "needs_manual_review",
+          publicationStatus: "not_published"
+        });
+      }
 
-          const genResult = await safeGenerateGeminiContent(aiClient, {
-            preferredModel: "gemini-3.7-flash",
-            contents: prompt,
-            config: {
-              systemInstruction: "أنت أفضل وكيل تسويق إلكتروني وصانع محتوى فيرال وفيديوهات باللغة العربية الفصحى والإنجليزية، تركز على التحفيز البصري والمقارنات المقنعة (Before & After).",
-              temperature: 0.7,
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                  productTitleAr: { type: Type.STRING, description: "اسم المنتج بالعربية جذاب وتسويقي" },
-                  productTitleEn: { type: Type.STRING, description: "اسم المنتج بالإنجليزية" },
-                  category: { type: Type.STRING, description: "المعرف: smart-home أو smart-kitchen أو smart-gadgets أو furniture-decor أو health-fitness" },
-                  subcategory: { type: Type.STRING, description: "اسم الفئة الفرعية بالعربية" },
-                  brand: { type: Type.STRING, description: "اسم الماركة أو البراند" },
-                  originalPrice: { type: Type.NUMBER, description: "السعر الأصلي التقديري بالدولار الأمريكي USD" },
-                  discountPrice: { type: Type.NUMBER, description: "سعر العرض التقديري بالدولار الأمريكي USD" },
-                  discountPercent: { type: Type.NUMBER, description: "نسبة الخصم التقديرية (مثال: 30)" },
-                  features: { type: Type.ARRAY, items: { type: Type.STRING }, description: "أهم 4 ميزات بارزة" },
-                  affiliateLink: { type: Type.STRING, description: "رابط الأفلييت المعتمد للشراء" },
-                  seoTitle: { type: Type.STRING, description: "عنوان SEO محسن للمقال أو صفحة المنتج" },
-                  seoDescription: { type: Type.STRING, description: "وصف ميتا مختصر للـ SEO" },
-                  keywords: { type: Type.ARRAY, items: { type: Type.STRING }, description: "الكلمات المفتاحية للبحث" },
-                  socialCaption: { type: Type.STRING, description: "نص الكابشن الجاهز للنشر على تيك توك وإنستغرام مع الرابط" },
-                  hashtags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "6 هاشتاقات فيرال" },
-                  suggestedVideoUrl: { type: Type.STRING, description: "رابط فيديو يوتيوب أو تيك توك ذو صلة" },
-                  videoScript: {
-                    type: Type.OBJECT,
-                    properties: {
-                      videoTitle: { type: Type.STRING, description: "عنوان الفيديو المثير" },
-                      hook: { type: Type.STRING, description: "هوك أول 3 ثوانٍ لمنع التمرير" },
-                      estimatedDuration: { type: Type.STRING, description: "المدة التقديرية (مثال: 35 ثانية)" },
-                      scenes: {
-                        type: Type.ARRAY,
-                        items: {
-                          type: Type.OBJECT,
-                          properties: {
-                            timeRange: { type: Type.STRING, description: "التوقيت مثل: 00:00 - 00:06" },
-                            sceneType: { type: Type.STRING, description: "نوع المشهد: before_problem أو action أو specs أو before_after أو cta" },
-                            visualPrompt: { type: Type.STRING, description: "المشهد المرئي المصور" },
-                            voiceoverText: { type: Type.STRING, description: "النص الصوتي المسموع" },
-                            screenText: { type: Type.STRING, description: "النص المكتوب على الشاشة" },
-                            transformationNote: { type: Type.STRING, description: "ملاحظة أثر التحول والإقناع في هذا المشهد" }
-                          },
-                          required: ["timeRange", "visualPrompt", "voiceoverText", "screenText"]
-                        }
-                      },
-                      callToAction: { type: Type.STRING, description: "دعوة الشراء في نهاية الفيديو للتوجيه لرابط الأفلييت" },
-                      suggestedBgm: { type: Type.STRING, description: "نوع الصوت أو الموسيقى الرائجة" }
-                    },
-                    required: ["videoTitle", "hook", "estimatedDuration", "scenes", "callToAction"]
-                  }
-                },
-                required: ["productTitleAr", "productTitleEn", "category", "originalPrice", "discountPrice", "features", "affiliateLink", "seoTitle", "seoDescription", "socialCaption", "hashtags", "videoScript"]
-              }
+      const needsVerification: string[] = [];
+      const originalPrice = Number(scraped?.originalPrice) || 0;
+      const discountPrice = Number(scraped?.discountPrice) || originalPrice;
+      if (!originalPrice) needsVerification.push('price');
+
+      let verifiedAffiliateLink = parsedUrl.toString();
+      if (typeof affiliateLink === 'string' && affiliateLink.startsWith('https://')) {
+        verifiedAffiliateLink = affiliateLink.trim();
+      } else if (typeof affiliateTag === 'string' && affiliateTag.trim() && /(^|\.)amazon\./i.test(parsedUrl.hostname)) {
+        parsedUrl.searchParams.set('tag', affiliateTag.trim());
+        verifiedAffiliateLink = parsedUrl.toString();
+      } else {
+        needsVerification.push('affiliate_link');
+      }
+
+      const features = Array.isArray(scraped?.features)
+        ? scraped.features.filter(feature => typeof feature === 'string' && feature.trim())
+        : [];
+      const productNameAr = scraped?.titleAr || verifiedTitle;
+      const productNameEn = scraped?.titleEn || verifiedTitle;
+      const safeFeatureSummary = features.length
+        ? features.join('، ')
+        : 'راجع مواصفات المتجر قبل الاعتماد';
+      if (features.length === 0) needsVerification.push('features');
+
+      const heroImage = verifiedImage;
+      const verifiedImages = Array.isArray(scraped?.images)
+        ? scraped.images.filter(image => typeof image === 'string' && image.startsWith('https://'))
+        : [heroImage];
+
+      const campaignData = {
+        verificationStatus: 'source_match_confirmed',
+        workflowStatus: 'waiting_owner_review',
+        publicationStatus: 'not_published',
+        sourceUrl: scraped?.sourceUrl || productUrl.trim(),
+        sourceProductId: scraped?.asin || null,
+        productTitleAr: productNameAr,
+        productTitleEn: productNameEn,
+        category: scraped?.category || 'products',
+        subcategory: scraped?.subcategory || '',
+        brand: scraped?.brand || '',
+        originalPrice,
+        discountPrice,
+        discountPercent: originalPrice > discountPrice
+          ? Math.round(((originalPrice - discountPrice) / originalPrice) * 100)
+          : 0,
+        features,
+        affiliateLink: verifiedAffiliateLink,
+        affiliateStatus: needsVerification.includes('affiliate_link')
+          ? 'needs_owner_review'
+          : 'preserved_or_tagged_from_owner_input',
+        image: heroImage,
+        imageUrl: heroImage,
+        heroImage,
+        images: verifiedImages,
+        beforeImage: null,
+        afterImage: null,
+        suggestedVideoUrl: '',
+        needsVerification: [...new Set([...needsVerification, 'product_video'])],
+        seoTitle: `مراجعة ${productNameAr}`,
+        seoDescription: `${productNameAr}: ${safeFeatureSummary}. راجع السعر والتوفر والمواصفات من رابط المصدر قبل الشراء.`,
+        keywords: [productNameAr, scraped?.brand || '', 'مراجعة منتج'].filter(Boolean),
+        socialCaption: `${productNameAr}\n\nراجع التفاصيل الحالية من رابط المنتج بعد اعتماد المسودة.`,
+        hashtags: ['#يسرى_سمايل', '#مراجعة_منتج'],
+        videoScript: {
+          videoTitle: `مراجعة ${productNameAr}`,
+          hook: `ما الذي يقدمه ${productNameAr} فعليًا؟`,
+          estimatedDuration: '30-45 ثانية',
+          scenes: [
+            {
+              timeRange: '00:00 - 00:08',
+              sceneType: 'action',
+              visualPrompt: 'استخدم صور المنتج الموثقة فقط مع إبقاء الشكل واللون والطراز مطابقًا للمصدر.',
+              voiceoverText: `هذه مراجعة أولية لـ ${productNameAr} اعتمادًا على البيانات الموثقة من المصدر.`,
+              screenText: productNameAr,
+              sceneImage: heroImage,
+              transformationNote: 'لا تستخدم ادعاء قبل/بعد دون مادة أصلية موثقة من المالك.'
+            },
+            {
+              timeRange: '00:08 - 00:28',
+              sceneType: 'specs',
+              visualPrompt: 'اعرض الميزات الموثقة فقط دون اختراع نتائج استخدام أو ملحقات.',
+              voiceoverText: safeFeatureSummary,
+              screenText: 'مواصفات تحتاج مراجعة المالك',
+              sceneImage: heroImage
+            },
+            {
+              timeRange: '00:28 - 00:40',
+              sceneType: 'cta',
+              visualPrompt: 'بطاقة نهاية مسودة بلا نشر أو جدولة.',
+              voiceoverText: 'بعد موافقة المالك، يمكن إضافة رابط المنتج المعتمد.',
+              screenText: 'بانتظار مراجعة المالك',
+              sceneImage: heroImage
             }
-          });
-
-          if (genResult.text) {
-            campaignData = JSON.parse(genResult.text.trim());
-          }
-        } catch (genErr) {
-          console.warn("Gemini URL Campaign processed via high-accuracy fallback.");
-        }
-      }
-
-      if (!campaignData) {
-        campaignData = getFallbackUrlCampaign(productUrl, affiliateLink, affiliateTag, platform);
-      }
-
-      // Merge real scraped images and brand if available
-      if (scraped) {
-        if (scraped.title && (!campaignData.productTitleAr || campaignData.productTitleAr.includes('جهاز منزلي'))) {
-          campaignData.productTitleAr = scraped.title;
-          campaignData.productTitleEn = scraped.titleEn || scraped.title;
-        }
-        if (scraped.brand && (!campaignData.brand || campaignData.brand === 'يسرى سمايل')) {
-          campaignData.brand = scraped.brand;
-        }
-        if (scraped.imageUrl) {
-          campaignData.image = scraped.imageUrl;
-          campaignData.imageUrl = scraped.imageUrl;
-          campaignData.heroImage = scraped.imageUrl;
-          campaignData.beforeImage = scraped.beforeImageUrl || scraped.imageUrl;
-          campaignData.afterImage = scraped.afterImageUrl || scraped.imageUrl;
-          campaignData.images = scraped.images || [scraped.imageUrl];
-        }
-        if (scraped.originalPrice) {
-          campaignData.originalPrice = scraped.originalPrice;
-          campaignData.discountPrice = scraped.discountPrice || Math.round(scraped.originalPrice * 0.78);
-        }
-      }
-
-      // Ensure valid image exists
-      if (!campaignData.image) {
-        campaignData.image = scraped?.imageUrl || 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80';
-      }
-
-      // Populate scenes with genuine product image
-      if (campaignData.videoScript?.scenes) {
-        campaignData.videoScript.scenes = campaignData.videoScript.scenes.map((sc: any, idx: number) => ({
-          ...sc,
-          sceneImage: campaignData.image,
-          beforeImage: campaignData.beforeImage || campaignData.image,
-          afterImage: campaignData.afterImage || campaignData.image
-        }));
-      }
-
-      // Ensure affiliate link is properly filled
-      if (!campaignData.affiliateLink || !campaignData.affiliateLink.startsWith('http')) {
-        campaignData.affiliateLink = affiliateLink && affiliateLink.startsWith('http')
-          ? affiliateLink
-          : (productUrl.startsWith('http')
-              ? `${productUrl}${productUrl.includes('?') ? '&' : '?'}tag=${affiliateTag || 'yousrasmile-21'}`
-              : `https://www.amazon.sa/dp/B08SAMPLE?tag=${affiliateTag || 'yousrasmile-21'}`);
-      }
-
-      // Set genuine YouTube video review search link
-      const searchTitle = campaignData.brand ? `${campaignData.brand} ${campaignData.productTitleEn || campaignData.productTitleAr}` : campaignData.productTitleAr;
-      if (!campaignData.suggestedVideoUrl || !campaignData.suggestedVideoUrl.startsWith('http')) {
-        campaignData.suggestedVideoUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(searchTitle + ' review unboxing')}`;
-      }
+          ],
+          callToAction: 'بانتظار موافقة المالك قبل الإضافة أو النشر.',
+          suggestedBgm: ''
+        },
+        requestedPlatform: platform,
+        targetAudience,
+        customNotes: typeof customNotes === 'string' ? customNotes : ''
+      };
 
       agentTrackingStore.videoScriptsGenerated += 1;
       agentTrackingStore.agentLogs.unshift({
         id: `log-${Date.now()}`,
-        source: "AI-URL-Video-Generator",
-        action: `Generated complete video & affiliate marketing bundle for: ${campaignData.productTitleAr}`,
-        status: "success",
+        source: "Verified-Product-Review-Planner",
+        action: `Prepared a review-only product and media plan for: ${productNameAr}`,
+        status: "pending_review",
         timestamp: new Date().toISOString()
       });
 
-      return res.json({
+      return res.status(202).json({
         success: true,
-        message: "تم استخراج صور وبيانات المنتج وتوليد الكابشن، الـ SEO، الهاشتاقات، وسكريبت الفيديو مع رابط العمولة بنجاح!",
+        message: "تم تجهيز مسودة موثقة من المصدر. لم يُنشأ فيديو ولم تتم إضافة المنتج أو نشره.",
         data: campaignData
       });
-
     } catch (error: any) {
-      console.error("URL-to-Video Campaign Error:", error);
-      return res.status(500).json({ error: error.message || "حدث خطأ أثناء معالجة الرابط وتوليد الحملة." });
+      console.error("Verified URL Intake Error:", error);
+      return res.status(500).json({ error: error.message || "تعذر تجهيز مسودة المنتج." });
     }
   });
 
@@ -1799,7 +1813,7 @@ async function startServer() {
   });
 
   // ==========================================
-  // 7. AGENT API: Ingest / Upload Product Directly
+  // 7. AGENT API: Validate and stage a product draft (no database write)
   // ==========================================
   app.post("/api/agent/products", verifyAgentAuth, (req, res) => {
     try {
@@ -1850,19 +1864,25 @@ async function startServer() {
         createdAt: new Date().toISOString().split('T')[0]
       };
 
-      agentTrackingStore.agentUploadedProducts += 1;
+      const reviewDraft = {
+        ...fullProduct,
+        workflowStatus: 'waiting_owner_review',
+        publicationStatus: 'not_published',
+        catalogWriteAttempted: false
+      };
+
       agentTrackingStore.agentLogs.unshift({
         id: `log-${Date.now()}`,
-        source: "External-Agent-Webhook",
-        action: `Ingested new product: ${fullProduct.titleAr}`,
-        status: "success",
+        source: "External-Agent-Review-Intake",
+        action: `Staged product draft for owner review: ${fullProduct.titleAr}`,
+        status: "pending_review",
         timestamp: new Date().toISOString()
       });
 
-      return res.status(201).json({
+      return res.status(202).json({
         success: true,
-        message: "تم استقبال المنتج وإضافته بنجاح إلى قاعدة بيانات يسرى سمايل.",
-        product: fullProduct
+        message: "تم تجهيز مسودة المنتج للمراجعة. لم تتم إضافتها إلى قاعدة البيانات أو نشرها.",
+        product: reviewDraft
       });
     } catch (err: any) {
       console.error("Product Ingest Error:", err);

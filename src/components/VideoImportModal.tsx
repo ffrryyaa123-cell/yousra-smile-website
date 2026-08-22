@@ -246,11 +246,10 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
 
     if (replaceExistingVideo) {
       // Direct replace helper keeping all product attributes completely intact
-      replaceProductVideo(linkedProd.id, finalVideoUrl, platform, finalTitle);
-      if (storagePath) updateProduct({ ...linkedProd, videoUrl: finalVideoUrl, videoStoragePath: storagePath });
+      await replaceProductVideo(linkedProd.id, finalVideoUrl, platform, finalTitle, storagePath);
     } else {
       // 1. Add video to VideoReviews state
-      addVideo({
+      await addVideo({
         productId: linkedProd.id,
         productTitle: linkedProd.titleAr,
         productImage: linkedProd.image,
@@ -272,9 +271,9 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
         else if (platform === 'tiktok') updated.tiktokUrl = finalVideoUrl;
         else if (platform === 'pinterest') updated.pinterestUrl = finalVideoUrl;
         else {
-          updated.youtubeUrl = finalVideoUrl;
+          updated.videoUrl = finalVideoUrl;
         }
-        updateProduct(updated);
+        await updateProduct(updated);
       }
     }
 

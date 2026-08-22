@@ -220,6 +220,8 @@ export interface ProductVideoCampaignResult {
   heroImage?: string;
   beforeImage?: string;
   afterImage?: string;
+  verificationStatus: 'source_match_confirmed' | 'needs_owner_review';
+  needsVerification: string[];
 }
 
 export interface ProductVideoServiceInput {
@@ -229,8 +231,6 @@ export interface ProductVideoServiceInput {
   platform?: 'tiktok' | 'youtube' | 'instagram' | 'pinterest';
   targetAudience?: string;
   customNotes?: string;
-  geminiApiKey?: string;
-  agentApiKey?: string;
 }
 
 export type PageView = 

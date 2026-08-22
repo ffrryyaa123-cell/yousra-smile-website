@@ -1,21 +1,55 @@
 name: Deploy Yousra Smile
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: yousra-smile-production
+  group: yousra-smile-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  validate:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check persistence safeguards
+        run: npm run validate:persistence
+
+      - name: Check review-only agent safeguards
+        run: npm run agent:validate
+
+      - name: Check TypeScript
+        run: npm run lint
+
+      - name: Build production site
+        run: npm run build
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -26,12 +60,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Install dependencies
-        run: npm install
-
-      - name: Check TypeScript
-        run: npm run lint
+        run: npm ci
 
       - name: Build production site
         run: npm run build

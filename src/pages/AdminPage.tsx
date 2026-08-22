@@ -61,6 +61,19 @@ import { auth, ownerGoogleSignIn, logoutGoogle } from '../services/googleWorkspa
 
 const OWNER_EMAIL = 'sarsar336699@gmail.com';
 
+const getOwnerSignInErrorMessage = (error: { code?: string; message?: string }) => {
+  switch (error?.code) {
+    case 'auth/unauthorized-domain':
+      return 'تسجيل الدخول متوقف لأن نطاق yousrasmile.com غير مضاف إلى Authorized domains في Firebase.';
+    case 'auth/operation-not-allowed':
+      return 'تسجيل الدخول عبر Google غير مفعّل في مشروع Firebase.';
+    case 'auth/network-request-failed':
+      return 'تعذر الاتصال بخدمة تسجيل الدخول. تحققي من الإنترنت ثم حاولي مجددًا.';
+    default:
+      return error?.message || 'تعذر تسجيل الدخول بحساب Google.';
+  }
+};
+
 export const AdminPage: React.FC = () => {
   const { 
     products, 
@@ -225,7 +238,7 @@ export const AdminPage: React.FC = () => {
     try {
       await ownerGoogleSignIn();
     } catch (error: any) {
-      setAuthError(error?.message || 'تعذر تسجيل الدخول بحساب Google.');
+      setAuthError(getOwnerSignInErrorMessage(error));
       setIsSigningIn(false);
     }
   };

@@ -7,7 +7,8 @@ import {
   getFirestore,
   onSnapshot,
   setDoc,
-  updateDoc
+  updateDoc,
+  writeBatch
 } from 'firebase/firestore';
 import {
   deleteObject,
@@ -45,6 +46,42 @@ export const catalogDatabase = {
 
   saveVideo(video: VideoReview) {
     return setDoc(doc(db, 'videos', video.id), cleanForFirestore(video), { merge: true });
+  },
+
+  saveProductAndVideo(product: Product, video: VideoReview) {
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'products', product.id), cleanForFirestore(product), { merge: true });
+    batch.set(doc(db, 'videos', video.id), cleanForFirestore(video), { merge: true });
+    return batch.commit();
+  },
+
+  async saveProducts(products: Product[]) {
+    for (let index = 0; index < products.length; index += 400) {
+      const batch = writeBatch(db);
+      products.slice(index, index + 400).forEach(product => {
+        batch.set(doc(db, 'products', product.id), cleanForFirestore(product), { merge: true });
+      });
+      await batch.commit();
+    }
+  },
+
+  deleteProductAndVideos(productId: string, videoIds: string[]) {
+    const batch = writeBatch(db);
+    batch.delete(doc(db, 'products', productId));
+    videoIds.forEach(videoId => batch.delete(doc(db, 'videos', videoId)));
+    return batch.commit();
+  },
+
+  removeProductVideoMetadata(productId: string, videoIds: string[]) {
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'products', productId), {
+      videoUrl: deleteField(),
+      videoThumbnailUrl: deleteField(),
+      videoStoragePath: deleteField(),
+      youtubeUrl: deleteField()
+    });
+    videoIds.forEach(videoId => batch.delete(doc(db, 'videos', videoId)));
+    return batch.commit();
   },
 
   deleteProduct(productId: string) {

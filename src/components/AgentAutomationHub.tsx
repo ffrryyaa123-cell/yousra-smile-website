@@ -38,6 +38,18 @@ import { GeminiApiKeyManager } from './GeminiApiKeyManager';
 import { GoogleWorkspaceHub } from './GoogleWorkspaceHub';
 import { InstantVideoStudio } from './InstantVideoStudio';
 import { generateProductVideoCampaign } from '../services/productVideoService';
+import { auth } from '../services/googleWorkspace';
+
+const getAgentRequestHeaders = async (): Promise<Record<string, string>> => {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error('يلزم تسجيل الدخول إلى لوحة التحكم.');
+  }
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${await currentUser.getIdToken()}`
+  };
+};
 
 export const AgentAutomationHub: React.FC = () => {
   const { 
@@ -53,7 +65,6 @@ export const AgentAutomationHub: React.FC = () => {
   } = useApp();
 
   const [activeSubTab, setActiveSubTab] = useState<'upload_agent' | 'bulk_batch_agent' | 'video_agent' | 'compare_agent' | 'api_docs' | 'tracking_analytics' | 'gemini_key' | 'google_workspace'>('video_agent');
-  const [copiedKey, setCopiedKey] = useState<boolean>(false);
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
 
   // Video Studio & Preview Modal State
@@ -117,8 +128,7 @@ export const AgentAutomationHub: React.FC = () => {
   const [statsData, setStatsData] = useState<any | null>(null);
   const [isLoadingStats, setIsLoadingStats] = useState<boolean>(false);
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://yusrasmail.com';
-  const agentApiKey = 'ys_agent_secret_key_2026';
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://yousrasmile.com';
 
   // Helper: Safely fetch and parse JSON responses
   const safeFetchJson = async (url: string, options?: RequestInit) => {
@@ -157,13 +167,8 @@ export const AgentAutomationHub: React.FC = () => {
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
-    if (id === 'key') {
-      setCopiedKey(true);
-      setTimeout(() => setCopiedKey(false), 2000);
-    } else {
-      setCopiedSnippet(id);
-      setTimeout(() => setCopiedSnippet(null), 2000);
-    }
+    setCopiedSnippet(id);
+    setTimeout(() => setCopiedSnippet(null), 2000);
   };
 
   // Run Auto-Curate Product
@@ -181,10 +186,7 @@ export const AgentAutomationHub: React.FC = () => {
     try {
       const { ok, data: result } = await safeFetchJson('/api/agent/auto-curate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-agent-key': agentApiKey,
-        },
+        headers: await getAgentRequestHeaders(),
         body: JSON.stringify({
           productName: productQuery,
           category: targetCategory,
@@ -692,10 +694,7 @@ export const AgentAutomationHub: React.FC = () => {
     try {
       const { ok, data: resData } = await safeFetchJson('/api/agent/batch-curate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-agent-key': agentApiKey,
-        },
+        headers: await getAgentRequestHeaders(),
         body: JSON.stringify({
           category: bulkCategory,
           targetCount: bulkCount,
@@ -877,10 +876,7 @@ export const AgentAutomationHub: React.FC = () => {
     try {
       const { ok, data: broadcastData } = await safeFetchJson('/api/agent/broadcast-social', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-agent-key': agentApiKey,
-        },
+        headers: await getAgentRequestHeaders(),
         body: JSON.stringify({
           products: approvedProducts,
           platforms: selectedSocialNetworks,
@@ -913,10 +909,7 @@ export const AgentAutomationHub: React.FC = () => {
     try {
       const { ok, data: result } = await safeFetchJson('/api/agent/generate-video-script', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-agent-key': agentApiKey,
-        },
+        headers: await getAgentRequestHeaders(),
         body: JSON.stringify({
           productTitle: selectedProd.titleAr,
           productFeatures: selectedProd.features.join(', '),
@@ -978,10 +971,7 @@ export const AgentAutomationHub: React.FC = () => {
     try {
       const { ok, data: result } = await safeFetchJson('/api/agent/compare', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-agent-key': agentApiKey,
-        },
+        headers: await getAgentRequestHeaders(),
         body: JSON.stringify({
           productA: {
             title: prodA.titleAr,
@@ -1029,8 +1019,7 @@ export const AgentAutomationHub: React.FC = () => {
         affiliateLink: urlAffiliateInput.trim() || undefined,
         platform: videoPlatform,
         targetAudience: videoAudience,
-        customNotes: urlCustomNotes.trim() || undefined,
-        agentApiKey: agentApiKey
+        customNotes: urlCustomNotes.trim() || undefined
       });
 
       setUrlCampaignResult({
@@ -1204,15 +1193,15 @@ ${urlCampaignResult.hashtags?.join(' ')}
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-full text-xs font-black">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                مدمج ونشط تلقائياً (Auto-Connected & Operational)
+                وضع المراجعة الآمنة (Review Only)
               </span>
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-bold">
                 <Bot className="w-3.5 h-3.5 text-amber-400" />
-                محرك الذكاء الاصطناعي Gemini 3.6 Flash
+                مسودات موثقة قبل الاعتماد
               </span>
               <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full text-xs font-bold">
                 <Globe className="w-3.5 h-3.5 text-purple-400" />
-                yusrasmail.com
+                yousrasmile.com
               </span>
             </div>
 
@@ -1220,31 +1209,19 @@ ${urlCampaignResult.hashtags?.join(' ')}
               <span>مركز وكلاء الذكاء الاصطناعي والأتمتة الذاتية</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-200 max-w-2xl leading-relaxed">
-              جميع أدوات الذكاء الاصطناعي والاستيراد التلقائي ومراجعة الفيديوهات تعمل فوراً بنقرة زر واحدة دون الحاجة لشراء أو إدخال أي مفاتيح.
+              يُنشئ الوكلاء مسودات للمراجعة فقط. لا تتم إضافة منتج أو نشر فيديو أو إرسال محتوى دون إجراء صريح من المالك.
             </p>
           </div>
 
-          {/* Quick API Key Pill */}
+          {/* Session-based authentication status. No shared secret is rendered in the browser. */}
           <div className="bg-slate-950/90 border border-indigo-400/40 rounded-2xl p-4 w-full lg:w-auto shrink-0 space-y-2">
-            <div className="flex items-center justify-between gap-4 text-xs font-bold text-slate-200">
-              <span className="flex items-center gap-1.5 text-amber-400">
-                <Key className="w-4 h-4" />
-                حالة المفتاح السري (جاهز ومفعل بالخادم):
-              </span>
-              <button
-                onClick={() => handleCopy(agentApiKey, 'key')}
-                className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer"
-              >
-                {copiedKey ? <Check className="w-3 h-3 text-emerald-300" /> : <Copy className="w-3 h-3" />}
-                <span>{copiedKey ? 'تم النسخ!' : 'نسخ المفتاح'}</span>
-              </button>
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-300">
+              <Key className="w-4 h-4" />
+              <span>الدخول محمي بجلسة Firebase الموثقة</span>
             </div>
-            <div className="font-mono text-xs text-indigo-200 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800 break-all select-all flex items-center justify-between gap-2">
-              <span>{agentApiKey}</span>
-              <span className="text-[10px] text-emerald-400 font-sans font-bold bg-emerald-500/20 px-2 py-0.5 rounded-md">نشط ومربوط</span>
-            </div>
-            <div className="text-[11px] text-slate-300">
-              ✅ لا يلزم إدخال أي شيء، جميع الوكلاء وأزرار الاستيراد مهيأة ومفعلة مباشرة.
+            <div className="text-[11px] text-slate-300 max-w-sm leading-relaxed">
+              مفتاح OpenAI محفوظ على الخادم فقط ولا يظهر في المتصفح أو مستودع GitHub.
+              جميع مخرجات الوكلاء تبقى مسودات بانتظار مراجعة المالك.
             </div>
           </div>
         </div>
@@ -2946,7 +2923,7 @@ ${urlCampaignResult.hashtags?.join(' ')}
 AGENT_API_URL = "${baseUrl}/api/agent/auto-curate"
 HEADERS = {
     "Content-Type": "application/json",
-    "x-agent-key": "${agentApiKey}"
+    "Authorization": "Bearer <FIREBASE_ID_TOKEN>"
 }
 
 payload = {
@@ -2969,7 +2946,7 @@ print(response.json())`, 'py')}
 AGENT_API_URL = "${baseUrl}/api/agent/auto-curate"
 HEADERS = {
     "Content-Type": "application/json",
-    "x-agent-key": "${agentApiKey}"
+    "Authorization": "Bearer <FIREBASE_ID_TOKEN>"
 }
 
 payload = {
@@ -2990,7 +2967,7 @@ print(response.json())`}
                 <button
                   onClick={() => handleCopy(`curl -X POST ${baseUrl}/api/agent/auto-curate \\
   -H "Content-Type: application/json" \\
-  -H "x-agent-key: ${agentApiKey}" \\
+  -H "Authorization: Bearer <FIREBASE_ID_TOKEN>" \\
   -d '{"productName": "Dyson V15 Vacuum", "category": "smart-home"}'`, 'curl')}
                   className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
                 >
@@ -3001,7 +2978,7 @@ print(response.json())`}
               <pre className="bg-slate-900 p-4 rounded-xl text-xs font-mono text-amber-300 overflow-x-auto border border-slate-800">
 {`curl -X POST ${baseUrl}/api/agent/auto-curate \\
   -H "Content-Type: application/json" \\
-  -H "x-agent-key: ${agentApiKey}" \\
+  -H "Authorization: Bearer <FIREBASE_ID_TOKEN>" \\
   -d '{"productName": "Dyson V15 Vacuum", "category": "smart-home"}'`}
               </pre>
             </div>
