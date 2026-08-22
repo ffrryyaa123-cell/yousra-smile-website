@@ -3,6 +3,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import firebaseConfig from "./firebase-applet-config.json";
 
 dotenv.config();
 
@@ -778,19 +779,63 @@ async function startServer() {
     ] as Array<{ id: string; source: string; action: string; status: string; timestamp: string; details?: any }>
   };
 
-  // Helper: Verify Agent API Key
-  const verifyAgentAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    const authHeader = req.headers.authorization;
-    const xApiKey = req.headers['x-agent-key'];
-    const providedKey = (xApiKey as string) || (authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : '');
-    const configuredKey = process.env.AGENT_API_KEY || 'ys_agent_secret_key_2026';
+  // Agent APIs are authenticated with the signed-in Firebase user's ID token.
+  // Shared browser API keys are intentionally unsupported because anything shipped
+  // to the browser is public and cannot protect privileged product workflows.
+  const OWNER_EMAIL = 'sarsar336699@gmail.com';
+  const AGENT_EDITOR_EMAILS = new Set(
+    (process.env.AGENT_EDITOR_EMAILS || '')
+      .split(',')
+      .map(email => email.trim().toLowerCase())
+      .filter(Boolean)
+  );
 
-    // Allow access if keys match or if using the default system development token
-    if (!providedKey || (providedKey !== configuredKey && providedKey !== 'ys_agent_2026' && providedKey !== 'yousra2026')) {
-      // In dev mode, we log but still allow with warning to ensure seamless agent testing
-      console.warn(`[Agent Auth] Access with key: ${providedKey ? '***' : 'none'}`);
+  const verifyAgentAuth = async (
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    const authHeader = req.headers.authorization;
+    const idToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7).trim() : '';
+
+    if (!idToken) {
+      return res.status(401).json({ error: 'يلزم تسجيل الدخول إلى لوحة التحكم.' });
     }
-    next();
+
+    try {
+      const lookupResponse = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseConfig.apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        }
+      );
+
+      if (!lookupResponse.ok) {
+        return res.status(401).json({ error: 'جلسة الدخول غير صالحة أو انتهت.' });
+      }
+
+      const lookupData = await lookupResponse.json() as {
+        users?: Array<{ localId?: string; email?: string; emailVerified?: boolean }>;
+      };
+      const firebaseUser = lookupData.users?.[0];
+      const email = firebaseUser?.email?.trim().toLowerCase();
+
+      if (!email || firebaseUser?.emailVerified !== true) {
+        return res.status(403).json({ error: 'يلزم بريد إلكتروني موثّق.' });
+      }
+
+      if (email !== OWNER_EMAIL && !AGENT_EDITOR_EMAILS.has(email)) {
+        return res.status(403).json({ error: 'هذا الحساب لا يملك صلاحية تشغيل الوكلاء.' });
+      }
+
+      res.locals.agentUser = { uid: firebaseUser.localId, email };
+      next();
+    } catch (error) {
+      console.error('[Agent Auth] Firebase token verification failed.');
+      return res.status(503).json({ error: 'تعذر التحقق من جلسة الدخول الآن.' });
+    }
   };
 
   // ==========================================
@@ -801,15 +846,16 @@ async function startServer() {
       success: true,
       service: "Yousra Smile AI Agent Core Engine",
       version: "2.5.0",
-      domain: "yusrasmail.com",
-      status: "operational",
+      domain: "yousrasmile.com",
+      status: "review-only",
       authentication: {
-        headerOptions: ["x-agent-key: <YOUR_KEY>", "Authorization: Bearer <YOUR_KEY>"],
-        defaultDevKey: "ys_agent_secret_key_2026"
+        method: "Firebase ID token",
+        header: "Authorization: Bearer <FIREBASE_ID_TOKEN>",
+        browserSecretRequired: false
       },
       endpoints: {
         curateProduct: { method: "POST", path: "/api/agent/auto-curate", description: "Takes a raw product name or link and returns full Arabic/English SEO product specs and descriptions using Gemini AI." },
-        uploadProduct: { method: "POST", path: "/api/agent/products", description: "Directly adds or updates a product in the catalog with automatic price discount calculation and affiliate formatting." },
+        stageProductDraft: { method: "POST", path: "/api/agent/products", description: "Validates and stages a product draft for owner review. It does not write to the catalog." },
         generateVideoScript: { method: "POST", path: "/api/agent/generate-video-script", description: "Generates high-converting short-form video review scripts (TikTok, Shorts, Reels, Pinterest) with visual hooks & audio lines." },
         generateComparison: { method: "POST", path: "/api/agent/compare", description: "Generates an in-depth smart AI comparison matrix and verdict between 2 or 3 products." },
         trackEvent: { method: "POST", path: "/api/agent/track", description: "Logs website visits, product views, affiliate link clicks, and conversion metrics." },
@@ -1088,49 +1134,47 @@ async function startServer() {
   });
 
   // =========================================================================
-  // 2.6 SOCIAL BROADCAST API: Send approved products/videos to Social Media
+  // 2.6 SOCIAL REVIEW PLAN: publishing connectors are deliberately disabled.
   // =========================================================================
   app.post("/api/agent/broadcast-social", verifyAgentAuth, async (req, res) => {
     try {
-      const { 
-        products = [], 
+      const {
+        products = [],
         platforms = ['tiktok', 'youtube', 'pinterest', 'instagram', 'snapchat'],
         customMessage = ''
       } = req.body;
 
-      if (!products || products.length === 0) {
-        return res.status(400).json({ error: "لا توجد منتجات معتمدة للإرسال إلى حسابات التواصل." });
+      if (!Array.isArray(products) || products.length === 0) {
+        return res.status(400).json({ error: "لا توجد منتجات لتجهيز خطة مراجعتها." });
       }
 
-      // Log broadcast to channels
-      const broadcastLog = {
-        id: `broadcast-${Date.now()}`,
-        source: "AI-Social-Media-Broadcaster",
-        action: `Broadcasted ${products.length} approved products to [${platforms.join(', ')}]`,
-        status: "success",
-        timestamp: new Date().toISOString(),
-        details: {
-          platforms,
-          productCount: products.length,
-          customMessage: customMessage || "تم النشر والتوجيه للرابط في البايو تلقائياً."
-        }
+      const reviewPlan = {
+        id: `social-review-${Date.now()}`,
+        status: 'waiting_owner_review',
+        publicationAttempted: false,
+        publishingConnectorsEnabled: false,
+        productCount: products.length,
+        platforms,
+        customMessage
       };
 
-      agentTrackingStore.agentLogs.unshift(broadcastLog);
+      agentTrackingStore.agentLogs.unshift({
+        id: reviewPlan.id,
+        source: "AI-Social-Media-Planner",
+        action: `Prepared a review-only plan for ${products.length} products`,
+        status: "pending_review",
+        timestamp: new Date().toISOString(),
+        details: reviewPlan
+      });
 
-      return res.json({
+      return res.status(202).json({
         success: true,
-        message: `تم إرسال وجدولة نشر ${products.length} منتج بنجاح إلى حسابات التواصل الاجتماعي (${platforms.join(', ')}).`,
-        data: {
-          broadcastId: broadcastLog.id,
-          sentCount: products.length,
-          platforms,
-          publishedAt: new Date().toISOString()
-        }
+        message: "تم تجهيز خطة مسودة للمراجعة فقط. لم يتم النشر أو الجدولة على أي منصة.",
+        data: reviewPlan
       });
     } catch (error: any) {
-      console.error("Social Broadcast Error:", error);
-      return res.status(500).json({ error: error.message || "فشلت عملية الإرسال لشبكات التواصل." });
+      console.error("Social Review Plan Error:", error);
+      return res.status(500).json({ error: error.message || "فشل تجهيز خطة المراجعة." });
     }
   });
 
@@ -1799,7 +1843,7 @@ async function startServer() {
   });
 
   // ==========================================
-  // 7. AGENT API: Ingest / Upload Product Directly
+  // 7. AGENT API: Validate and stage a product draft (no database write)
   // ==========================================
   app.post("/api/agent/products", verifyAgentAuth, (req, res) => {
     try {
@@ -1850,19 +1894,25 @@ async function startServer() {
         createdAt: new Date().toISOString().split('T')[0]
       };
 
-      agentTrackingStore.agentUploadedProducts += 1;
+      const reviewDraft = {
+        ...fullProduct,
+        workflowStatus: 'waiting_owner_review',
+        publicationStatus: 'not_published',
+        catalogWriteAttempted: false
+      };
+
       agentTrackingStore.agentLogs.unshift({
         id: `log-${Date.now()}`,
-        source: "External-Agent-Webhook",
-        action: `Ingested new product: ${fullProduct.titleAr}`,
-        status: "success",
+        source: "External-Agent-Review-Intake",
+        action: `Staged product draft for owner review: ${fullProduct.titleAr}`,
+        status: "pending_review",
         timestamp: new Date().toISOString()
       });
 
-      return res.status(201).json({
+      return res.status(202).json({
         success: true,
-        message: "تم استقبال المنتج وإضافته بنجاح إلى قاعدة بيانات يسرى سمايل.",
-        product: fullProduct
+        message: "تم تجهيز مسودة المنتج للمراجعة. لم تتم إضافتها إلى قاعدة البيانات أو نشرها.",
+        product: reviewDraft
       });
     } catch (err: any) {
       console.error("Product Ingest Error:", err);
