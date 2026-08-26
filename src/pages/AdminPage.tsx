@@ -57,9 +57,18 @@ import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 import { AgentAutomationHub } from '../components/AgentAutomationHub';
 import { GeminiApiKeyManager } from '../components/GeminiApiKeyManager';
 import { GoogleWorkspaceHub } from '../components/GoogleWorkspaceHub';
-import { auth, ownerGoogleSignIn, logoutGoogle } from '../services/googleWorkspace';
+import { auth, ownerGoogleSignIn, consumeOwnerRedirectResult, describeAuthError, logoutGoogle } from '../services/googleWorkspace';
+import { adminAccount, AdminProfile } from '../services/adminAccount';
 
-const OWNER_EMAIL = 'sarsar336699@gmail.com';
+// Accounts allowed to open the dashboard. Kept as a list so a second owner mailbox
+// can be used without locking anyone out of the panel.
+export const OWNER_EMAILS = [
+  'sarsar336699@gmail.com',
+  'ffrryyaa123@gmail.com'
+];
+
+const isOwnerEmail = (email?: string | null): boolean =>
+  Boolean(email && OWNER_EMAILS.includes(email.toLowerCase()));
 
 export const AdminPage: React.FC = () => {
   const { 
@@ -84,9 +93,16 @@ export const AdminPage: React.FC = () => {
     removeProductVideo
   } = useApp();
 
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
+  // Two independent ways in, so neither provider can lock the other out:
+  // a Supabase email/password account (the primary route), or the legacy
+  // Firebase Google sign-in for the owner addresses.
+  const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
+  const [firebaseOwner, setFirebaseOwner] = useState<boolean>(false);
+  const isUnlocked = Boolean(adminProfile) || firebaseOwner;
   const [isSigningIn, setIsSigningIn] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string>('');
+  const [loginEmail, setLoginEmail] = useState<string>('');
+  const [loginPassword, setLoginPassword] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'messages' | 'analytics' | 'settings' | 'ai-assistant' | 'agent-hub' | 'workspace'>('overview');
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -204,35 +220,86 @@ export const AdminPage: React.FC = () => {
     isHidden: false
   });
 
+  // Finishes a redirect based sign-in when the browser had to fall back to it.
+  useEffect(() => {
+    void consumeOwnerRedirectResult();
+  }, []);
+
+  // Primary gate: a Supabase session whose address has an active admin record.
+  useEffect(() => {
+    let cancelled = false;
+
+    const syncProfile = async () => {
+      const profile = await adminAccount.loadProfile();
+      if (cancelled) return;
+      setAdminProfile(profile);
+      setIsSigningIn(false);
+    };
+
+    void syncProfile();
+    const stop = adminAccount.onSessionChange(() => { void syncProfile(); });
+    return () => { cancelled = true; stop(); };
+  }, []);
+
+  // Secondary gate, kept so the existing Google sign-in keeps working.
   useEffect(() => onAuthStateChanged(auth, async user => {
     const email = user?.email?.toLowerCase();
-    if (email === OWNER_EMAIL) {
-      setIsUnlocked(true);
+    if (isOwnerEmail(email)) {
+      setFirebaseOwner(true);
       setAuthError('');
     } else {
-      setIsUnlocked(false);
-      if (user && email !== OWNER_EMAIL) {
+      setFirebaseOwner(false);
+      if (user) {
         await logoutGoogle();
         setAuthError('هذا الحساب غير مصرح له بالدخول إلى لوحة التحكم.');
       }
     }
-    setIsSigningIn(false);
   }), []);
+
+  const handleAdminSignIn = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsSigningIn(true);
+    setAuthError('');
+    try {
+      await adminAccount.signIn(loginEmail, loginPassword);
+      const profile = await adminAccount.loadProfile();
+      if (!profile) {
+        await adminAccount.signOut();
+        setAuthError('هذا الحساب غير مصرح له بالدخول إلى لوحة التحكم.');
+      } else {
+        setAdminProfile(profile);
+        setLoginPassword('');
+        void adminAccount.logActivity('admin_sign_in');
+      }
+    } catch (error: any) {
+      setAuthError(error?.message || 'تعذر تسجيل الدخول.');
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
 
   const handleOwnerSignIn = async () => {
     setIsSigningIn(true);
     setAuthError('');
     try {
-      await ownerGoogleSignIn();
+      const user = await ownerGoogleSignIn();
+      // null means the browser fell back to a full page redirect.
+      if (user && !isOwnerEmail(user.email)) {
+        await logoutGoogle();
+        setAuthError('هذا الحساب غير مصرح له بالدخول إلى لوحة التحكم.');
+        setIsSigningIn(false);
+      }
     } catch (error: any) {
-      setAuthError(error?.message || 'تعذر تسجيل الدخول بحساب Google.');
+      setAuthError(describeAuthError(error));
       setIsSigningIn(false);
     }
   };
 
   const handleOwnerSignOut = async () => {
-    await logoutGoogle();
-    setIsUnlocked(false);
+    void adminAccount.logActivity('admin_sign_out');
+    await Promise.allSettled([logoutGoogle(), adminAccount.signOut()]);
+    setAdminProfile(null);
+    setFirebaseOwner(false);
     setPage('home');
   };
 
@@ -657,22 +724,70 @@ export const AdminPage: React.FC = () => {
 
   if (!isUnlocked) {
     return (
-      <div className="max-w-md mx-auto my-16 bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-xl space-y-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 flex items-center justify-center mx-auto">
-          <Lock className="w-8 h-8" />
+      <div className="max-w-md mx-auto my-16 bg-white dark:bg-slate-900 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 shadow-xl space-y-6">
+        <div className="text-center space-y-3">
+          <div className="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 flex items-center justify-center mx-auto">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-black font-['Tajawal'] text-slate-900 dark:text-white">دخول لوحة تحكم يسرى سمايل</h2>
+          <p className="text-xs text-slate-500">
+            لوحة التحكم خاصة بالمالك والحسابات التي يمنحها صلاحية فقط.
+          </p>
         </div>
-        <h2 className="text-xl font-black font-['Tajawal'] text-slate-900 dark:text-white">دخول مالك يسرى سمايل</h2>
-        <p className="text-xs text-slate-500">
-          لوحة التحكم خاصة بالمالك والحسابات التي يمنحها صلاحية فقط.
-        </p>
-        {authError && <p className="text-xs font-bold text-red-600">{authError}</p>}
+
+        <form onSubmit={handleAdminSignIn} className="space-y-3">
+          <div className="text-right">
+            <label className="block text-[11px] font-bold text-slate-500 mb-1">البريد الإلكتروني</label>
+            <input
+              type="email"
+              dir="ltr"
+              autoComplete="username"
+              required
+              value={loginEmail}
+              onChange={e => setLoginEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="you@example.com"
+            />
+          </div>
+
+          <div className="text-right">
+            <label className="block text-[11px] font-bold text-slate-500 mb-1">كلمة المرور</label>
+            <input
+              type="password"
+              dir="ltr"
+              autoComplete="current-password"
+              required
+              value={loginPassword}
+              onChange={e => setLoginPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="••••••••"
+            />
+          </div>
+
+          {authError && <p className="text-xs font-bold text-red-600 text-center">{authError}</p>}
+
+          <button
+            type="submit"
+            disabled={isSigningIn}
+            className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl shadow-md transition-colors"
+          >
+            {isSigningIn ? 'جاري التحقق...' : 'دخول'}
+          </button>
+        </form>
+
+        <div className="flex items-center gap-3">
+          <span className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+          <span className="text-[10px] text-slate-400">أو</span>
+          <span className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+        </div>
+
         <button
           type="button"
           disabled={isSigningIn}
           onClick={handleOwnerSignIn}
-          className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl shadow-md transition-colors"
+          className="w-full border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60 text-slate-700 dark:text-slate-200 font-bold py-3 rounded-xl transition-colors text-sm"
         >
-          {isSigningIn ? 'جاري فتح تسجيل الدخول...' : 'الدخول إلى لوحة التحكم'}
+          الدخول بحساب Google
         </button>
       </div>
     );

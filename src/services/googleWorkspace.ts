@@ -3,6 +3,9 @@ import {
   getAuth, 
   signInWithPopup, 
   signInWithRedirect,
+  getRedirectResult,
+  browserLocalPersistence,
+  setPersistence,
   GoogleAuthProvider, 
   onAuthStateChanged, 
   signOut,
@@ -80,10 +83,70 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
   }
 };
 
+// Human readable Arabic messages for the Firebase Auth error codes that actually
+// surface on a custom domain. Silent failures were the reason the owner could no
+// longer reach the dashboard, so every failure path now says exactly what to fix.
+export const describeAuthError = (error: any): string => {
+  const code = String(error?.code || '');
+  switch (code) {
+    case 'auth/unauthorized-domain':
+      return 'نطاق الموقع غير مُصرَّح به في Firebase Authentication. أضيفي yousrasmile.com و www.yousrasmile.com إلى Authorized domains ثم أعيدي المحاولة.';
+    case 'auth/popup-blocked':
+      return 'المتصفح منع النافذة المنبثقة. اسمحي بالنوافذ المنبثقة لهذا الموقع أو أعيدي المحاولة.';
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+      return 'تم إغلاق نافذة تسجيل الدخول قبل إتمامها. أعيدي المحاولة.';
+    case 'auth/operation-not-allowed':
+      return 'مزوّد الدخول بحساب Google غير مُفعَّل في Firebase Authentication. فعّليه من Sign-in method.';
+    case 'auth/network-request-failed':
+      return 'تعذر الاتصال بخوادم Firebase. تحققي من الاتصال بالإنترنت وأعيدي المحاولة.';
+    default:
+      return error?.message || 'تعذر تسجيل الدخول بحساب Google.';
+  }
+};
+
+const POPUP_FALLBACK_CODES = new Set([
+  'auth/popup-blocked',
+  'auth/cancelled-popup-request',
+  'auth/operation-not-supported-in-this-environment',
+  'auth/web-storage-unsupported'
+]);
+
 // Lightweight owner login. It deliberately avoids Drive/Sheets/Calendar scopes,
 // so opening the private admin area does not trigger a large permissions prompt.
-export const ownerGoogleSignIn = async (): Promise<void> => {
-  await signInWithRedirect(auth, ownerProvider);
+//
+// A popup is used as the primary flow: signInWithRedirect no longer completes on a
+// custom domain (yousrasmile.com) whose Firebase authDomain lives on
+// *.firebaseapp.com, because browsers now partition third-party storage and the
+// session is lost on the way back. The redirect flow is kept only as a fallback for
+// browsers that block popups outright.
+export const ownerGoogleSignIn = async (): Promise<User | null> => {
+  await setPersistence(auth, browserLocalPersistence).catch(() => undefined);
+  try {
+    isSigningIn = true;
+    const result = await signInWithPopup(auth, ownerProvider);
+    return result.user;
+  } catch (error: any) {
+    if (POPUP_FALLBACK_CODES.has(String(error?.code))) {
+      await signInWithRedirect(auth, ownerProvider);
+      return null;
+    }
+    throw error;
+  } finally {
+    isSigningIn = false;
+  }
+};
+
+// Completes a redirect based sign-in when the browser had to fall back to it.
+// Returns the signed-in user, or null when there is no pending redirect.
+export const consumeOwnerRedirectResult = async (): Promise<User | null> => {
+  try {
+    const result = await getRedirectResult(auth);
+    return result?.user ?? null;
+  } catch (error) {
+    console.error('Owner redirect sign-in error:', error);
+    return null;
+  }
 };
 
 export const getAccessToken = async (): Promise<string | null> => {
