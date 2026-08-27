@@ -57,6 +57,7 @@ import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 import { AgentAutomationHub } from '../components/AgentAutomationHub';
 import { GeminiApiKeyManager } from '../components/GeminiApiKeyManager';
 import { GoogleWorkspaceHub } from '../components/GoogleWorkspaceHub';
+import { AdminUsersPanel } from '../components/AdminUsersPanel';
 import { auth, ownerGoogleSignIn, consumeOwnerRedirectResult, describeAuthError, logoutGoogle } from '../services/googleWorkspace';
 import { adminAccount, AdminProfile } from '../services/adminAccount';
 
@@ -103,7 +104,7 @@ export const AdminPage: React.FC = () => {
   const [authError, setAuthError] = useState<string>('');
   const [loginEmail, setLoginEmail] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'messages' | 'analytics' | 'settings' | 'ai-assistant' | 'agent-hub' | 'workspace'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'messages' | 'analytics' | 'settings' | 'ai-assistant' | 'agent-hub' | 'workspace' | 'users'>('overview');
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
@@ -1244,6 +1245,18 @@ export const AdminPage: React.FC = () => {
           <Globe className="w-4 h-4 text-blue-400 animate-spin" />
           <span className="font-black">📁 مساحة عمل Google (Drive / Sheets / Classroom / Calendar)</span>
           <span className="px-1.5 py-0.5 rounded bg-blue-500/30 text-[10px] text-blue-200 font-mono">PRO</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
+            activeTab === 'users'
+              ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-lg border-purple-400 font-black'
+              : 'bg-slate-900 text-purple-300 border-purple-500/40 hover:border-purple-400 hover:text-white'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 text-purple-400" />
+          <span className="font-black">👥 المستخدمون والصلاحيات</span>
         </button>
       </div>
 
@@ -2427,6 +2440,26 @@ export const AdminPage: React.FC = () => {
       {/* TAB 11: GOOGLE WORKSPACE HUB */}
       {activeTab === 'workspace' && (
         <GoogleWorkspaceHub />
+      )}
+
+      {/* TAB 12: USERS & PERMISSIONS */}
+      {activeTab === 'users' && (
+        adminProfile ? (
+          <AdminUsersPanel
+            currentEmail={adminProfile.email}
+            isOwner={adminProfile.role === 'owner'}
+          />
+        ) : (
+          <div className="bg-slate-900 border border-amber-500/40 rounded-3xl p-6 text-center space-y-2">
+            <ShieldCheck className="w-8 h-8 text-amber-400 mx-auto" />
+            <p className="text-sm font-bold text-amber-300">
+              إدارة المستخدمين تتطلب الدخول بالبريد وكلمة المرور.
+            </p>
+            <p className="text-xs text-slate-400">
+              أنت داخلة حالياً بحساب Google. سجّلي الخروج ثم ادخلي بالبريد وكلمة المرور لعرض هذا القسم.
+            </p>
+          </div>
+        )
       )}
 
       {/* Video Import Modal */}
