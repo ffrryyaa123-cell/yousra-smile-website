@@ -26,16 +26,41 @@ export interface RealVideoRenderResult {
 }
 
 /**
- * Loads an image with CORS handling and fallback to a styled placeholder if blocked.
+ * Recovers the original address from one of our media-proxy URLs.
+ *
+ * Product photos are normally requested through the proxy so the canvas stays
+ * untainted. If the proxy itself is unreachable, trying the original address is
+ * still better than giving up — some hosts do send CORS headers of their own.
  */
-async function loadImageSafe(src: string): Promise<HTMLImageElement> {
+function directSourceOf(src: string): string | null {
+  if (!src.includes('/functions/v1/media-proxy')) return null;
+  try {
+    const original = new URL(src).searchParams.get('url');
+    return original && original !== src ? original : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Loads an image for canvas painting, degrading in three steps: through the
+ * proxy, then straight from the source, then a branded placeholder. Every step
+ * matters — the placeholder is what produced grey videos with no product in them.
+ */
+async function loadImageSafe(src: string, allowDirectRetry = true): Promise<HTMLImageElement> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.referrerPolicy = 'no-referrer';
-    
+
     img.onload = () => resolve(img);
     img.onerror = () => {
+      const direct = allowDirectRetry ? directSourceOf(src) : null;
+      if (direct) {
+        // Second attempt: the original URL, without the proxy in front of it.
+        void loadImageSafe(direct, false).then(resolve);
+        return;
+      }
       // Fallback SVG data URL if remote image fails CORS
       const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
         <defs>
