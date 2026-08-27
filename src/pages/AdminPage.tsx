@@ -58,6 +58,7 @@ import { AgentAutomationHub } from '../components/AgentAutomationHub';
 import { GeminiApiKeyManager } from '../components/GeminiApiKeyManager';
 import { GoogleWorkspaceHub } from '../components/GoogleWorkspaceHub';
 import { AdminUsersPanel } from '../components/AdminUsersPanel';
+import { generateVideoForProduct, toRenderedAsset, toVideoReview } from '../services/productVideoPipeline';
 import { auth, ownerGoogleSignIn, consumeOwnerRedirectResult, describeAuthError, logoutGoogle } from '../services/googleWorkspace';
 import { adminAccount, AdminProfile } from '../services/adminAccount';
 
@@ -657,65 +658,52 @@ export const AdminPage: React.FC = () => {
     setIsFormOpen(false);
   };
 
-  // Generate video using videoGenerator service and attach directly to the product entry in the database
+  // Generate a video for a product that already exists in the catalog.
+  //
+  // The previous version handed the product's URL to a server route that no
+  // longer exists (the site is served as static files), so every run fell back
+  // to one block of hard-coded stock copy — which is why every product ended up
+  // with the same video. This path reads the product's own saved record, and
+  // uploads the finished file so it survives a page reload.
   const handleGenerateProductVideo = async (prod: Product) => {
     setGeneratingVideoProductId(prod.id);
     setVideoGenerationProgress({
-      stage: 'parsing_url',
-      percent: 15,
-      message: 'جاري استخراج رابط الأفلييت والتحقق من المنصة...'
+      stage: 'extracting_data',
+      percent: 5,
+      message: 'جاري تجهيز بيانات المنتج وصوره ورابط الأفلييت...'
     });
 
     try {
-      // Pick best product affiliate link
-      const affiliateUrl = prod.amazonUrl || prod.aliexpressUrl || getAffiliateUrl(prod, 'amazon');
-
-      // Call videoGenerator service
-      const videoAsset = await videoGenerator.generatePromotionalVideo({
-        productUrl: affiliateUrl,
-        affiliateLink: affiliateUrl,
-        affiliateTag: siteSettings.amazonTag || 'frial-20',
-        platform: 'tiktok',
+      const generated = await generateVideoForProduct(prod, {
         aspectRatio: '9:16',
-        targetAudience: `المهتمين بـ ${prod.subcategory || prod.titleAr}`,
-        onProgress: (prog) => {
-          setVideoGenerationProgress(prog);
+        onProgress: prog => {
+          setVideoGenerationProgress({
+            stage: prog.stage === 'rendering' ? 'rendering_scenes' : 'finalizing',
+            percent: prog.percent,
+            message: prog.message
+          } as VideoGenerationProgress);
         }
       });
 
-      // 1. Automatically attach the generated video to the product entry in the database
+      // 1. Attach the permanent video URL to the product record.
       const updatedProduct: Product = {
         ...prod,
-        youtubeUrl: videoAsset.videoUrl,
-        tiktokUrl: prod.tiktokUrl || `https://tiktok.com/@yousrasmile/video/${videoAsset.id}`,
-        pinterestUrl: prod.pinterestUrl || `https://pinterest.com/pin/${videoAsset.id}`,
-        image: prod.image || videoAsset.thumbnailUrl,
-        images: prod.images && prod.images.length > 0 ? prod.images : [videoAsset.thumbnailUrl]
+        videoUrl: generated.videoUrl,
+        videoThumbnailUrl: generated.thumbnailUrl,
+        videoStoragePath: generated.storagePath
       };
       updateProduct(updatedProduct);
 
-      // 2. Automatically register video entry in the video reviews catalog linked to this product
-      addVideo({
-        productId: prod.id,
-        productTitle: prod.titleAr,
-        productImage: prod.image || videoAsset.thumbnailUrl,
-        thumbnailUrl: videoAsset.thumbnailUrl,
-        platform: 'youtube',
-        embedId: videoAsset.id,
-        videoUrl: videoAsset.videoUrl,
-        title: videoAsset.script.videoTitle || `فيديو ترويجي لـ ${prod.titleAr}`,
-        duration: `${videoAsset.durationSeconds}s`
-      });
+      // 2. Register it in the site's video catalog, linked to this product.
+      addVideo(toVideoReview(prod, generated));
 
-      // 3. Notify user and open rich preview modal
-      setVideoSuccessToast(`تم توليد الفيديو وربطه بنجاح بالمنتج "${prod.titleAr}" ومكتبة الفيديوهات! 🎉`);
-      setGeneratedVideoModal({ product: updatedProduct, videoAsset });
-      setTimeout(() => {
-        setVideoSuccessToast(null);
-      }, 6000);
+      // 3. Show the preview.
+      setVideoSuccessToast(`تم إنشاء الفيديو وحفظه وربطه بالمنتج "${prod.titleAr}" 🎉`);
+      setGeneratedVideoModal({ product: updatedProduct, videoAsset: toRenderedAsset(prod, generated) });
+      setTimeout(() => setVideoSuccessToast(null), 6000);
     } catch (error: any) {
       console.error('Error generating product video:', error);
-      alert(`حدث خطأ أثناء توليد الفيديو: ${error?.message || 'يرجى المحاولة مرة أخرى'}`);
+      alert(error?.message || 'حدث خطأ أثناء توليد الفيديو، يرجى المحاولة مرة أخرى.');
     } finally {
       setGeneratingVideoProductId(null);
       setVideoGenerationProgress(null);
