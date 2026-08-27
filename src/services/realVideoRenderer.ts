@@ -226,17 +226,25 @@ export async function renderRealVideoAsset(input: RealVideoRenderInput): Promise
     audioDestination.stream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
   }
 
-  // Supported Mime Types
-  let mimeType = 'video/webm;codecs=vp9,opus';
-  if (!MediaRecorder.isTypeSupported(mimeType)) {
-    mimeType = 'video/webm;codecs=vp8,opus';
-  }
-  if (!MediaRecorder.isTypeSupported(mimeType)) {
-    mimeType = 'video/webm';
-  }
-  if (!MediaRecorder.isTypeSupported(mimeType)) {
-    mimeType = 'video/mp4';
-  }
+  // MP4 first, WebM only as a fallback.
+  //
+  // WebM is a web-native format: it plays inside a browser but Windows Media
+  // Player will not open a downloaded .webm, and TikTok, Instagram and YouTube
+  // reject or re-encode it. MP4/H.264 opens everywhere and uploads everywhere,
+  // so it is the right default for a file the owner downloads and publishes.
+  // Chrome has recorded MP4 since v126; older browsers fall through to WebM
+  // rather than failing.
+  const PREFERRED_TYPES = [
+    'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+    'video/mp4;codecs=avc1.4d002a,mp4a.40.2',
+    'video/mp4;codecs=h264,aac',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm'
+  ];
+
+  let mimeType = PREFERRED_TYPES.find(type => MediaRecorder.isTypeSupported(type)) ?? 'video/webm';
 
   const recordedChunks: Blob[] = [];
   const recorder = new MediaRecorder(combinedStream, {
