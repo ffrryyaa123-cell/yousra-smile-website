@@ -769,10 +769,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  const addVideo = (videoData: Omit<VideoReview, 'id' | 'views' | 'date'>) => {
+  const addVideo = (videoData: Omit<VideoReview, 'id' | 'views' | 'date'> & { id?: string }) => {
+    // Accepts an optional caller-supplied id (e.g. the same id a direct
+    // storage/import helper already used to write this same video's row) so
+    // that upload flows saving through two helpers converge on ONE row in
+    // Supabase instead of creating a duplicate — see VideoImportModal's
+    // handleImport, which used to leave two near-identical video cards
+    // behind for a single upload because each write picked its own id.
     const newVideo: VideoReview = {
       ...videoData,
-      id: `v-${Date.now()}`,
+      id: videoData.id || `v-${Date.now()}`,
       views: '1.2K',
       date: 'اليوم'
     };
