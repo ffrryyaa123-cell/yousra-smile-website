@@ -283,6 +283,12 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
     } else {
       // 1. Add video to VideoReviews state
       addVideo({
+        // A device upload already wrote one row for this exact video via
+        // saveVideoRecord() above, keyed by embedId. Reusing that same id
+        // here makes this write update that row instead of creating a
+        // second, near-identical one — previously every "upload from
+        // device" produced two video cards for a single video.
+        id: uploadedFile ? embedId : undefined,
         productId: linkedProd.id,
         productTitle: linkedProd.titleAr,
         productImage: linkedProd.image,
