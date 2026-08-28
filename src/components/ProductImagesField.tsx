@@ -112,13 +112,17 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
                 </span>
               )}
 
-              <div className="absolute inset-0 bg-slate-950/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+              {/* Controls are always visible (not hover-only) so this works on
+                  touchscreens — a phone or tablet has no hover state, so a
+                  group-hover-only overlay would leave no way to see, let
+                  alone tap, the delete button at all. */}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/95 via-slate-950/60 to-transparent pt-4 pb-1 flex items-center justify-center gap-1.5">
                 {index !== 0 && (
                   <button
                     type="button"
                     onClick={() => makePrimary(index)}
                     title="اجعليها الصورة الرئيسية"
-                    className="p-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950"
+                    className="p-1.5 rounded-lg bg-amber-500 active:bg-amber-400 hover:bg-amber-400 text-slate-950 shadow"
                   >
                     <Star className="w-3.5 h-3.5" />
                   </button>
@@ -127,7 +131,7 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
                   type="button"
                   onClick={() => removeAt(index)}
                   title="حذف الصورة"
-                  className="p-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white"
+                  className="p-1.5 rounded-lg bg-red-600 active:bg-red-500 hover:bg-red-500 text-white shadow"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
