@@ -5,7 +5,7 @@ import { SAMPLE_VIDEOS } from '../data/sampleVideos';
 import { SAMPLE_BLOG_POSTS } from '../data/blogPosts';
 import { translations, Language } from '../utils/i18n';
 import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../utils/currency';
-import { catalogDatabase } from '../services/catalogDatabase';
+import { catalogDatabase } from '../services/supabaseCatalog';
 
 interface AppContextType {
   products: Product[];
@@ -219,15 +219,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return SAMPLE_VIDEOS;
   });
 
-  // Live catalog shared across every device. Static data remains the safe fallback
-  // until Firestore is enabled or while the visitor is offline.
+  // Live catalog shared across every device, backed by Supabase/PostgreSQL.
+  // Static data remains the safe fallback while the visitor is offline or on
+  // the very first load before the remote fetch resolves.
   useEffect(() => {
     const stopProducts = catalogDatabase.subscribeProducts(remoteProducts => {
       if (remoteProducts.length > 0) setProducts(remoteProducts.map(normalizeProduct));
-    }, error => console.warn('Firestore products unavailable; using local catalog.', error));
+    }, error => console.warn('Supabase products unavailable; using local catalog.', error));
     const stopVideos = catalogDatabase.subscribeVideos(remoteVideos => {
       if (remoteVideos.length > 0) setVideos(remoteVideos);
-    }, error => console.warn('Firestore videos unavailable; using local catalog.', error));
+    }, error => console.warn('Supabase videos unavailable; using local catalog.', error));
     return () => { stopProducts(); stopVideos(); };
   }, []);
 
