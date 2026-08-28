@@ -59,6 +59,7 @@ import { GeminiApiKeyManager } from '../components/GeminiApiKeyManager';
 import { GoogleWorkspaceHub } from '../components/GoogleWorkspaceHub';
 import { AdminUsersPanel } from '../components/AdminUsersPanel';
 import { ProductImagesField } from '../components/ProductImagesField';
+import { ProductVideosManager } from '../components/ProductVideosManager';
 import { generateVideoForProduct, toRenderedAsset, toVideoReview } from '../services/productVideoPipeline';
 import { auth, ownerGoogleSignIn, consumeOwnerRedirectResult, describeAuthError, logoutGoogle } from '../services/googleWorkspace';
 import { adminAccount, AdminProfile } from '../services/adminAccount';
@@ -111,6 +112,7 @@ export const AdminPage: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [isImportVideoOpen, setIsImportVideoOpen] = useState<boolean>(false);
+  const [videosManagerProduct, setVideosManagerProduct] = useState<Product | null>(null);
   const [exportVideo, setExportVideo] = useState<VideoReview | null>(null);
   const [isAiGenerating, setIsAiGenerating] = useState<boolean>(false);
 
@@ -1528,16 +1530,12 @@ export const AdminPage: React.FC = () => {
 
                           {hasVideo && (
                             <button
-                              onClick={() => {
-                                if (window.confirm(`هل أنتِ متأكدة من حذف الفيديو المرفق بالمنتج "${prod.titleAr}"؟ يمكنك رفع فيديو جديد من جهازك في أي وقت.`)) {
-                                  removeProductVideo(prod.id);
-                                }
-                              }}
+                              onClick={() => setVideosManagerProduct(prod)}
                               className="px-2 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
-                              title="حذف الفيديو المرفق بهذا المنتج"
+                              title="عرض فيديوهات هذا المنتج وحذف أي واحد منها على حدة"
                             >
                               <Trash2 className="w-3 h-3 text-red-400" />
-                              <span>حذف الفيديو</span>
+                              <span>إدارة الفيديوهات</span>
                             </button>
                           )}
                         </div>
@@ -2459,6 +2457,11 @@ export const AdminPage: React.FC = () => {
       )}
 
       {/* Video Import Modal */}
+      <ProductVideosManager
+        product={videosManagerProduct}
+        onClose={() => setVideosManagerProduct(null)}
+      />
+
       <VideoImportModal 
         isOpen={isImportVideoOpen} 
         onClose={() => setIsImportVideoOpen(false)} 
