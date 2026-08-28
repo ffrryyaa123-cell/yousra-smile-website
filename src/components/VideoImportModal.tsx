@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { catalogDatabase } from '../services/catalogDatabase';
+import { catalogDatabase } from '../services/supabaseCatalog';
 import { uploadLocalVideo, saveVideoRecord, MAX_VIDEO_BYTES } from '../services/videoAssets';
 import { 
   X, 
