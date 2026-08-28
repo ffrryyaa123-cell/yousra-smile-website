@@ -58,6 +58,7 @@ import { AgentAutomationHub } from '../components/AgentAutomationHub';
 import { GeminiApiKeyManager } from '../components/GeminiApiKeyManager';
 import { GoogleWorkspaceHub } from '../components/GoogleWorkspaceHub';
 import { AdminUsersPanel } from '../components/AdminUsersPanel';
+import { ProductImagesField } from '../components/ProductImagesField';
 import { generateVideoForProduct, toRenderedAsset, toVideoReview } from '../services/productVideoPipeline';
 import { auth, ownerGoogleSignIn, consumeOwnerRedirectResult, describeAuthError, logoutGoogle } from '../services/googleWorkspace';
 import { adminAccount, AdminProfile } from '../services/adminAccount';
@@ -1509,13 +1510,20 @@ export const AdminPage: React.FC = () => {
                             )}
                           </button>
 
+                          {/*
+                            Always opens in "add" mode. Passing hasVideo here
+                            meant a second upload silently replaced the first,
+                            so a product could never hold more than one video.
+                            Replacing is still possible — it is a deliberate
+                            toggle inside the dialog.
+                          */}
                           <button
-                            onClick={() => openImportVideoModal(prod.id, 'upload', hasVideo)}
+                            onClick={() => openImportVideoModal(prod.id, 'upload', false)}
                             className="px-2 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-700 text-purple-300 font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
-                            title={hasVideo ? 'استبدال الفيديو الحالي بفيديو حقيقي من جهازك' : 'رفع فيديو من جهازك وربطه بالمنتج'}
+                            title={hasVideo ? 'إضافة فيديو آخر لهذا المنتج (لا يحذف الفيديوهات السابقة)' : 'رفع فيديو من جهازك وربطه بالمنتج'}
                           >
                             <Upload className="w-3 h-3 text-emerald-400" />
-                            <span>{hasVideo ? 'استبدال من جهازي' : 'رفع من جهازي'}</span>
+                            <span>{hasVideo ? 'إضافة فيديو آخر' : 'رفع من جهازي'}</span>
                           </button>
 
                           {hasVideo && (
@@ -2706,14 +2714,27 @@ export const AdminPage: React.FC = () => {
 
               {/* Image & Video Links */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="font-bold text-white block mb-1">رابط الصورة الرئيسية *</label>
-                  <input 
-                    type="url" 
-                    required
-                    value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-purple-400 focus:outline-none"
+                <div className="sm:col-span-2">
+                  {/*
+                    Replaces the old single "main image URL" box. A product can
+                    now carry as many photos as it needs, uploaded straight from
+                    the owner's computer; the first one stays the main image so
+                    every existing listing keeps rendering exactly as before.
+                  */}
+                  <ProductImagesField
+                    productId={editingProduct?.id || 'new-product'}
+                    images={
+                      formData.imagesStr
+                        ? formData.imagesStr.split(',').map(part => part.trim()).filter(Boolean)
+                        : (formData.image ? [formData.image] : [])
+                    }
+                    onChange={(next) =>
+                      setFormData({
+                        ...formData,
+                        imagesStr: next.join(', '),
+                        image: next[0] || ''
+                      })
+                    }
                   />
                 </div>
 
