@@ -1,4 +1,4 @@
-import { supabase } from './adminAccount';
+import { supabase, SUPABASE_PUBLISHABLE_KEY } from './adminAccount';
 import { Product } from '../types';
 
 /**
@@ -82,6 +82,99 @@ export const uploadProductVideo = async (
     videoUrl: data.publicUrl,
     storagePath,
     sizeBytes: blob.size,
+    contentType
+  };
+};
+
+/** Largest file the bucket accepts, mirrored here so the UI can refuse early. */
+export const MAX_VIDEO_BYTES = 300 * 1024 * 1024;
+
+/**
+ * Uploads a video the owner picked from her own computer, reporting real
+ * progress as the bytes go up.
+ *
+ * The Supabase JS client has no progress callback, and a 200 MB upload with no
+ * feedback looks identical to one that has frozen — so this posts to the storage
+ * REST endpoint through XMLHttpRequest, whose upload events give a true
+ * percentage. Same bucket, same row level security as every other upload here.
+ */
+export const uploadLocalVideo = async (
+  productId: string,
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<StoredVideoAsset> => {
+  if (!file || file.size === 0) {
+    throw new Error('الملف فارغ أو تالف. اختاري ملفاً آخر.');
+  }
+  if (file.size > MAX_VIDEO_BYTES) {
+    throw new Error(
+      `حجم الملف ${(file.size / 1048576).toFixed(0)} ميغابايت، والحد الأقصى ${MAX_VIDEO_BYTES / 1048576} ميغابايت. اضغطي الفيديو ثم أعيدي المحاولة.`
+    );
+  }
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) {
+    throw new Error('انتهت جلسة الدخول. سجّلي الدخول إلى لوحة التحكم بالبريد وكلمة المرور ثم أعيدي المحاولة.');
+  }
+
+  const contentType = file.type || 'video/mp4';
+  const extension = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
+  const safeId = String(productId || 'product').replace(/[^a-zA-Z0-9_-]/g, '-');
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const storagePath = `${safeId}/upload-${stamp}.${extension}`;
+
+  await new Promise<void>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open('POST', `${SUPABASE_PROJECT_URL}/storage/v1/object/${BUCKET}/${storagePath}`, true);
+    request.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+    request.setRequestHeader('apikey', SUPABASE_PUBLISHABLE_KEY);
+    request.setRequestHeader('Content-Type', contentType);
+    request.setRequestHeader('x-upsert', 'true');
+    request.setRequestHeader('cache-control', '31536000');
+
+    request.upload.onprogress = event => {
+      if (event.lengthComputable) {
+        onProgress?.(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+
+    request.onload = () => {
+      if (request.status >= 200 && request.status < 300) {
+        onProgress?.(100);
+        resolve();
+        return;
+      }
+      // Storage returns a JSON body describing why it refused.
+      let detail = '';
+      try {
+        detail = JSON.parse(request.responseText)?.message ?? '';
+      } catch {
+        detail = request.responseText?.slice(0, 200) ?? '';
+      }
+      if (request.status === 403 || /row-level security/i.test(detail)) {
+        reject(new Error('ليس لديك صلاحية الرفع. تأكدي أنك داخلة بحساب المالك بالبريد وكلمة المرور.'));
+      } else if (request.status === 413 || /exceeded|too large/i.test(detail)) {
+        reject(new Error('الملف أكبر من الحد المسموح. اضغطي الفيديو ثم أعيدي المحاولة.'));
+      } else if (/mime type/i.test(detail)) {
+        reject(new Error('صيغة الملف غير مدعومة. استخدمي MP4 أو WebM أو MOV.'));
+      } else {
+        reject(new Error(detail || `تعذر رفع الفيديو (رمز ${request.status}).`));
+      }
+    };
+
+    request.onerror = () => reject(new Error('انقطع الاتصال أثناء الرفع. تحققي من الإنترنت وأعيدي المحاولة.'));
+    request.onabort = () => reject(new Error('تم إلغاء الرفع.'));
+
+    request.send(file);
+  });
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+
+  return {
+    videoUrl: data.publicUrl,
+    storagePath,
+    sizeBytes: file.size,
     contentType
   };
 };

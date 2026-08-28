@@ -20,7 +20,7 @@ const SUPABASE_URL = 'https://iicvasloytbjotbgbvjt.supabase.co';
 
 // Publishable key. It is safe in front-end code: every table is protected by
 // row level security, so this key alone grants nothing beyond public reads.
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_aMazQgFRFomsVGyuZF0cKg_Fn5fhH96';
+export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_aMazQgFRFomsVGyuZF0cKg_Fn5fhH96';
 
 export const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
