@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { catalogDatabase } from '../services/catalogDatabase';
+import { uploadLocalVideo, saveVideoRecord, MAX_VIDEO_BYTES } from '../services/videoAssets';
 import { 
   X, 
   ArrowLeft,
@@ -119,8 +120,10 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       return;
     }
 
-    if (file.size > 200 * 1024 * 1024) {
-      setFileError('حجم ملف الفيديو يتجاوز الحد الأقصى المسموح (200 ميجابايت)');
+    if (file.size > MAX_VIDEO_BYTES) {
+      setFileError(
+        `حجم الملف ${(file.size / 1048576).toFixed(0)} ميجابايت ويتجاوز الحد الأقصى (${MAX_VIDEO_BYTES / 1048576} ميجابايت). اضغطي الفيديو ثم أعيدي المحاولة.`
+      );
       return;
     }
 
@@ -239,9 +242,33 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       if (importMode === 'upload' && uploadedFile) {
         setIsUploading(true);
         setUploadProgress(0);
-        const uploaded = await catalogDatabase.uploadVideo(linkedProd.id, uploadedFile, setUploadProgress);
-        finalVideoUrl = uploaded.url;
+        // Uploads go to Supabase Storage. The old path wrote to the site's
+        // Firebase project, which this account cannot administer — the upload
+        // was rejected there and the failure never surfaced.
+        const uploaded = await uploadLocalVideo(linkedProd.id, uploadedFile, setUploadProgress);
+        finalVideoUrl = uploaded.videoUrl;
         storagePath = uploaded.storagePath;
+
+        // Record the file next to the product so every browser can find it.
+        try {
+          await saveVideoRecord({
+            id: embedId,
+            productId: linkedProd.id,
+            videoUrl: uploaded.videoUrl,
+            storagePath: uploaded.storagePath,
+            thumbnailUrl: linkedProd.image,
+            durationSeconds: 0,
+            aspectRatio: '9:16',
+            title: finalTitle,
+            caption: seoDescription,
+            hashtags,
+            affiliateUrl: linkedProd.amazonUrl || linkedProd.aliexpressUrl || '',
+            createdAt: new Date().toISOString()
+          });
+        } catch (recordError) {
+          // The file is safely stored; a missing metadata row must not undo it.
+          console.warn('Video metadata not saved:', recordError);
+        }
       }
 
     if (replaceExistingVideo) {
@@ -459,7 +486,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
                     {uploadedFile ? uploadedFile.name : 'انقر هنا لاختيار ملف فيديو أو اسحبه إلى هنا مباشرة'}
                   </h4>
                   <p className="text-xs text-slate-400 mt-1">
-                    يدعم جميع صيغ الفيديو: MP4, WebM, QuickTime MOV (حتى 200 ميجابايت)
+                    يدعم MP4 و WebM و MOV — حتى 300 ميجابايت. يُرفع إلى تخزين الموقع ويُحفظ تلقائياً مع المنتج.
                   </p>
                 </div>
                 {uploadedFile && (
