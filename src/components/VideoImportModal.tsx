@@ -209,12 +209,17 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (importMode === 'link' && !videoUrl.trim()) {
+    // A picked file always wins. Tying the upload to the active tab meant that
+    // choosing a file while the "link" tab happened to be selected silently
+    // stored a blob: URL instead of uploading anything.
+    const hasPickedFile = Boolean(uploadedFile);
+
+    if (!hasPickedFile && importMode === 'link' && !videoUrl.trim()) {
       setErrorMessage(language === 'en' ? 'Please paste a valid video URL' : 'يرجى إدخال رابط الفيديو بشكل صحيح');
       return;
     }
 
-    if (importMode === 'upload' && !uploadedFile && !uploadedVideoPreviewUrl) {
+    if (!hasPickedFile && importMode === 'upload' && !uploadedVideoPreviewUrl) {
       setErrorMessage('يرجى اختيار أو رفع ملف فيديو من جهازك أولاً');
       return;
     }
@@ -234,12 +239,12 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       }
     }
 
-    let finalVideoUrl = importMode === 'upload' ? uploadedVideoPreviewUrl : videoUrl.trim();
+    let finalVideoUrl = hasPickedFile || importMode === 'upload' ? uploadedVideoPreviewUrl : videoUrl.trim();
     let storagePath: string | undefined;
     const finalTitle = customTitle.trim() || `مراجعة شاملة لـ ${linkedProd.titleAr}`;
 
     try {
-      if (importMode === 'upload' && uploadedFile) {
+      if (uploadedFile) {
         setIsUploading(true);
         setUploadProgress(0);
         // Uploads go to Supabase Storage. The old path wrote to the site's
@@ -316,6 +321,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       onClose();
     }, 1200);
     } catch (error: any) {
+      console.error('[Yousra Smile] video import failed:', error);
       setErrorMessage(error?.message || 'فشل رفع الفيديو إلى التخزين. تأكدي من تسجيل الدخول بحساب المالك.');
     } finally {
       setIsUploading(false);
@@ -727,8 +733,17 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
                 إلغاء
               </button>
 
+              {/*
+                A plain button with an onClick handler, not a form submit.
+                Submission can be swallowed silently — by HTML validation on a
+                control that is not currently visible, or by the form never
+                firing at all — and the user just sees a button that does
+                nothing. Calling the handler directly removes that whole class
+                of failure.
+              */}
               <button
-                type="submit"
+                type="button"
+                onClick={handleImport}
                 disabled={isSuccess || isUploading}
                 className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-amber-500 to-emerald-500 hover:opacity-95 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
               >
