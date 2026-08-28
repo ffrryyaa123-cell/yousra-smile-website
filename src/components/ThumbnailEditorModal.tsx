@@ -166,7 +166,7 @@ export const ThumbnailEditorModal: React.FC<ThumbnailEditorModalProps> = ({ vide
           <div className="space-y-2">
             <div className="flex justify-between items-center text-xs font-mono-meta text-slate-400">
               <span>{language === 'en' ? 'LIVE THUMBNAIL PREVIEW' : 'معاينة حية للصورة المصغرة'}</span>
-              <span className="text-red-400 font-bold">{video.platform.toUpperCase()}</span>
+              <span className="text-red-400 font-bold">{(video.platform || 'local').toUpperCase()}</span>
             </div>
 
             <div className="relative aspect-video w-full rounded-2xl overflow-hidden border-2 border-amber-500/40 shadow-2xl group bg-slate-950">
