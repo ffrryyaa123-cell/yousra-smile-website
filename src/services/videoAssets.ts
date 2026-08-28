@@ -179,6 +179,86 @@ export const uploadLocalVideo = async (
   };
 };
 
+export const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+
+/**
+ * Uploads one product image the owner picked from her own computer.
+ *
+ * Product photos previously had to be pasted in as URLs, which meant every
+ * image had to already live somewhere else on the internet — and in practice
+ * that "somewhere else" was the seller's own site, with the rights questions
+ * that brings. Hosting them here makes the catalog self-contained.
+ */
+export const uploadLocalImage = async (
+  productId: string,
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<StoredVideoAsset> => {
+  if (!file || file.size === 0) {
+    throw new Error('الصورة فارغة أو تالفة. اختاري ملفاً آخر.');
+  }
+  if (!/^image\//.test(file.type)) {
+    throw new Error('هذا الملف ليس صورة. استخدمي JPG أو PNG أو WebP.');
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error(
+      `حجم الصورة ${(file.size / 1048576).toFixed(1)} ميغابايت، والحد الأقصى ${MAX_IMAGE_BYTES / 1048576} ميغابايت.`
+    );
+  }
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) {
+    throw new Error('انتهت جلسة الدخول. سجّلي الدخول بالبريد وكلمة المرور ثم أعيدي المحاولة.');
+  }
+
+  const extension = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const safeId = String(productId || 'product').replace(/[^a-zA-Z0-9_-]/g, '-');
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const suffix = Math.random().toString(36).slice(2, 7);
+  const storagePath = `${safeId}/images/${stamp}-${suffix}.${extension}`;
+
+  await new Promise<void>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open('POST', `${SUPABASE_PROJECT_URL}/storage/v1/object/${BUCKET}/${storagePath}`, true);
+    request.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+    request.setRequestHeader('apikey', SUPABASE_PUBLISHABLE_KEY);
+    request.setRequestHeader('Content-Type', file.type);
+    request.setRequestHeader('x-upsert', 'true');
+    request.setRequestHeader('cache-control', '31536000');
+
+    request.upload.onprogress = event => {
+      if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+    };
+
+    request.onload = () => {
+      if (request.status >= 200 && request.status < 300) {
+        onProgress?.(100);
+        resolve();
+        return;
+      }
+      let detail = '';
+      try {
+        detail = JSON.parse(request.responseText)?.message ?? '';
+      } catch {
+        detail = '';
+      }
+      if (request.status === 403 || /row-level security/i.test(detail)) {
+        reject(new Error('ليس لديك صلاحية الرفع. ادخلي بحساب المالك بالبريد وكلمة المرور.'));
+      } else if (/mime type/i.test(detail)) {
+        reject(new Error('صيغة الصورة غير مدعومة. استخدمي JPG أو PNG أو WebP.'));
+      } else {
+        reject(new Error(detail || `تعذر رفع الصورة (رمز ${request.status}).`));
+      }
+    };
+    request.onerror = () => reject(new Error('انقطع الاتصال أثناء رفع الصورة.'));
+    request.send(file);
+  });
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+  return { videoUrl: data.publicUrl, storagePath, sizeBytes: file.size, contentType: file.type };
+};
+
 /** Removes a stored video file. Never throws — deletion is best effort. */
 export const deleteProductVideo = async (storagePath: string): Promise<void> => {
   try {
