@@ -29,7 +29,24 @@ const asProduct = (row: { id: string; data: unknown }): Product | null => {
 
 const asVideo = (row: { id: string; data: unknown }): VideoReview | null => {
   if (!row?.data || typeof row.data !== 'object') return null;
-  return { ...(row.data as VideoReview), id: row.id };
+  const raw = row.data as Partial<VideoReview>;
+  // A handful of rows written by an older code path (before every video
+  // write went through the same helper) are missing fields like `platform`.
+  // Any screen that assumes these required fields are always present — e.g.
+  // `video.platform.toUpperCase()` in the thumbnail editor — would crash
+  // the whole page white on exactly those rows. Filling in safe defaults
+  // here, once, means every screen can keep assuming a complete VideoReview.
+  return {
+    ...raw,
+    id: row.id,
+    platform: raw.platform || 'local',
+    embedId: raw.embedId || row.id,
+    videoUrl: raw.videoUrl || '',
+    title: raw.title || raw.productTitle || 'فيديو المنتج',
+    views: raw.views || '0',
+    date: raw.date || '',
+    duration: raw.duration || '00:00'
+  } as VideoReview;
 };
 
 const POLL_MS = 20_000;
