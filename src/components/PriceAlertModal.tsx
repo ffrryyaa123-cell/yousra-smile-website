@@ -44,13 +44,13 @@ export const PriceAlertModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div 
-        className="relative w-full max-w-lg bg-[#111113] border border-[#FDFCFB]/15 rounded-3xl shadow-2xl text-[#FDFCFB] overflow-hidden"
+      <div
+        className="relative w-full max-w-lg max-h-[92vh] bg-[#111113] border border-[#FDFCFB]/15 rounded-3xl shadow-2xl text-[#FDFCFB] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Decor Bar */}
-        <div className="bg-gradient-to-r from-[#D4AF37]/20 via-[#D4AF37]/40 to-[#D4AF37]/20 h-1.5 w-full" />
-        
+        <div className="bg-gradient-to-r from-[#D4AF37]/20 via-[#D4AF37]/40 to-[#D4AF37]/20 h-1.5 w-full shrink-0" />
+
         {/* Close Button */}
         <button
           onClick={handleClose}
@@ -59,7 +59,11 @@ export const PriceAlertModal: React.FC = () => {
           <X className="w-5 h-5" />
         </button>
 
-        <div className="p-6 sm:p-8 space-y-6">
+        {/* Scrollable body — same fix as ThumbnailEditorModal: on a short
+            browser window this content could run taller than the
+            viewport, and a plain overflow-hidden wrapper would clip the
+            bottom action button out of view with no way to reach it. */}
+        <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1 min-h-0">
           {/* Header Title */}
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-[#D4AF37]/15 border border-[#D4AF37]/40 flex items-center justify-center shrink-0">

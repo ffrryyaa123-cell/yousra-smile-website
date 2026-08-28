@@ -81,12 +81,12 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-      <div 
-        className="relative w-full max-w-xl bg-[#111113] border border-amber-500/30 rounded-3xl shadow-2xl text-white overflow-hidden"
+      <div
+        className="relative w-full max-w-xl max-h-[92vh] bg-[#111113] border border-amber-500/30 rounded-3xl shadow-2xl text-white overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Ribbon */}
-        <div className="bg-gradient-to-r from-red-600 via-amber-500 to-purple-600 h-1.5 w-full" />
+        <div className="bg-gradient-to-r from-red-600 via-amber-500 to-purple-600 h-1.5 w-full shrink-0" />
 
         <button
           onClick={onClose}
@@ -95,7 +95,12 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
           <X className="w-5 h-5" />
         </button>
 
-        <div className="p-6 sm:p-8 space-y-6">
+        {/* Scrollable body — same fix as ThumbnailEditorModal: on a short
+            browser window this content (all the share buttons + embed
+            code box) could run taller than the viewport, and a plain
+            overflow-hidden wrapper would clip the bottom of it out of
+            view with no way to reach it. */}
+        <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1 min-h-0">
           {/* Title */}
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">

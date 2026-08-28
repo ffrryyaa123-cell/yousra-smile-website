@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { VideoReview } from '../types';
+import { uploadLocalImage } from '../services/videoAssets';
 import { 
   Pencil, 
   X, 
@@ -63,6 +64,9 @@ export const ThumbnailEditorModal: React.FC<ThumbnailEditorModalProps> = ({ vide
   const [customInputUrl, setCustomInputUrl] = useState('');
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<'url' | 'presets' | 'upload'>('presets');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState('');
 
   if (!video) return null;
 
@@ -78,16 +82,29 @@ export const ThumbnailEditorModal: React.FC<ThumbnailEditorModalProps> = ({ vide
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          setCurrentUrl(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    // This used to read the file into a base64 data: URL and store that
+    // whole giant string directly inside the video's database row. That
+    // "worked" for a tiny test image but silently failed to save for any
+    // real photo — a normal phone photo becomes several megabytes of
+    // base64 text, which the database call would reject or time out on,
+    // and the failure was only ever logged to the console. Uploading the
+    // actual file to Supabase Storage (same helper the product photos use)
+    // and saving only its short URL is what the site should have been
+    // doing here all along.
+    setUploadError('');
+    setIsUploading(true);
+    setUploadProgress(0);
+    try {
+      const uploaded = await uploadLocalImage(video.productId, file, setUploadProgress);
+      setCurrentUrl(uploaded.videoUrl);
+    } catch (err: any) {
+      setUploadError(err?.message || 'تعذر رفع الصورة. حاولي مرة أخرى.');
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -107,12 +124,12 @@ export const ThumbnailEditorModal: React.FC<ThumbnailEditorModalProps> = ({ vide
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
-      <div 
-        className="relative w-full max-w-2xl bg-[#111113] border border-[#FDFCFB]/15 rounded-3xl shadow-2xl text-[#FDFCFB] overflow-hidden"
+      <div
+        className="relative w-full max-w-2xl max-h-[92vh] bg-[#111113] border border-[#FDFCFB]/15 rounded-3xl shadow-2xl text-[#FDFCFB] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* YouTube Studio Gold Header Decor */}
-        <div className="bg-gradient-to-r from-red-600 via-amber-500 to-red-600 h-1.5 w-full" />
+        <div className="bg-gradient-to-r from-red-600 via-amber-500 to-red-600 h-1.5 w-full shrink-0" />
 
         {/* Close Button */}
         <button
@@ -122,7 +139,13 @@ export const ThumbnailEditorModal: React.FC<ThumbnailEditorModalProps> = ({ vide
           <X className="w-5 h-5" />
         </button>
 
-        <div className="p-6 sm:p-8 space-y-6">
+        {/* Scrollable body — on a short browser window (or a laptop at
+            a large zoom level) the preview + tabs + upload area could be
+            taller than the viewport. This div used to be part of a
+            plain overflow-hidden container, which clipped the bottom
+            Save/Cancel bar completely out of view with no way to reach
+            it. Now the header strip stays put and only this area scrolls. */}
+        <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1 min-h-0">
           {/* Header Title */}
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-red-600/20 border border-red-500/40 flex items-center justify-center shrink-0">
@@ -295,28 +318,39 @@ export const ThumbnailEditorModal: React.FC<ThumbnailEditorModalProps> = ({ vide
             {/* Tab 3: Upload */}
             {activeTab === 'upload' && (
               <div className="bg-[#18181B] border border-dashed border-white/20 rounded-2xl p-6 text-center space-y-3">
-                <Upload className="w-8 h-8 text-amber-400 mx-auto animate-bounce" />
+                <Upload className={`w-8 h-8 text-amber-400 mx-auto ${isUploading ? 'animate-spin' : 'animate-bounce'}`} />
                 <div className="space-y-1">
                   <p className="text-xs text-white font-bold">
-                    {language === 'en' ? 'Click to select an image file from your device' : 'اضغط لاختيار صورة مصغرة من جهازك'}
+                    {isUploading
+                      ? (language === 'en' ? 'Uploading…' : 'جاري الرفع...')
+                      : (language === 'en' ? 'Click to select an image file from your device' : 'اضغط لاختيار صورة مصغرة من جهازك')}
                   </p>
                   <p className="text-[11px] text-slate-400">
                     JPG, PNG, WebP (16:9 Aspect ratio recommended)
                   </p>
                 </div>
-                <input 
-                  type="file" 
+                {isUploading && (
+                  <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden max-w-xs mx-auto">
+                    <div className="h-full bg-amber-500 transition-all" style={{ width: `${uploadProgress}%` }} />
+                  </div>
+                )}
+                <input
+                  type="file"
                   accept="image/*"
                   onChange={handleFileUpload}
-                  className="hidden" 
+                  disabled={isUploading}
+                  className="hidden"
                   id="thumbnail-file-input"
                 />
-                <label 
+                <label
                   htmlFor="thumbnail-file-input"
-                  className="inline-block px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl cursor-pointer transition-colors"
+                  className={`inline-block px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}
                 >
                   {language === 'en' ? 'Browse Files' : 'استعراض الملفات'}
                 </label>
+                {uploadError && (
+                  <p className="text-[11px] text-red-400 font-bold">{uploadError}</p>
+                )}
               </div>
             )}
           </div>
@@ -344,8 +378,8 @@ export const ThumbnailEditorModal: React.FC<ThumbnailEditorModalProps> = ({ vide
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={isSaved}
-                className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-amber-500 to-red-600 hover:opacity-95 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                disabled={isSaved || isUploading}
+                className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-amber-500 to-red-600 hover:opacity-95 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaved ? (
                   <>
