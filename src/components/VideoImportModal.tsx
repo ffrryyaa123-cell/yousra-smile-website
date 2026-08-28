@@ -462,17 +462,26 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
           {/* Mode 1: Local Video File Upload */}
           {importMode === 'upload' && (
             <div className="space-y-3">
+              {/*
+                The picker is driven by a real <label htmlFor>, not by calling
+                .click() on a display:none input. A hidden input is unreachable
+                for keyboard and screen-reader users, and several browsers and
+                privacy extensions refuse the synthetic click outright — which
+                is why the button did nothing at all. A label opens the file
+                dialog natively and cannot be blocked.
+              */}
               <input 
                 type="file" 
+                id="yousra-video-file-input"
                 ref={fileInputRef}
-                accept="video/*,video/mp4,video/webm,video/ogg,video/quicktime"
+                accept="video/mp4,video/webm,video/quicktime,video/ogg,video/x-matroska,video/*"
                 onChange={handleFileChange}
-                className="hidden"
+                className="absolute w-px h-px opacity-0 -z-10 overflow-hidden"
               />
 
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all space-y-2 group ${
+              <label
+                htmlFor="yousra-video-file-input"
+                className={`block border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all space-y-2 group ${
                   isDragging 
                     ? 'border-amber-400 bg-amber-500/10 scale-102' 
                     : 'border-purple-500/40 hover:border-purple-400 bg-slate-900/60 hover:bg-slate-900'
@@ -494,6 +503,23 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
                     حجم الملف: {(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB ✓
                   </span>
                 )}
+              </label>
+
+              {/*
+                A plain, always-visible file field as well. If anything ever
+                interferes with the styled area above, this one still works —
+                it is the browser's own control with nothing layered over it.
+              */}
+              <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-3 space-y-2">
+                <p className="text-[11px] font-bold text-slate-400">
+                  أو اختاري الملف من هنا مباشرة:
+                </p>
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm,video/quicktime,video/ogg,video/x-matroska,video/*"
+                  onChange={handleFileChange}
+                  className="block w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer cursor-pointer"
+                />
               </div>
 
               {fileError && (
