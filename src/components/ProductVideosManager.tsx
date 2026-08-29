@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Trash2, PlaySquare, Film, AlertCircle } from 'lucide-react';
+import { X, Trash2, PlaySquare, Film, AlertCircle, Plus, CheckSquare, Square } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Product } from '../types';
 import { deleteProductVideo } from '../services/videoAssets';
@@ -10,47 +10,76 @@ interface ProductVideosManagerProps {
 }
 
 /**
- * Lists every video attached to one product so a single one can be removed.
+ * Lists every video attached to one product so a single one — or a chosen
+ * few — can be removed without touching the rest.
  *
  * The dashboard previously offered only "delete the video", which cleared the
  * product's whole video set at once — fine when a product could hold just one,
- * wrong now that it can hold several. Each entry here is removed on its own,
- * and the others are left untouched.
+ * wrong now that it can hold several. Each entry here is removed on its own
+ * (or as part of an explicit multi-select), and every other video, and every
+ * other field on the product, is left untouched.
  */
 export const ProductVideosManager: React.FC<ProductVideosManagerProps> = ({ product, onClose }) => {
-  const { videos, deleteVideo, updateProduct } = useApp();
+  const { videos, deleteVideo, patchProduct, openImportVideoModal } = useApp();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState<string>('');
 
   if (!product) return null;
 
   const linked = videos.filter(v => v.productId === product.id);
 
+  const toggleSelected = (videoId: string) => {
+    setSelected(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
+  };
+
+  /** Removes one video's stored file + row, and — only if the product's
+   * single cover-video field was pointing at exactly this file — hands the
+   * cover slot to whichever video remains via patchProduct, which can only
+   * ever change that one field and nothing else on the product. */
+  const removeOne = async (videoId: string, storagePath?: string, videoUrl?: string) => {
+    if (storagePath) await deleteProductVideo(storagePath);
+    deleteVideo(videoId);
+    if (videoUrl && product.videoUrl === videoUrl) {
+      const remaining = linked.filter(v => v.id !== videoId);
+      patchProduct(product.id, {
+        videoUrl: remaining[0]?.videoUrl ?? '',
+        videoStoragePath: remaining[0]?.storagePath ?? ''
+      });
+    }
+  };
+
   const handleDelete = async (videoId: string, storagePath?: string, videoUrl?: string) => {
     if (!window.confirm('حذف هذا الفيديو وحده؟ باقي فيديوهات المنتج تبقى كما هي.')) return;
-
     setBusyId(videoId);
     setError('');
     try {
-      // Remove the stored file first; a leftover file costs storage forever.
-      if (storagePath) await deleteProductVideo(storagePath);
-
-      deleteVideo(videoId);
-
-      // If the product pointed at this exact file, hand it over to whichever
-      // video remains rather than leaving a dead link on the product page.
-      if (videoUrl && product.videoUrl === videoUrl) {
-        const remaining = linked.filter(v => v.id !== videoId);
-        updateProduct({
-          ...product,
-          videoUrl: remaining[0]?.videoUrl ?? '',
-          videoStoragePath: remaining[0]?.storagePath ?? ''
-        });
-      }
+      await removeOne(videoId, storagePath, videoUrl);
     } catch (deleteError: any) {
       setError(deleteError?.message || 'تعذر حذف الفيديو.');
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selected.length === 0) return;
+    if (!window.confirm(`حذف ${selected.length} فيديو محدد؟ باقي فيديوهات المنتج تبقى كما هي.`)) return;
+    setBulkBusy(true);
+    setError('');
+    try {
+      for (const videoId of selected) {
+        const v = linked.find(item => item.id === videoId);
+        if (!v) continue;
+        // eslint-disable-next-line no-await-in-loop
+        await removeOne(v.id, v.storagePath, v.videoUrl);
+      }
+      setSelected([]);
+    } catch (deleteError: any) {
+      setError(deleteError?.message || 'تعذر حذف بعض الفيديوهات المحددة.');
+    } finally {
+      setBulkBusy(false);
     }
   };
 
@@ -81,6 +110,29 @@ export const ProductVideosManager: React.FC<ProductVideosManagerProps> = ({ prod
           </button>
         </div>
 
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => openImportVideoModal(product.id, 'upload', false)}
+            className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            إضافة فيديو جديد لهذا المنتج
+          </button>
+
+          {selected.length > 0 && (
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={handleDeleteSelected}
+              className="px-3 py-2 rounded-xl bg-red-600/90 hover:bg-red-600 disabled:opacity-50 text-white font-bold text-[11px] flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              {bulkBusy ? 'جاري الحذف...' : `حذف المحدد (${selected.length})`}
+            </button>
+          )}
+        </div>
+
         {error && (
           <p className="text-xs text-red-400 font-bold flex items-center gap-1.5">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -97,8 +149,19 @@ export const ProductVideosManager: React.FC<ProductVideosManagerProps> = ({ prod
             {linked.map(video => (
               <div
                 key={video.id}
-                className="rounded-2xl border border-slate-700 bg-slate-950/60 p-3 flex flex-wrap items-center gap-3"
+                className={`rounded-2xl border p-3 flex flex-wrap items-center gap-3 ${
+                  selected.includes(video.id) ? 'border-amber-400 bg-amber-950/20' : 'border-slate-700 bg-slate-950/60'
+                }`}
               >
+                <button
+                  type="button"
+                  onClick={() => toggleSelected(video.id)}
+                  title="تحديد للحذف الجماعي"
+                  className="shrink-0 text-amber-300"
+                >
+                  {selected.includes(video.id) ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5 text-slate-600" />}
+                </button>
+
                 <div className="w-28 shrink-0 rounded-xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center">
                   {video.videoUrl && /\.(mp4|webm|mov)(\?|$)/i.test(video.videoUrl) ? (
                     <video src={video.videoUrl} className="w-full h-full object-cover" muted preload="metadata" />

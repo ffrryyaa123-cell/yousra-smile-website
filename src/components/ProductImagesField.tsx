@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, X, Star, Loader2, Plus, ImageIcon, AlertCircle } from 'lucide-react';
+import { Upload, X, Star, Loader2, Plus, ImageIcon, AlertCircle, Trash2, CheckSquare, Square } from 'lucide-react';
 import { uploadLocalImage } from '../services/videoAssets';
 
 interface ProductImagesFieldProps {
@@ -29,6 +29,9 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
   const [current, setCurrent] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [urlDraft, setUrlDraft] = useState<string>('');
+  // Tracked by URL, not index — an index would go stale the moment a photo
+  // is made primary (reorders the array) or another one is removed.
+  const [selected, setSelected] = useState<string[]>([]);
 
   const handleFiles = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
@@ -76,6 +79,16 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
 
   const removeAt = (index: number) => onChange(images.filter((_, i) => i !== index));
 
+  const toggleSelected = (src: string) => {
+    setSelected(prev => prev.includes(src) ? prev.filter(s => s !== src) : [...prev, src]);
+  };
+
+  const removeSelected = () => {
+    if (selected.length === 0) return;
+    onChange(images.filter(src => !selected.includes(src)));
+    setSelected([]);
+  };
+
   /** Moves an image to the front — the first one is the product's main photo. */
   const makePrimary = (index: number) => {
     if (index === 0) return;
@@ -94,6 +107,17 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
         <span className="text-[11px] text-slate-400">الصورة الأولى هي الرئيسية التي تظهر في القوائم</span>
       </div>
 
+      {selected.length > 0 && (
+        <button
+          type="button"
+          onClick={removeSelected}
+          className="px-3 py-2 rounded-xl bg-red-600/90 hover:bg-red-600 text-white font-bold text-[11px] flex items-center gap-1.5"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          حذف الصور المحددة ({selected.length})
+        </button>
+      )}
+
       {/* thumbnails */}
       {images.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
@@ -111,6 +135,19 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
                   رئيسية
                 </span>
               )}
+
+              <button
+                type="button"
+                onClick={() => toggleSelected(src)}
+                title="تحديد للحذف الجماعي"
+                className="absolute top-1 left-1 p-0.5 rounded bg-slate-950/70"
+              >
+                {selected.includes(src) ? (
+                  <CheckSquare className="w-4 h-4 text-amber-300" />
+                ) : (
+                  <Square className="w-4 h-4 text-white/80" />
+                )}
+              </button>
 
               {/* Controls are always visible (not hover-only) so this works on
                   touchscreens — a phone or tablet has no hover state, so a

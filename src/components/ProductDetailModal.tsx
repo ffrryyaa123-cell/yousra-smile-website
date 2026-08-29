@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Product } from '../types';
 import { useApp } from '../context/AppContext';
 import { PriceHistoryChart } from './PriceHistoryChart';
+import { deleteProductVideo as deleteStoredVideoFile } from '../services/videoAssets';
 import { 
   X, 
   Star, 
@@ -89,7 +90,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
     videos,
     openImportVideoModal,
     replaceProductVideo,
-    removeProductVideo
+    removeProductVideo,
+    deleteVideo,
+    patchProduct
   } = useApp();
 
   if (!product) return null;
@@ -103,6 +106,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
   const [activeImage, setActiveImage] = useState<string>(product.image);
   const [showInlineVideo, setShowInlineVideo] = useState(false);
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'videos' | 'specs' | 'reviews' | 'seo'>('overview');
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedJsonLd, setCopiedJsonLd] = useState(false);
@@ -909,9 +913,71 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
             {/* Tab 2: Videos (YouTube, TikTok, Local Upload, Replacement) */}
             {activeTab === 'videos' && (() => {
               const linkedVideoReviews = videos.filter(v => v.productId === product.id);
-              const primaryVideoUrl = product.videoUrl || product.youtubeUrl || linkedVideoReviews[0]?.videoUrl;
-              const hasVideo = Boolean(primaryVideoUrl || linkedVideoReviews.length > 0);
-              const isDirectOrLocal = primaryVideoUrl?.startsWith('blob:') || primaryVideoUrl?.endsWith('.mp4') || primaryVideoUrl?.endsWith('.webm') || linkedVideoReviews[0]?.platform === 'local' || linkedVideoReviews[0]?.platform === 'direct';
+
+              // Every video linked to this product, not just one. The single
+              // "cover video" fields on the product (videoUrl/youtubeUrl) are
+              // kept as a fallback entry for products that predate the video
+              // gallery table, but a video already present in the gallery
+              // (same URL) is not listed twice.
+              type GalleryVideo = { url: string; thumbnail?: string; title: string; isLocal: boolean };
+              const gallery: GalleryVideo[] = [];
+              const seenUrls = new Set<string>();
+              const coverUrl = product.videoUrl || product.youtubeUrl;
+              if (coverUrl) {
+                gallery.push({
+                  url: coverUrl,
+                  thumbnail: product.videoThumbnailUrl || product.image,
+                  title: product.titleAr,
+                  isLocal: coverUrl.startsWith('blob:') || coverUrl.endsWith('.mp4') || coverUrl.endsWith('.webm')
+                });
+                seenUrls.add(coverUrl);
+              }
+              linkedVideoReviews.forEach(v => {
+                if (!v.videoUrl || seenUrls.has(v.videoUrl)) return;
+                gallery.push({
+                  url: v.videoUrl,
+                  thumbnail: v.thumbnailUrl || product.image,
+                  title: v.title || product.titleAr,
+                  isLocal: v.platform === 'local' || v.platform === 'direct'
+                });
+                seenUrls.add(v.videoUrl);
+              });
+
+              const hasVideo = gallery.length > 0;
+              const safeIndex = Math.min(activeVideoIndex, Math.max(gallery.length - 1, 0));
+              const active = gallery[safeIndex];
+              const primaryVideoUrl = active?.url;
+              const isDirectOrLocal = Boolean(active?.isLocal);
+
+              // Deletes only the video currently showing — never the whole
+              // gallery. `removeProductVideo` used to be the only option here
+              // and it wipes every video linked to the product at once, which
+              // is exactly the kind of bulk deletion the owner does not want
+              // from a single "delete video" click.
+              const handleDeleteActiveVideo = async () => {
+                if (!active) return;
+                const label = gallery.length > 1
+                  ? `حذف هذا الفيديو فقط (${safeIndex + 1} من ${gallery.length})؟ باقي فيديوهات المنتج تبقى كما هي.`
+                  : 'هل أنتِ متأكدة من حذف هذا الفيديو؟ يمكنك رفع أو استيراد فيديو آخر في أي وقت.';
+                if (!window.confirm(label)) return;
+
+                const matchingReview = linkedVideoReviews.find(v => v.videoUrl === active.url);
+                if (matchingReview) {
+                  if (matchingReview.storagePath) {
+                    try { await deleteStoredVideoFile(matchingReview.storagePath); } catch (e) { console.error(e); }
+                  }
+                  deleteVideo(matchingReview.id);
+                }
+                if (product.videoUrl === active.url || (!matchingReview && coverUrl === active.url)) {
+                  const remaining = gallery.filter(g => g.url !== active.url);
+                  patchProduct(product.id, {
+                    videoUrl: remaining[0]?.url ?? '',
+                    videoThumbnailUrl: remaining[0]?.thumbnail ?? '',
+                    youtubeUrl: undefined
+                  });
+                }
+                setActiveVideoIndex(0);
+              };
 
               return (
                 <div className="space-y-4">
@@ -947,16 +1013,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                           </button>
 
                           <button
-                            onClick={() => {
-                              if (window.confirm('هل أنتِ متأكدة من حذف الفيديو المرفق بهذا المنتج؟ يمكنك رفع أو توليد فيديو آخر في أي وقت.')) {
-                                removeProductVideo(product.id);
-                              }
-                            }}
+                            onClick={() => { void handleDeleteActiveVideo(); }}
                             className="px-3 py-1.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-transform active:scale-95"
-                            title="حذف الفيديو المرفق"
+                            title="حذف هذا الفيديو فقط"
                           >
                             <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                            <span>🗑️ حذف الفيديو</span>
+                            <span>🗑️ حذف هذا الفيديو</span>
                           </button>
                         </>
                       )}
@@ -968,15 +1030,17 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     <div className="space-y-3">
                       <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-2xl relative">
                         {isDirectOrLocal ? (
-                          <video 
-                            src={primaryVideoUrl} 
-                            poster={product.videoThumbnailUrl || product.image}
-                            controls 
+                          <video
+                            key={primaryVideoUrl}
+                            src={primaryVideoUrl}
+                            poster={active?.thumbnail}
+                            controls
                             playsInline
                             className="w-full h-full object-contain"
                           />
                         ) : (
-                          <iframe 
+                          <iframe
+                            key={primaryVideoUrl}
                             className="w-full h-full"
                             src={primaryVideoUrl}
                             title={product.titleAr}
@@ -985,6 +1049,31 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                           />
                         )}
                       </div>
+
+                      {/* Every video linked to this product — not just the
+                          one playing. Switching here only changes which
+                          video is shown; it never deletes or replaces
+                          anything. */}
+                      {gallery.length > 1 && (
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                          {gallery.map((g, idx) => (
+                            <button
+                              key={g.url}
+                              type="button"
+                              onClick={() => setActiveVideoIndex(idx)}
+                              className={`relative shrink-0 w-20 aspect-video rounded-xl overflow-hidden border-2 ${
+                                idx === safeIndex ? 'border-purple-400' : 'border-slate-700 opacity-70 hover:opacity-100'
+                              }`}
+                              title={g.title}
+                            >
+                              <img src={g.thumbnail} alt={g.title} className="w-full h-full object-cover" />
+                              <span className="absolute bottom-0.5 right-0.5 px-1 rounded bg-slate-950/80 text-[9px] text-white font-mono">
+                                {idx + 1}/{gallery.length}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
 
                       {/* Video Quick Actions Bar */}
                       <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -1011,15 +1100,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                           </button>
                           <span className="text-slate-600">|</span>
                           <button
-                            onClick={() => {
-                              if (window.confirm('هل أنتِ متأكدة من حذف الفيديو المرفق بهذا المنتج؟')) {
-                                removeProductVideo(product.id);
-                              }
-                            }}
+                            onClick={() => { void handleDeleteActiveVideo(); }}
                             className="text-red-400 hover:text-red-300 font-bold flex items-center gap-1 text-[11px] cursor-pointer"
                           >
                             <Trash2 className="w-3 h-3" />
-                            حذف الفيديو
+                            حذف هذا الفيديو
                           </button>
                         </div>
                       </div>

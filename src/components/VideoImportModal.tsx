@@ -42,7 +42,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
   isReplacing = false,
   defaultMode = 'upload'
 }) => {
-  const { products, addVideo, updateProduct, replaceProductVideo, language, formatPrice } = useApp();
+  const { products, addVideo, patchProduct, replaceProductVideo, language, formatPrice } = useApp();
 
   const [importMode, setImportMode] = useState<'link' | 'upload'>(defaultMode);
   const [videoUrl, setVideoUrl] = useState('');
@@ -277,11 +277,18 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       }
 
     if (replaceExistingVideo) {
-      // Direct replace helper keeping all product attributes completely intact
+      // Explicit replace: the owner ticked "replace the current video" on
+      // purpose, so overwriting the pinned video is exactly what she asked
+      // for. replaceProductVideo only ever touches video-related fields
+      // (via patchProduct) — it cannot drag along a stale copy of anything
+      // else, so this can never take down her photos or other product data.
       replaceProductVideo(linkedProd.id, finalVideoUrl, platform, finalTitle);
-      if (storagePath) updateProduct({ ...linkedProd, videoUrl: finalVideoUrl, videoStoragePath: storagePath });
+      if (storagePath) patchProduct(linkedProd.id, { videoStoragePath: storagePath });
     } else {
-      // 1. Add video to VideoReviews state
+      // 1. Add video to VideoReviews state — this is always purely additive:
+      // every video the owner uploads gets its own row here and stays
+      // visible in the product's video gallery, regardless of what happens
+      // to the single "cover video" fields below.
       addVideo({
         // A device upload already wrote one row for this exact video via
         // saveVideoRecord() above, keyed by embedId. Reusing that same id
@@ -303,16 +310,24 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
         hashtags
       });
 
-      // 2. Sync with product entry
-      if (syncWithProduct && linkedProd) {
-        const updated: any = { ...linkedProd, videoUrl: finalVideoUrl, videoStoragePath: storagePath };
-        if (platform === 'youtube') updated.youtubeUrl = finalVideoUrl;
-        else if (platform === 'tiktok') updated.tiktokUrl = finalVideoUrl;
-        else if (platform === 'pinterest') updated.pinterestUrl = finalVideoUrl;
-        else {
-          updated.youtubeUrl = finalVideoUrl;
-        }
-        updateProduct(updated);
+      // 2. Only pin this as the product's single "cover video" field when it
+      // does not already have one. Confirmed bug this fixes: this used to
+      // unconditionally overwrite the product's videoUrl/videoStoragePath on
+      // every single "add a video" — even though the checkbox for that is
+      // labelled as syncing, not replacing — which is exactly why a second
+      // upload always made the first video disappear from the product page.
+      // Every video beyond the first is now purely additive (step 1 above)
+      // and shows up in the product's video gallery instead of stealing the
+      // cover slot. patchProduct also means this can never touch images or
+      // any other field, however stale this component's own copy of the
+      // product is.
+      if (syncWithProduct && linkedProd && !linkedProd.videoUrl) {
+        const patch: Record<string, unknown> = { videoUrl: finalVideoUrl, videoStoragePath: storagePath };
+        if (platform === 'youtube') patch.youtubeUrl = finalVideoUrl;
+        else if (platform === 'tiktok') patch.tiktokUrl = finalVideoUrl;
+        else if (platform === 'pinterest') patch.pinterestUrl = finalVideoUrl;
+        else patch.youtubeUrl = finalVideoUrl;
+        patchProduct(linkedProd.id, patch);
       }
     }
 
@@ -701,13 +716,15 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
             </label>
 
             <label className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs font-bold text-emerald-300 cursor-pointer">
-              <input 
+              <input
                 type="checkbox"
                 checked={syncWithProduct}
                 onChange={(e) => setSyncWithProduct(e.target.checked)}
                 className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 bg-slate-950 border-slate-700 cursor-pointer"
               />
-              <span>حفظ وتثبيت الفيديو مباشرة في بطاقة وتفاصيل المنتج بالمتجر</span>
+              <span>
+                حفظ وتثبيت الفيديو كغلاف للمنتج (فقط إذا لم يوجد فيديو غلاف بعد) — بأي حال هذا الفيديو يُضاف دائماً لمعرض فيديوهات المنتج ولا يحذف أي فيديو سابق
+              </span>
             </label>
           </div>
 
