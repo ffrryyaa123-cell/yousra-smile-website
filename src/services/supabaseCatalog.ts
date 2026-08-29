@@ -157,6 +157,38 @@ export const catalogDatabase = {
     if (saveError) throw saveError;
   },
 
+  /**
+   * Updates only the given fields on a product's saved row, leaving every
+   * other field exactly as it is in the database right now.
+   *
+   * This exists because of a real, confirmed data-loss bug: side actions like
+   * "add a video" used to build their update from whatever copy of the
+   * product they already had in memory (`{...product, videoUrl: x}`) and
+   * save that whole object back. If the owner had just uploaded new photos
+   * in a still-open, not-yet-saved edit form, that in-memory copy was
+   * missing them — and saving it overwrote the real, already-correct images
+   * in the database with the stale, photo-less version. It looked like the
+   * video upload had "deleted the photos", but the video code never touched
+   * images at all — it just blindly wrote an old snapshot over new data.
+   *
+   * Fetching the current row fresh and merging only the requested fields
+   * makes that entire class of bug impossible: this can never erase a field
+   * it wasn't explicitly asked to change, no matter how stale the caller's
+   * own copy of the product is.
+   */
+  async patchProduct(productId: string, patch: Record<string, unknown>) {
+    const { data, error } = await supabase.from('products').select('data').eq('id', productId).maybeSingle();
+    if (error) throw error;
+    const current = (data?.data as Record<string, unknown>) || {};
+    const merged = { ...current, ...patch, id: productId };
+    const { error: saveError } = await supabase
+      .from('products')
+      .update({ data: merged, updated_at: new Date().toISOString() })
+      .eq('id', productId);
+    if (saveError) throw saveError;
+    return merged as Product;
+  },
+
   /** Kept for interface parity with the old Firestore uploader. New code
    * should call `uploadLocalVideo` from `videoAssets.ts` directly — it gives
    * real upload-progress events and is what the video import modal uses. */
