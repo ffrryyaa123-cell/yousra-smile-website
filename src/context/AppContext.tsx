@@ -89,6 +89,13 @@ interface AppContextType {
   addProduct: (newProduct: Omit<Product, 'id' | 'createdAt' | 'viewsCount'>) => void;
   importProductsBulk: (newProducts: Product[]) => void;
   updateProduct: (updatedProduct: Product) => void;
+  /** Updates only the given fields on one product, both locally and in the
+   * database — never touches, and can never accidentally erase, any other
+   * field (images, affiliate link, SEO...) no matter how stale the rest of
+   * the caller's copy of the product is. Use this for any side-action that
+   * only means to change one thing (pin a video, set a thumbnail) instead of
+   * `updateProduct`, which saves the whole object it is given. */
+  patchProduct: (productId: string, patch: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
   resetCatalog: () => void;
   addReview: (productId: string, userName: string, rating: number, comment: string) => void;
@@ -457,13 +464,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('Failed to restore product video state:', e);
     }
 
-    // Update Product object with new video url
-    const updatedProd: Product = {
-      ...prod,
+    // Update only the video-related fields on the product — not a full
+    // `{...prod, ...}` overwrite. This is an explicit "replace the video"
+    // action, so it is expected to change videoUrl; it must never also drag
+    // along a stale copy of images/specs/affiliate link that happened to be
+    // sitting in this component's memory and silently erase newer data that
+    // was saved to the database in the meantime.
+    patchProduct(productId, {
       videoUrl: newVideoUrl,
       youtubeUrl: platform === 'youtube' ? newVideoUrl : (prod.youtubeUrl || newVideoUrl)
-    };
-    updateProduct(updatedProd);
+    });
 
     // Update or Add to videos feed
     const existingVideoIndex = videos.findIndex(v => v.productId === productId);
@@ -490,8 +500,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
 
+    // Keeps the currently-open product modal in sync immediately. This is
+    // local view state only, not a database write, so building it from
+    // whatever is already in memory here is safe.
     if (selectedProduct && selectedProduct.id === productId) {
-      setSelectedProduct(updatedProd);
+      setSelectedProduct({
+        ...selectedProduct,
+        videoUrl: newVideoUrl,
+        youtubeUrl: platform === 'youtube' ? newVideoUrl : (selectedProduct.youtubeUrl || newVideoUrl)
+      });
     }
   };
 
@@ -863,6 +880,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     void catalogDatabase.saveProduct(updatedProduct).catch(console.error);
   };
 
+  const patchProduct = (productId: string, patch: Partial<Product>) => {
+    // Optimistic local update so the open screen reflects the change
+    // immediately — merged onto whatever local copy exists, same as the
+    // database merge below.
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, ...patch } : p));
+    void catalogDatabase.patchProduct(productId, patch as Record<string, unknown>).catch(console.error);
+  };
+
   const deleteProduct = (id: string) => {
     const existing = products.find(product => product.id === id);
     const matchingVideos = videos.filter(video => video.productId === id);
@@ -973,6 +998,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addProduct,
         importProductsBulk,
         updateProduct,
+        patchProduct,
         deleteProduct,
         resetCatalog,
         addReview,
