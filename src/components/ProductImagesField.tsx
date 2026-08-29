@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Upload, X, Star, Loader2, Plus, ImageIcon, AlertCircle, Trash2, CheckSquare, Square } from 'lucide-react';
 import { uploadLocalImage } from '../services/videoAssets';
+import { useApp } from '../context/AppContext';
 
 interface ProductImagesFieldProps {
   /** The product's id — used to group its images inside storage. */
@@ -17,12 +18,20 @@ interface ProductImagesFieldProps {
  * never show more than one photo, and every photo had to already be hosted
  * somewhere else. This lets the owner upload several from her own computer,
  * see them, reorder which one leads, and drop the ones she does not want.
+ *
+ * Existing products are persisted immediately whenever their image gallery
+ * changes. This is important because media actions (for example opening the
+ * video uploader) can happen before the owner presses the form's final Save
+ * button. Keeping the database in sync here prevents a later media action or
+ * refresh from restoring stale images or making a newly uploaded image seem
+ * to disappear.
  */
 export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
   productId,
   images,
   onChange
 }) => {
+  const { patchProduct } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
@@ -32,6 +41,24 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
   // Tracked by URL, not index — an index would go stale the moment a photo
   // is made primary (reorders the array) or another one is removed.
   const [selected, setSelected] = useState<string[]>([]);
+
+  /**
+   * Updates the form immediately and, for an existing product, persists only
+   * the image fields. patchProduct deliberately avoids a stale full-product
+   * write, so changing photos cannot erase videos, affiliate links or SEO.
+   */
+  const commitImages = (nextImages: string[]) => {
+    // Avoid duplicate URLs while preserving the owner's chosen order.
+    const normalized = Array.from(new Set(nextImages.filter(Boolean)));
+    onChange(normalized);
+
+    if (productId && productId !== 'new-product') {
+      patchProduct(productId, {
+        images: normalized,
+        image: normalized[0] || ''
+      });
+    }
+  };
 
   const handleFiles = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
@@ -54,7 +81,7 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
       }
     }
 
-    if (uploaded.length > 0) onChange([...images, ...uploaded]);
+    if (uploaded.length > 0) commitImages([...images, ...uploaded]);
     setBusy(false);
     setCurrent('');
     setProgress(0);
@@ -73,11 +100,11 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
       return;
     }
     setError('');
-    onChange([...images, candidate]);
+    commitImages([...images, candidate]);
     setUrlDraft('');
   };
 
-  const removeAt = (index: number) => onChange(images.filter((_, i) => i !== index));
+  const removeAt = (index: number) => commitImages(images.filter((_, i) => i !== index));
 
   const toggleSelected = (src: string) => {
     setSelected(prev => prev.includes(src) ? prev.filter(s => s !== src) : [...prev, src]);
@@ -85,7 +112,7 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
 
   const removeSelected = () => {
     if (selected.length === 0) return;
-    onChange(images.filter(src => !selected.includes(src)));
+    commitImages(images.filter(src => !selected.includes(src)));
     setSelected([]);
   };
 
@@ -94,7 +121,7 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
     if (index === 0) return;
     const next = [...images];
     const [chosen] = next.splice(index, 1);
-    onChange([chosen, ...next]);
+    commitImages([chosen, ...next]);
   };
 
   return (
