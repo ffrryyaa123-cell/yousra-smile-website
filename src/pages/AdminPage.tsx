@@ -62,7 +62,7 @@ import { ProductImagesField } from '../components/ProductImagesField';
 import { ProductVideosManager } from '../components/ProductVideosManager';
 import { generateVideoForProduct, toRenderedAsset, toVideoReview } from '../services/productVideoPipeline';
 import { auth, ownerGoogleSignIn, consumeOwnerRedirectResult, describeAuthError, logoutGoogle } from '../services/googleWorkspace';
-import { adminAccount, AdminProfile } from '../services/adminAccount';
+import { adminAccount, AdminProfile, supabase } from '../services/adminAccount';
 
 // Accounts allowed to open the dashboard. Kept as a list so a second owner mailbox
 // can be used without locking anyone out of the panel.
@@ -511,68 +511,103 @@ export const AdminPage: React.FC = () => {
     }, 1200);
   };
 
-  // 1-Click Fast Extract & Auto-Fill from Link ONLY (No manual data entry needed!)
+  // استخراج بيانات المنتج الحقيقية من صفحته عبر دالة product-extract في Supabase.
+  //
+  // النسخة السابقة كانت تخمّن من نص الرابط وتكتب اسماً وسعراً وصورة مخترعة، ثم
+  // تعرض رسالة نجاح. هنا لا يوجد أي تخمين: إمّا بيانات حقيقية من الصفحة نفسها،
+  // أو رسالة خطأ واضحة والنموذج يبقى كما هو.
   const handleFastAutoFillFromLink = async () => {
-    if (!fastLinkInput || !fastLinkInput.trim()) {
-      alert('يرجى لصق رابط المنتج أولاً (أمازون / علي إكسبريس)');
+    const rawLink = (fastLinkInput || '').trim();
+
+    if (!rawLink) {
+      alert('يرجى لصق رابط المنتج أولاً (رابط أمازون).');
+      return;
+    }
+    if (!/^https?:\/\//i.test(rawLink)) {
+      alert('الرابط غير صالح. الصقي الرابط كاملاً مع https://');
       return;
     }
 
     setIsFastExtracting(true);
     try {
-      const extracted = await videoGenerator.extractProductDataAndPrepareVideo(
-        fastLinkInput.trim(),
-        siteSettings.amazonTag || 'frial-20'
+      const { data: result, error: invokeError } = await supabase.functions.invoke(
+        'product-extract',
+        { body: { url: rawLink } }
       );
 
-      if (extracted && extracted.product) {
-        const p = extracted.product;
-        const origPrice = p.originalPrice || 299;
-        const discPrice = p.discountPrice || 199;
-
-        // Auto add brand to brandsList if new
-        if (p.brand && !brandsList.includes(p.brand)) {
-          setBrandsList(prev => [...prev, p.brand]);
+      if (invokeError) {
+        let serverMessage = '';
+        try {
+          const ctx: any = (invokeError as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const payload = await ctx.json();
+            serverMessage = payload?.error || '';
+          }
+        } catch {
+          serverMessage = '';
         }
-
-        setFormData(prev => ({
-          ...prev,
-          titleAr: p.titleAr || prev.titleAr,
-          titleEn: p.titleEn || prev.titleEn,
-          category: (p.category as any) || prev.category,
-          subcategory: p.subcategory || prev.subcategory,
-          brand: p.brand || prev.brand,
-          description: p.description || prev.description,
-          longDescription: `${extracted.marketing?.caption || ''}\n\nالمميزات والفوائد:\n${p.features?.map(f => `• ${f}`).join('\n') || ''}`,
-          originalPrice: origPrice,
-          discountPrice: discPrice,
-          currency: 'USD',
-          amazonUrl: p.affiliateUrl || fastLinkInput.trim(),
-          image: p.image || prev.image,
-          imagesStr: p.image,
-          featuresStr: p.features?.join(', ') || 'أداء ذكي فائق, جودة واعتمادية عالية, ضمان سنتين شامل, استهلاك موفر للطاقة',
-          keywordsStr: extracted.marketing?.hashtags?.map(h => h.replace('#', '')).join(', ') || 'أجهزة_ذكية, عروض, تسوق_أونلاين, يسرى_سمايل'
-        }));
-
-        alert('✨ تم استخراج وتعبئة كافة بيانات المنتج (الاسم بالعربي والإنجليزي، السعر بالدولار $، الوصف، والمميزات) تلقائياً بنجاح دون الحاجة لإدخال يدوي!');
+        throw new Error(serverMessage || invokeError.message || 'تعذر الاتصال بخدمة الاستخراج.');
       }
-    } catch (err) {
-      console.warn('Fast extraction note, applying smart fallback:', err);
-      const isAliexpress = /aliexpress/i.test(fastLinkInput);
+
+      if (!result?.ok || !result?.data) {
+        throw new Error(result?.error || 'تعذر قراءة بيانات المنتج من الصفحة.');
+      }
+
+      const d = result.data;
+
+      const price = typeof d.price === 'number' ? d.price : null;
+      const listPrice = typeof d.listPrice === 'number' ? d.listPrice : null;
+      const images: string[] = Array.isArray(d.images) ? d.images : [];
+      const features: string[] = Array.isArray(d.features) ? d.features : [];
+      // أمازون تضع صفوف السعر داخل جدول المواصفات؛ هذه ليست مواصفات منتج.
+      const SKIP_SPEC_KEYS = ['price', 'total', 'list price', 'preis', 'gesamt', 'prix'];
+      const specsPairs = (d.specs && typeof d.specs === 'object' ? Object.entries(d.specs) : [])
+        .filter(([k]) => !SKIP_SPEC_KEYS.includes(String(k).trim().toLowerCase()));
+      const specsText = specsPairs.map(([k, v]) => `${k}: ${v}`).join('\n');
+
+      if (d.brand && !brandsList.includes(d.brand)) {
+        setBrandsList(prev => [...prev, d.brand]);
+      }
+
       setFormData(prev => ({
         ...prev,
-        titleAr: isAliexpress ? 'جهاز إلكتروني ذكي متعدد الوظائف' : 'مكنسة روبوت ذكية فائقة القوة والذكاء الاصطناعي',
-        titleEn: isAliexpress ? 'Smart Multifunctional Device' : 'Smart Robot Vacuum Cleaner AI',
-        brand: 'Smart Choice',
-        amazonUrl: fastLinkInput.trim(),
-        currency: 'USD',
-        originalPrice: 320,
-        discountPrice: 219,
-        description: 'جهاز ذكي بتقنيات حديثة يوفر لك أعلى مستويات الكفاءة والراحة المنزلية مع ضمان شامل.',
-        featuresStr: 'قوة شفط فائقة, تحكم كامل عبر التطبيق, بطارية تدوم طويلاً, ضمان سنتين',
-        keywordsStr: 'أجهزة_ذكية, عروض_خاصة, تسوق_ذكي'
+        titleEn: d.title || prev.titleEn,
+        titleAr: prev.titleAr || d.title || '',
+        brand: d.brand || prev.brand,
+        description: d.description || prev.description,
+        longDescription: specsText
+          ? `${d.description || ''}\n\nالمواصفات كما وردت في صفحة المنتج:\n${specsText}`.trim()
+          : (d.description || prev.longDescription),
+        // الرابط يُحفظ كما لصقته بالضبط — رابط SiteStripe الخاص بك لا يُعاد بناؤه أبداً.
+        amazonUrl: rawLink,
+        image: images[0] || prev.image,
+        imagesStr: images.length ? images.join(', ') : prev.imagesStr,
+        featuresStr: features.length ? features.join(', ') : prev.featuresStr,
+        currency: d.currency || 'USD',
+        discountPrice: price !== null ? price : prev.discountPrice,
+        originalPrice: listPrice !== null ? listPrice : (price !== null ? price : prev.originalPrice),
+        rating: typeof d.rating === 'number' ? d.rating : prev.rating,
+        reviewCount: typeof d.reviewCount === 'number' ? d.reviewCount : prev.reviewCount
       }));
-      alert('✨ تم استخراج وتعبئة بيانات المنتج بالدولار بنجاح!');
+
+      const notes: string[] = Array.isArray(d.warnings) ? d.warnings : [];
+      const summary = [
+        '✅ تم جلب البيانات من صفحة المنتج نفسها:',
+        `• الاسم: ${d.title || '—'}`,
+        `• العلامة: ${d.brand || '—'}`,
+        `• السعر: ${price !== null ? price + ' ' + (d.currency || 'USD') : 'غير معروض'}`,
+        `• الصور: ${images.length}`,
+        `• المميزات: ${features.length}`,
+        `• المواصفات: ${specsPairs.length}`
+      ].join('\n');
+
+      alert(notes.length ? `${summary}\n\nملاحظات:\n• ${notes.join('\n• ')}` : summary);
+    } catch (err: any) {
+      console.error('product-extract failed:', err);
+      alert(
+        `❌ لم يتم الاستخراج ولم يتغير أي حقل في النموذج.\n\nالسبب: ${err?.message || 'خطأ غير معروف'}\n\n` +
+        'جرّبي الرابط الطويل للمنتج (الذي يحتوي /dp/)، أو أعيدي المحاولة بعد دقيقة، أو أدخلي البيانات يدوياً.'
+      );
     } finally {
       setIsFastExtracting(false);
     }
