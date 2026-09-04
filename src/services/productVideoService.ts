@@ -6,6 +6,7 @@ import {
   VideoScene
 } from '../types';
 import { auth } from './googleWorkspace';
+import { generateOriginalProductImages } from './aiProductMedia';
 
 export type SupportedCommercePlatform = 'amazon' | 'aliexpress' | 'noon' | 'shein' | 'other';
 
@@ -219,14 +220,14 @@ function buildEnglishVideoScript(
   category: string,
   features: string[],
   heroImage: string,
-  referenceImages: string[],
+  generatedImages: string[],
   price: number,
   discountPrice: number
 ): PromotionalVideoScript {
   const kind = productKindFrom(title, category, features);
-  const hero = referenceImages[0] || heroImage;
-  const alternate = referenceImages[1] || hero;
-  const alternate2 = referenceImages[2] || alternate;
+  const hero = generatedImages[0] || heroImage;
+  const alternate = generatedImages[1] || hero;
+  const alternate2 = generatedImages[2] || alternate;
   const featureOne = features[0] || 'Designed for practical everyday use';
   const featureTwo = features[1] || features[0] || 'Built around the product’s verified features';
   const featureThree = features[2] || features[1] || features[0] || 'Easy to understand and use';
@@ -268,9 +269,9 @@ function buildEnglishVideoScript(
       visualPrompt: `A realistic before-and-after demonstration for ${title}, only if the verified product is intended to clean or restore this exact surface. Keep lighting and camera angle consistent and avoid exaggerated results.`,
       voiceoverText: `The result is easy to see when the product is used for the job it was designed to do.`,
       screenText: 'Realistic Before & After',
-      sceneImage: alternate2,
-      beforeImage: alternate,
-      afterImage: alternate2,
+      sceneImage: generatedImages[2] || alternate2,
+      beforeImage: generatedImages[1] || alternate,
+      afterImage: generatedImages[2] || alternate2,
       transformationNote: 'Use before/after only for a verified cleaning use case. Never fabricate a transformation.'
     });
   } else {
@@ -280,7 +281,7 @@ function buildEnglishVideoScript(
       visualPrompt: lifestylePromptFor(kind, title),
       voiceoverText: `It fits naturally into the way this product is meant to be used, without adding claims that are not in the verified listing.`,
       screenText: 'Designed for Everyday Use',
-      sceneImage: alternate2
+      sceneImage: generatedImages[2] || alternate2
     });
   }
 
@@ -377,7 +378,7 @@ export async function generateProductVideoCampaign(
         'All video narration, on-screen text, captions and hashtags must be English only.',
         'Do not invent product claims, prices, accessories or results.',
         'Do not use before/after unless the verified product genuinely supports that use case.',
-        'Amazon/store images are temporary references only; final Yousra Smile media should be original generated assets.'
+        'Store/source images are temporary references only; final Yousra Smile media must be original generated assets.'
       ].filter(Boolean).join(' ')
     })
   });
@@ -394,9 +395,9 @@ export async function generateProductVideoCampaign(
   const category = String(raw.category || 'products').trim();
   const features = englishWords(Array.isArray(raw.features) ? raw.features : []);
   const referenceImages = englishWords(Array.isArray(raw.images) ? raw.images : []);
-  const heroImage = String(raw.heroImage || raw.imageUrl || raw.image || referenceImages[0] || '').trim();
+  const sourceHeroImage = String(raw.heroImage || raw.imageUrl || raw.image || referenceImages[0] || '').trim();
 
-  if (!title || !heroImage.startsWith('https://')) {
+  if (!title || !sourceHeroImage.startsWith('https://')) {
     throw new Error('تم الوصول للرابط، لكن لم أتمكن من مطابقة عنوان المنتج وصورته الحقيقية. أوقفت التوليد حتى لا يخرج فيديو خاطئ.');
   }
 
@@ -411,14 +412,43 @@ export async function generateProductVideoCampaign(
     }
   );
 
-  const allReferenceImages = Array.from(new Set([heroImage, ...referenceImages].filter(Boolean)));
+  const allReferenceImages = Array.from(new Set([sourceHeroImage, ...referenceImages].filter(Boolean)));
+  const kind = productKindFrom(title, category, features);
+
+  // The commerce/store images above are temporary references only. This call
+  // generates NEW assets and stores only those generated images in Yousra Smile.
+  const generatedMedia = await generateOriginalProductImages({
+    storageKey: String(raw.sourceProductId || sanitized.extractedId || title),
+    productTitle: title,
+    brand,
+    category,
+    kind,
+    features,
+    referenceImages: allReferenceImages,
+    sourceUrl: String(raw.sourceUrl || input.productUrl),
+    geminiApiKey: input.geminiApiKey
+  });
+
+  const imagePriority = ['hero', 'lifestyle_home', 'lifestyle_outdoor', 'before_after', 'feature', 'thumbnail'];
+  const sortedGenerated = [...generatedMedia].sort((a, b) => {
+    const ai = imagePriority.indexOf(a.type);
+    const bi = imagePriority.indexOf(b.type);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+  const generatedImages = sortedGenerated.map(item => item.url).filter(Boolean);
+  const heroImage = sortedGenerated.find(item => item.type === 'hero')?.url || generatedImages[0];
+
+  if (!heroImage || generatedImages.length === 0) {
+    throw new Error('تم استخراج المنتج، لكن لم يتم إنشاء صور أصلية قابلة للحفظ. لم يتم استخدام صور المتجر كبديل نهائي.');
+  }
+
   const videoScript = buildEnglishVideoScript(
     title,
     brand,
     category,
     features,
     heroImage,
-    allReferenceImages,
+    generatedImages,
     originalPrice,
     discountPrice
   );
@@ -441,9 +471,12 @@ export async function generateProductVideoCampaign(
     affiliateLink,
     sourceUrl: String(raw.sourceUrl || input.productUrl),
     image: heroImage,
-    images: allReferenceImages,
+    images: generatedImages,
     youtubeUrl: undefined
   };
+
+  const cleaningBefore = sortedGenerated.find(item => item.type === 'lifestyle_home')?.url;
+  const cleaningAfter = sortedGenerated.find(item => item.type === 'before_after')?.url;
 
   return {
     product,
@@ -457,11 +490,7 @@ export async function generateProductVideoCampaign(
     },
     suggestedVideoUrl: undefined,
     heroImage,
-    beforeImage: isBeforeAfterAppropriate(productKindFrom(title, category, features))
-      ? allReferenceImages[1] || heroImage
-      : undefined,
-    afterImage: isBeforeAfterAppropriate(productKindFrom(title, category, features))
-      ? allReferenceImages[2] || allReferenceImages[1] || heroImage
-      : undefined
+    beforeImage: isBeforeAfterAppropriate(kind) ? cleaningBefore : undefined,
+    afterImage: isBeforeAfterAppropriate(kind) ? cleaningAfter : undefined
   };
 }
