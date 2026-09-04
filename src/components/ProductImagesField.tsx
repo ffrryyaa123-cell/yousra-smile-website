@@ -4,28 +4,36 @@ import { uploadLocalImage } from '../services/videoAssets';
 import { useApp } from '../context/AppContext';
 
 interface ProductImagesFieldProps {
-  /** The product's id — used to group its images inside storage. */
   productId: string;
-  /** Every image, primary first. */
   images: string[];
   onChange: (images: string[]) => void;
 }
 
-/**
- * Manages the whole set of photos for one product.
- *
- * The form used to offer a single "main image URL" box, so a product could
- * never show more than one photo, and every photo had to already be hosted
- * somewhere else. This lets the owner upload several from her own computer,
- * see them, reorder which one leads, and drop the ones she does not want.
- *
- * Existing products are persisted immediately whenever their image gallery
- * changes. This is important because media actions (for example opening the
- * video uploader) can happen before the owner presses the form's final Save
- * button. Keeping the database in sync here prevents a later media action or
- * refresh from restoring stale images or making a newly uploaded image seem
- * to disappear.
- */
+const IMAGE_MIME_BY_EXTENSION: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  jfif: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+  bmp: 'image/bmp',
+  avif: 'image/avif',
+  heic: 'image/heic',
+  heif: 'image/heif',
+  tif: 'image/tiff',
+  tiff: 'image/tiff'
+};
+
+const IMAGE_ACCEPT = '.jpg,.jpeg,.jfif,.png,.webp,.gif,.bmp,.avif,.heic,.heif,.tif,.tiff,image/*';
+
+const normalizeImageFile = (file: File): File => {
+  if (file.type?.startsWith('image/') && file.type !== 'image/svg+xml') return file;
+  const extension = (file.name.split('.').pop() || '').toLowerCase();
+  const inferred = IMAGE_MIME_BY_EXTENSION[extension];
+  if (!inferred) return file;
+  return new File([file], file.name, { type: inferred, lastModified: file.lastModified });
+};
+
 export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
   productId,
   images,
@@ -38,17 +46,9 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
   const [current, setCurrent] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [urlDraft, setUrlDraft] = useState<string>('');
-  // Tracked by URL, not index — an index would go stale the moment a photo
-  // is made primary (reorders the array) or another one is removed.
   const [selected, setSelected] = useState<string[]>([]);
 
-  /**
-   * Updates the form immediately and, for an existing product, persists only
-   * the image fields. patchProduct deliberately avoids a stale full-product
-   * write, so changing photos cannot erase videos, affiliate links or SEO.
-   */
   const commitImages = (nextImages: string[]) => {
-    // Avoid duplicate URLs while preserving the owner's chosen order.
     const normalized = Array.from(new Set(nextImages.filter(Boolean)));
     onChange(normalized);
 
@@ -67,21 +67,32 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
 
     const picked = Array.from(fileList);
     const uploaded: string[] = [];
+    const failures: string[] = [];
 
     for (let index = 0; index < picked.length; index++) {
-      const file = picked[index];
+      const originalFile = picked[index];
+      const extension = (originalFile.name.split('.').pop() || '').toLowerCase();
+
+      if (extension === 'svg' || originalFile.type === 'image/svg+xml') {
+        failures.push(`${originalFile.name}: SVG غير مسموح للمنتجات لأسباب أمان.`);
+        continue;
+      }
+
+      const file = normalizeImageFile(originalFile);
       setCurrent(`${index + 1} من ${picked.length} — ${file.name}`);
       setProgress(0);
+
       try {
         const result = await uploadLocalImage(productId || 'new-product', file, setProgress);
         uploaded.push(result.videoUrl);
       } catch (uploadError: any) {
-        // One bad file must not discard the ones that already succeeded.
-        setError(uploadError?.message || 'تعذر رفع إحدى الصور.');
+        failures.push(`${file.name}: ${uploadError?.message || 'تعذر رفع الصورة.'}`);
       }
     }
 
     if (uploaded.length > 0) commitImages([...images, ...uploaded]);
+    if (failures.length > 0) setError(failures.join(' — '));
+
     setBusy(false);
     setCurrent('');
     setProgress(0);
@@ -116,7 +127,6 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
     setSelected([]);
   };
 
-  /** Moves an image to the front — the first one is the product's main photo. */
   const makePrimary = (index: number) => {
     if (index === 0) return;
     const next = [...images];
@@ -145,15 +155,12 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
         </button>
       )}
 
-      {/* thumbnails */}
       {images.length > 0 && (
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
           {images.map((src, index) => (
             <div
               key={`${src}-${index}`}
-              className={`relative group rounded-xl overflow-hidden border aspect-square bg-slate-950 ${
-                index === 0 ? 'border-amber-400' : 'border-slate-700'
-              }`}
+              className={`relative group rounded-xl overflow-hidden border aspect-square bg-slate-950 ${index === 0 ? 'border-amber-400' : 'border-slate-700'}`}
             >
               <img src={src} alt={`صورة ${index + 1}`} className="w-full h-full object-cover" loading="lazy" />
 
@@ -169,17 +176,9 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
                 title="تحديد للحذف الجماعي"
                 className="absolute top-1 left-1 p-0.5 rounded bg-slate-950/70"
               >
-                {selected.includes(src) ? (
-                  <CheckSquare className="w-4 h-4 text-amber-300" />
-                ) : (
-                  <Square className="w-4 h-4 text-white/80" />
-                )}
+                {selected.includes(src) ? <CheckSquare className="w-4 h-4 text-amber-300" /> : <Square className="w-4 h-4 text-white/80" />}
               </button>
 
-              {/* Controls are always visible (not hover-only) so this works on
-                  touchscreens — a phone or tablet has no hover state, so a
-                  group-hover-only overlay would leave no way to see, let
-                  alone tap, the delete button at all. */}
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/95 via-slate-950/60 to-transparent pt-4 pb-1 flex items-center justify-center gap-1.5">
                 {index !== 0 && (
                   <button
@@ -205,16 +204,18 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
         </div>
       )}
 
-      {/* upload from device */}
       <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-3 space-y-2">
         <p className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
           <Upload className="w-3.5 h-3.5 text-emerald-400" />
-          ارفعي صوراً من جهازك — يمكنك اختيار عدة صور معاً
+          ارفعي صورة واحدة أو عدة صور من جهازك
+        </p>
+        <p className="text-[10px] text-emerald-300">
+          JPG, JPEG, PNG, WebP, GIF, BMP, AVIF, HEIC/HEIF, TIFF
         </p>
         <input
           ref={fileRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/*"
+          accept={IMAGE_ACCEPT}
           multiple
           disabled={busy}
           onChange={e => handleFiles(e.target.files)}
@@ -234,7 +235,6 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
         )}
       </div>
 
-      {/* add by URL */}
       <div className="flex gap-2">
         <input
           type="url"
