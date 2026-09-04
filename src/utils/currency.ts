@@ -190,7 +190,14 @@ export function formatPriceValue(priceInUsd: number, currencyCode: CurrencyCode,
 } {
   const config = CURRENCIES[currencyCode] || CURRENCIES.USD;
   const rate = config.rateFromUsd ?? 1;
-  const converted = currencyCode === 'USD' ? priceInUsd : Math.round(priceInUsd * rate);
+
+  // A product saved without a price used to arrive here as null, and
+  // null.toFixed(2) threw — which unmounted the whole React tree and left the
+  // dashboard as a blank black screen. A missing price is a data problem to be
+  // shown, never a reason to take the page down.
+  const safePrice = typeof priceInUsd === 'number' && Number.isFinite(priceInUsd) ? priceInUsd : 0;
+
+  const converted = currencyCode === 'USD' ? safePrice : Math.round(safePrice * rate);
   
   const formattedAmount = (currencyCode === 'USD' && !Number.isInteger(converted))
     ? converted.toFixed(2)
