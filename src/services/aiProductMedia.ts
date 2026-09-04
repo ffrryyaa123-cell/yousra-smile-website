@@ -1,5 +1,4 @@
-import { auth } from './googleWorkspace';
-import { uploadLocalImage } from './videoAssets';
+import { supabase } from './adminAccount';
 
 export type GeneratedProductImageType =
   | 'hero'
@@ -26,126 +25,76 @@ export interface GenerateProductImagesInput {
   features?: string[];
   referenceImages: string[];
   sourceUrl?: string;
-  geminiApiKey?: string;
   onProgress?: (percent: number, message: string) => void;
 }
 
-const safeStorageKey = (value: string): string => {
-  const cleaned = String(value || 'product')
-    .trim()
-    .replace(/[^a-zA-Z0-9_-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
-  return cleaned || `product-${Date.now()}`;
-};
-
-const base64ToFile = (data: string, mimeType: string, fileName: string): File => {
-  const binary = atob(data);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
+const readFunctionError = async (error: any): Promise<string> => {
+  try {
+    const response = error?.context;
+    if (response && typeof response.json === 'function') {
+      const body = await response.json();
+      return body?.error || body?.message || error?.message || '';
+    }
+  } catch {
+    // Ignore response parsing errors and use the connector message below.
   }
-  return new File([bytes], fileName, { type: mimeType, lastModified: Date.now() });
-};
-
-const extensionForMime = (mimeType: string): string => {
-  if (/png/i.test(mimeType)) return 'png';
-  if (/webp/i.test(mimeType)) return 'webp';
-  if (/avif/i.test(mimeType)) return 'avif';
-  return 'jpg';
+  return error?.message || '';
 };
 
 /**
- * Generates NEW product media from verified product references, then stores only
- * those generated outputs in Yousra Smile storage. Reference/store images are
- * never persisted by this service.
+ * Generates NEW product media through the secure Supabase Edge Function.
+ * Store/Amazon images are sent only as temporary references. The Edge Function
+ * saves only generated outputs into Yousra Smile storage and returns their URLs.
  */
 export async function generateOriginalProductImages(
   input: GenerateProductImagesInput
 ): Promise<GeneratedProductImage[]> {
-  const currentUser = auth.currentUser;
-  if (!currentUser) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session?.access_token) {
     throw new Error('سجّلي الدخول إلى لوحة التحكم قبل توليد الصور الأصلية.');
   }
 
-  const idToken = await currentUser.getIdToken();
-  input.onProgress?.(5, 'تحليل المنتج وتجهيز المراجع المؤقتة...');
+  const references = Array.from(new Set((input.referenceImages || []).filter(Boolean))).slice(0, 3);
+  if (references.length === 0) {
+    throw new Error('لا توجد صورة مرجعية موثقة للمنتج. أوقفت التوليد حتى لا يتم إنشاء منتج مختلف.');
+  }
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${idToken}`
-  };
-  if (input.geminiApiKey) headers['x-gemini-key'] = input.geminiApiKey;
+  input.onProgress?.(10, 'تحليل المنتج وتجهيز المراجع المؤقتة...');
 
-  const response = await fetch('/api/agent/generate-product-images', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
+  const { data, error } = await supabase.functions.invoke('ai-product-media', {
+    body: {
+      action: 'generate_images',
+      storageKey: input.storageKey,
       productTitle: input.productTitle,
       brand: input.brand || '',
       category: input.category || '',
       kind: input.kind || 'general',
       features: input.features || [],
-      referenceImages: Array.from(new Set((input.referenceImages || []).filter(Boolean))).slice(0, 3),
+      referenceImages: references,
       sourceUrl: input.sourceUrl || ''
-    })
+    }
   });
 
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || !payload?.success || !Array.isArray(payload?.data?.generatedImages)) {
-    throw new Error(payload?.error || `تعذر توليد الصور الأصلية (HTTP ${response.status}).`);
+  if (error) {
+    const detail = await readFunctionError(error);
+    throw new Error(detail || 'تعذر توليد الصور الأصلية.');
+  }
+  if (data?.error) throw new Error(data.error);
+
+  const generated = data?.data?.generatedImages;
+  if (!data?.success || !Array.isArray(generated) || generated.length === 0) {
+    throw new Error('لم يرجع مولد الصور أي صورة أصلية قابلة للنشر.');
   }
 
-  const rawImages = payload.data.generatedImages as Array<{
-    type?: GeneratedProductImageType;
-    aspectRatio?: string;
-    mimeType?: string;
-    data?: string;
-  }>;
+  input.onProgress?.(100, `تم توليد وحفظ ${generated.length} صور أصلية بنجاح.`);
 
-  if (rawImages.length === 0) {
-    throw new Error('لم يرجع مولد الصور أي صورة أصلية.');
-  }
-
-  input.onProgress?.(45, `تم توليد ${rawImages.length} صور. جاري حفظها في Yousra Smile...`);
-
-  const storageKey = `ai-${safeStorageKey(input.storageKey)}`;
-  const stored: GeneratedProductImage[] = [];
-
-  for (let index = 0; index < rawImages.length; index += 1) {
-    const raw = rawImages[index];
-    if (!raw?.data || !raw?.mimeType?.startsWith('image/')) continue;
-
-    const type = raw.type || 'feature';
-    const extension = extensionForMime(raw.mimeType);
-    const file = base64ToFile(
-      raw.data,
-      raw.mimeType,
-      `${type}-${Date.now()}-${index + 1}.${extension}`
-    );
-
-    const storedAsset = await uploadLocalImage(storageKey, file, progress => {
-      const base = 45 + Math.round((index / rawImages.length) * 50);
-      const perFile = Math.round((progress / rawImages.length) * 50);
-      input.onProgress?.(
-        Math.min(95, base + perFile),
-        `حفظ الصورة ${index + 1} من ${rawImages.length}...`
-      );
-    });
-
-    stored.push({
-      type,
-      aspectRatio: raw.aspectRatio || '2:3',
-      url: storedAsset.videoUrl,
-      storagePath: storedAsset.storagePath,
-      mimeType: raw.mimeType
-    });
-  }
-
-  if (stored.length === 0) {
-    throw new Error('تم توليد الصور لكن تعذر حفظها في التخزين الدائم.');
-  }
-
-  input.onProgress?.(100, 'تم توليد وحفظ الصور الأصلية بنجاح.');
-  return stored;
+  return generated
+    .filter((item: any) => item?.url && item?.storagePath)
+    .map((item: any) => ({
+      type: item.type || 'feature',
+      aspectRatio: item.aspectRatio || '2:3',
+      url: item.url,
+      storagePath: item.storagePath,
+      mimeType: item.mimeType || 'image/png'
+    })) as GeneratedProductImage[];
 }
