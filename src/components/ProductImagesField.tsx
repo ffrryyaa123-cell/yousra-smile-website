@@ -27,11 +27,20 @@ const IMAGE_MIME_BY_EXTENSION: Record<string, string> = {
 const IMAGE_ACCEPT = '.jpg,.jpeg,.jfif,.png,.webp,.gif,.bmp,.avif,.heic,.heif,.tif,.tiff,image/*';
 
 const normalizeImageFile = (file: File): File => {
-  if (file.type?.startsWith('image/') && file.type !== 'image/svg+xml') return file;
   const extension = (file.name.split('.').pop() || '').toLowerCase();
   const inferred = IMAGE_MIME_BY_EXTENSION[extension];
-  if (!inferred) return file;
-  return new File([file], file.name, { type: inferred, lastModified: file.lastModified });
+
+  // Always prefer the canonical MIME that belongs to the file extension.
+  // Windows and some browsers sometimes expose JPEG as image/jpg or with an
+  // empty/odd MIME. Supabase accepts the canonical image/jpeg, so normalize
+  // before the upload request instead of forwarding the browser's label.
+  if (inferred && file.type !== inferred) {
+    return new File([file], file.name, { type: inferred, lastModified: file.lastModified });
+  }
+
+  if (file.type?.startsWith('image/') && file.type !== 'image/svg+xml') return file;
+  if (inferred) return new File([file], file.name, { type: inferred, lastModified: file.lastModified });
+  return file;
 };
 
 export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({
