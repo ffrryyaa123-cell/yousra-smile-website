@@ -106,6 +106,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
   const [activeImage, setActiveImage] = useState<string>(product.image);
   const [showInlineVideo, setShowInlineVideo] = useState(false);
+  const [activeMediaVideoUrl, setActiveMediaVideoUrl] = useState('');
   const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'overview' | 'history' | 'videos' | 'specs' | 'reviews' | 'seo'>('overview');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -125,6 +126,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [onClose]);
+
+  useEffect(() => {
+    setActiveImage(product.image);
+    setShowInlineVideo(false);
+    setActiveMediaVideoUrl('');
+    setActiveVideoIndex(0);
+  }, [product.id, product.image]);
 
   const handleReviewSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,11 +161,36 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   const [ratingSubmittedMsg, setRatingSubmittedMsg] = useState(false);
 
   const primaryProductVideoUrl = product.videoUrl || product.youtubeUrl || product.tiktokUrl || product.pinterestUrl;
-  const hasDirectProductVideo = Boolean(primaryProductVideoUrl && (
-    primaryProductVideoUrl.startsWith('blob:') ||
-    primaryProductVideoUrl.endsWith('.mp4') ||
-    primaryProductVideoUrl.endsWith('.webm')
-  ));
+  const linkedProductVideos = videos.filter(v => v.productId === product.id && Boolean(v.videoUrl));
+  type ProductMediaVideo = { url: string; thumbnail?: string; title: string; isLocal: boolean };
+  const productMediaVideos: ProductMediaVideo[] = (() => {
+    const items: ProductMediaVideo[] = [];
+    const seen = new Set<string>();
+    if (primaryProductVideoUrl) {
+      items.push({
+        url: primaryProductVideoUrl,
+        thumbnail: product.videoThumbnailUrl || product.image,
+        title: product.titleAr,
+        isLocal: primaryProductVideoUrl.startsWith('blob:') || /\.(mp4|webm|mov|m4v)(?:$|\?)/i.test(primaryProductVideoUrl)
+      });
+      seen.add(primaryProductVideoUrl);
+    }
+    linkedProductVideos.forEach(videoItem => {
+      const url = videoItem.videoUrl || '';
+      if (!url || seen.has(url)) return;
+      items.push({
+        url,
+        thumbnail: videoItem.thumbnailUrl || videoItem.productImage || product.videoThumbnailUrl || product.image,
+        title: videoItem.title || product.titleAr,
+        isLocal: videoItem.platform === 'local' || videoItem.platform === 'direct' || /\.(mp4|webm|mov|m4v)(?:$|\?)/i.test(url)
+      });
+      seen.add(url);
+    });
+    return items;
+  })();
+  const productMediaImages = Array.from(new Set([product.image, ...(product.images || [])].filter(Boolean)));
+  const activeMediaVideo = productMediaVideos.find(item => item.url === activeMediaVideoUrl) || productMediaVideos[0];
+  const hasDirectProductVideo = productMediaVideos.length > 0;
 
   const currentUserRating = userRatings[product.id] || 0;
 
@@ -428,42 +461,37 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
-            {/* Gallery Left/Right Side */}
+            {/* Unified Images + Videos Gallery */}
             <div className="space-y-4">
               <div className="relative w-full h-80 rounded-2xl bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200/60 dark:border-slate-800 group">
-                {showInlineVideo && hasDirectProductVideo ? (
-                  <video
-                    src={primaryProductVideoUrl}
-                    poster={product.videoThumbnailUrl || product.image}
-                    controls
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-contain bg-black"
-                  />
-                ) : (
-                  <>
-                    <img 
-                      src={hasDirectProductVideo && product.videoThumbnailUrl ? product.videoThumbnailUrl : activeImage}
-                      alt={product.titleAr}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                {showInlineVideo && activeMediaVideo ? (
+                  activeMediaVideo.isLocal ? (
+                    <video
+                      key={activeMediaVideo.url}
+                      src={activeMediaVideo.url}
+                      poster={activeMediaVideo.thumbnail || product.image}
+                      controls
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-contain bg-black"
                     />
-                    {hasDirectProductVideo && (
-                      <button
-                        type="button"
-                        onClick={() => setShowInlineVideo(true)}
-                        className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-slate-950/25 hover:bg-slate-950/10 transition-colors cursor-pointer"
-                        aria-label={language === 'ar' ? 'تشغيل فيديو المنتج' : 'Play product video'}
-                      >
-                        <span className="w-20 h-20 rounded-full bg-red-600 hover:bg-red-500 border-4 border-white text-white shadow-2xl flex items-center justify-center transition-transform hover:scale-110">
-                          <Play className="w-9 h-9 fill-white text-white" />
-                        </span>
-                        <span className="px-4 py-2 rounded-xl bg-slate-950/90 border border-amber-400/60 text-white font-black text-sm shadow-xl">
-                          {language === 'ar' ? 'شاهد فيديو المنتج' : 'Watch Product Video'}
-                        </span>
-                      </button>
-                    )}
-                  </>
+                  ) : (
+                    <iframe
+                      key={activeMediaVideo.url}
+                      src={activeMediaVideo.url}
+                      title={activeMediaVideo.title}
+                      className="w-full h-full bg-black"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  )
+                ) : (
+                  <img 
+                    src={activeImage}
+                    alt={product.titleAr}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
                 )}
                 {product.discountPercent > 0 && (
                   <span className="absolute top-4 right-4 bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-base px-4 py-2 rounded-2xl shadow-xl border border-red-400/40 tracking-wider z-10 flex items-center gap-1.5">
@@ -479,7 +507,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   </div>
 
                   <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto">
-                    {/* WhatsApp Button */}
                     <button
                       onClick={shareToWhatsApp}
                       className="flex items-center gap-1 text-[11px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer"
@@ -489,7 +516,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       <span>واتساب</span>
                     </button>
 
-                    {/* Pinterest Button */}
                     <button
                       onClick={shareToPinterest}
                       className="flex items-center gap-1 text-[11px] font-bold bg-red-600 hover:bg-red-500 text-white px-2.5 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer"
@@ -499,17 +525,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       <span>بنترست</span>
                     </button>
 
-                    {/* Twitter / X Button */}
                     <button
                       onClick={shareToTwitter}
                       className="flex items-center gap-1 text-[11px] font-bold bg-sky-600 hover:bg-sky-500 text-white px-2.5 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer"
                       title="مشاركة عبر تويتر / X"
                     >
                       <TwitterIcon className="w-3.5 h-3.5" />
-                      <span>تويتر</span>
+                      <span>تويتر / X</span>
                     </button>
 
-                    {/* Copy Link Button */}
                     <button
                       onClick={copyToClipboard}
                       className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 transition-colors shrink-0 cursor-pointer"
@@ -521,18 +545,57 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 </div>}
               </div>
 
-              {/* Multi Image Thumbnails */}
-              {product.images && product.images.length > 1 && (
+              {/* Unified media thumbnails: clicking a photo shows that exact photo;
+                  clicking a video plays that exact video. */}
+              {(productMediaImages.length > 0 || productMediaVideos.length > 0) && (
                 <div className="flex items-center gap-3 overflow-x-auto pb-2">
-                  {product.images.map((img, idx) => (
+                  {productMediaImages.map((img, idx) => (
                     <button
-                      key={idx}
-                      onClick={() => { setActiveImage(img); setShowInlineVideo(false); }}
-                      className={`w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
-                        activeImage === img ? 'border-purple-600 scale-105 shadow-sm' : 'border-transparent opacity-60 hover:opacity-100'
+                      key={`image-${img}-${idx}`}
+                      type="button"
+                      onClick={() => {
+                        setActiveImage(img);
+                        setShowInlineVideo(false);
+                      }}
+                      className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
+                        !showInlineVideo && activeImage === img ? 'border-purple-600 scale-105 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'
                       }`}
+                      title={language === 'ar' ? `صورة ${idx + 1}` : `Image ${idx + 1}`}
                     >
-                      <img src={img} alt="Thumb" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <img src={img} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      <span className="absolute bottom-0 right-0 left-0 bg-black/60 text-white text-[8px] py-0.5 text-center">
+                        {language === 'ar' ? `صورة ${idx + 1}` : `Image ${idx + 1}`}
+                      </span>
+                    </button>
+                  ))}
+
+                  {productMediaVideos.map((mediaVideo, idx) => (
+                    <button
+                      key={`video-${mediaVideo.url}`}
+                      type="button"
+                      onClick={() => {
+                        setActiveMediaVideoUrl(mediaVideo.url);
+                        setShowInlineVideo(true);
+                      }}
+                      className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all bg-black ${
+                        showInlineVideo && activeMediaVideo?.url === mediaVideo.url ? 'border-red-500 scale-105 shadow-sm' : 'border-slate-700 opacity-80 hover:opacity-100'
+                      }`}
+                      title={mediaVideo.title}
+                    >
+                      <img
+                        src={mediaVideo.thumbnail || product.image}
+                        alt={mediaVideo.title}
+                        className="w-full h-full object-cover opacity-75"
+                        referrerPolicy="no-referrer"
+                      />
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center shadow">
+                          <Play className="w-3.5 h-3.5 fill-white" />
+                        </span>
+                      </span>
+                      <span className="absolute bottom-0 right-0 left-0 bg-black/75 text-white text-[8px] py-0.5 text-center">
+                        {language === 'ar' ? `فيديو ${idx + 1}` : `Video ${idx + 1}`}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -684,7 +747,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Amazon Option */}
                   <button
                     type="button"
                     onClick={handleAmazonBuy}
@@ -700,7 +762,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     </div>
                   </button>
 
-                  {/* AliExpress Option */}
                   <button
                     type="button"
                     onClick={handleAliExpressBuy}
@@ -768,7 +829,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   </div>
                 </div>
 
-                {/* Shopper Cart Button in Modal */}
                 <button
                   type="button"
                   onClick={() => {
@@ -876,7 +936,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               </button>
             </div>
 
-            {/* Tab 1: Features & Description */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
                 <div>
@@ -898,27 +957,19 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   </p>
                 </div>
 
-                {/* Price History Chart Section inside Overview */}
                 <PriceHistoryChart product={product} />
               </div>
             )}
 
-            {/* Tab 2: Price History Chart Standalone Tab */}
             {activeTab === 'history' && (
               <div className="space-y-4">
                 <PriceHistoryChart product={product} />
               </div>
             )}
 
-            {/* Tab 2: Videos (YouTube, TikTok, Local Upload, Replacement) */}
             {activeTab === 'videos' && (() => {
               const linkedVideoReviews = videos.filter(v => v.productId === product.id);
 
-              // Every video linked to this product, not just one. The single
-              // "cover video" fields on the product (videoUrl/youtubeUrl) are
-              // kept as a fallback entry for products that predate the video
-              // gallery table, but a video already present in the gallery
-              // (same URL) is not listed twice.
               type GalleryVideo = { url: string; thumbnail?: string; title: string; isLocal: boolean };
               const gallery: GalleryVideo[] = [];
               const seenUrls = new Set<string>();
@@ -949,11 +1000,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               const primaryVideoUrl = active?.url;
               const isDirectOrLocal = Boolean(active?.isLocal);
 
-              // Deletes only the video currently showing — never the whole
-              // gallery. `removeProductVideo` used to be the only option here
-              // and it wipes every video linked to the product at once, which
-              // is exactly the kind of bulk deletion the owner does not want
-              // from a single "delete video" click.
               const handleDeleteActiveVideo = async () => {
                 if (!active) return;
                 const label = gallery.length > 1
@@ -981,7 +1027,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
               return (
                 <div className="space-y-4">
-                  {/* Video Actions Header */}
                   <div className="bg-gradient-to-r from-purple-950/60 to-slate-900 p-4 rounded-2xl border border-purple-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center shrink-0">
@@ -989,7 +1034,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       </div>
                       <div>
                         <h4 className="text-sm font-bold text-white">فيديوهات ومراجعات المنتج</h4>
-                        <p className="text-xs text-slate-400">شاهد الفيديو أو استبدله بملف فيديو قمت بإنشائه من جهازك.</p>
+                        <p className="text-xs text-slate-400">كل فيديوهات المنتج تظهر هنا ويمكن تشغيل أي واحد منها بشكل مستقل.</p>
                       </div>
                     </div>
 
@@ -1025,7 +1070,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     </div>
                   </div>
 
-                  {/* Video Player Display */}
                   {hasVideo ? (
                     <div className="space-y-3">
                       <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-2xl relative">
@@ -1050,10 +1094,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                         )}
                       </div>
 
-                      {/* Every video linked to this product — not just the
-                          one playing. Switching here only changes which
-                          video is shown; it never deletes or replaces
-                          anything. */}
                       {gallery.length > 1 && (
                         <div className="flex items-center gap-2 overflow-x-auto pb-1">
                           {gallery.map((g, idx) => (
@@ -1067,6 +1107,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                               title={g.title}
                             >
                               <img src={g.thumbnail} alt={g.title} className="w-full h-full object-cover" />
+                              <span className="absolute inset-0 flex items-center justify-center">
+                                <Play className="w-5 h-5 text-white fill-white drop-shadow" />
+                              </span>
                               <span className="absolute bottom-0.5 right-0.5 px-1 rounded bg-slate-950/80 text-[9px] text-white font-mono">
                                 {idx + 1}/{gallery.length}
                               </span>
@@ -1075,7 +1118,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                         </div>
                       )}
 
-                      {/* Video Quick Actions Bar */}
                       <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
                         <span className="text-slate-300 font-bold flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -1110,7 +1152,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       </div>
                     </div>
                   ) : (
-                    /* No Video State -> Offer Upload Immediately */
                     <div className="text-center py-10 px-4 bg-slate-900/60 border-2 border-dashed border-slate-800 rounded-2xl space-y-4">
                       <div className="w-14 h-14 rounded-2xl bg-purple-950/60 border border-purple-800/40 text-purple-400 flex items-center justify-center mx-auto">
                         <Upload className="w-7 h-7 text-purple-300" />
@@ -1144,7 +1185,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               );
             })()}
 
-            {/* Tab 3: Specs Table */}
             {activeTab === 'specs' && (
               <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900">
                 <table className="w-full text-right text-xs sm:text-sm text-slate-100">
@@ -1168,10 +1208,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               </div>
             )}
 
-            {/* Tab: Customer Reviews & Ratings */}
             {activeTab === 'reviews' && (
               <div className="space-y-6 dir-rtl font-['Cairo']">
-                {/* Rating Overview Header */}
                 <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md">
                   <div className="text-center sm:text-right">
                     <div className="text-4xl font-black text-amber-300">{product.rating}</div>
@@ -1208,7 +1246,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   </div>
                 </div>
 
-                {/* Add Review Form */}
                 <form onSubmit={handleReviewSubmit} className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-md">
                   <h4 className="text-sm font-bold text-amber-300 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-amber-400" />
@@ -1273,11 +1310,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   </div>
                 </form>
 
-                {/* Customer Reviews List */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-bold text-slate-200">أحدث آراء المشترين:</h4>
 
-                  {/* Built-in Sample Reviews */}
                   <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -1341,10 +1376,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               </div>
             )}
 
-            {/* Tab 4: SEO & Schema Markup (JSON-LD) */}
             {activeTab === 'seo' && (
               <div className="space-y-6">
-                {/* Google Search Rich Snippet Mockup */}
                 <div className="bg-[#1A1A1C] border border-[#FDFCFB]/10 rounded-2xl p-5 space-y-3 font-sans">
                   <div className="flex items-center gap-2 text-xs text-[#D4AF37] font-mono-meta">
                     <Search className="w-4 h-4 text-[#D4AF37]" />
@@ -1378,7 +1411,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   </div>
                 </div>
 
-                {/* Structured JSON-LD Code Block */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-mono-meta text-[#D4AF37]">
@@ -1466,7 +1498,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               </div>
             )}
 
-            {/* Related Products Cards Section */}
             <div className="border-t border-slate-800 pt-6 mt-6 space-y-4 font-['Cairo']">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-black text-amber-300 flex items-center gap-2">
@@ -1485,7 +1516,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   .map((relProd) => (
                     <div 
                       key={relProd.id}
-                      onClick={() => { openProductDetail(relProd); setActiveImage(relProd.image); }}
+                      onClick={() => {
+                        openProductDetail(relProd);
+                        setActiveImage(relProd.image);
+                        setShowInlineVideo(false);
+                        setActiveMediaVideoUrl('');
+                      }}
                       className="bg-slate-900 border border-slate-800 hover:border-amber-400/50 rounded-2xl p-3 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] shadow-lg group"
                     >
                       <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-slate-950 mb-2 border border-slate-800">
