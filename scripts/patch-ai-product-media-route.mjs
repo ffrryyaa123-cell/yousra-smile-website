@@ -44,7 +44,7 @@ const routeCode = `
 
       const validReferenceUrls = Array.isArray(referenceImages)
         ? referenceImages
-            .filter((url: unknown) => typeof url === 'string' && /^https:\/\//i.test(url))
+            .filter((url: unknown) => typeof url === 'string' && String(url).startsWith('https://'))
             .slice(0, 3)
         : [];
 
