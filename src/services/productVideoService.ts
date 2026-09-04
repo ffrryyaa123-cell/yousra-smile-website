@@ -5,7 +5,7 @@ import {
   PromotionalVideoScript,
   VideoScene
 } from '../types';
-import { auth } from './googleWorkspace';
+import { supabase } from './adminAccount';
 import { generateOriginalProductImages } from './aiProductMedia';
 
 export type SupportedCommercePlatform = 'amazon' | 'aliexpress' | 'noon' | 'shein' | 'other';
@@ -18,279 +18,157 @@ export interface SanitizedProductUrl {
   errorMessage?: string;
 }
 
-/**
- * URL-first product workflow.
- *
- * This module deliberately does NOT invent product data, prices, stock images,
- * product claims, or a generic before/after story. If the server cannot verify
- * the real product from the supplied URL, generation stops and asks for review.
- */
 export function validateAndSanitizeUrl(rawUrl: string): SanitizedProductUrl {
-  if (!rawUrl || typeof rawUrl !== 'string' || rawUrl.trim() === '') {
-    return {
-      isValid: false,
-      cleanUrl: '',
-      platform: 'other',
-      errorMessage: 'رابط المنتج فارغ.'
-    };
+  const trimmed = String(rawUrl || '').trim();
+  if (!trimmed) return { isValid: false, cleanUrl: '', platform: 'other', errorMessage: 'رابط المنتج فارغ.' };
+  if (/^(javascript:|data:|file:|vbscript:)/i.test(trimmed) || !/^https?:\/\//i.test(trimmed)) {
+    return { isValid: false, cleanUrl: '', platform: 'other', errorMessage: 'استخدمي رابط المنتج الكامل من المتجر.' };
   }
-
-  const trimmed = rawUrl.trim();
-  if (/^(javascript:|data:|file:|vbscript:)/i.test(trimmed)) {
-    return {
-      isValid: false,
-      cleanUrl: '',
-      platform: 'other',
-      errorMessage: 'الرابط يحتوي على بروتوكول غير آمن.'
-    };
-  }
-
-  if (!/^https?:\/\//i.test(trimmed)) {
-    return {
-      isValid: false,
-      cleanUrl: '',
-      platform: 'other',
-      errorMessage: 'استخدمي رابط المنتج الكامل من Amazon أو المتجر.'
-    };
-  }
-
   try {
     const parsed = new URL(trimmed);
     const host = parsed.hostname.toLowerCase();
     let platform: SupportedCommercePlatform = 'other';
     let extractedId: string | undefined;
-
-    if (/amazon\.|amzn\.to|amzn\.eu/i.test(host)) {
+    if (/amazon\.|amzn\.to|amzn\.eu|a\.co$/i.test(host)) {
       platform = 'amazon';
-      const asinMatch = trimmed.match(/(?:\/dp\/|\/gp\/product\/|asin=)([A-Z0-9]{10})/i);
-      if (asinMatch?.[1]) extractedId = asinMatch[1].toUpperCase();
-    } else if (/aliexpress\.com/i.test(host)) {
+      extractedId = trimmed.match(/(?:\/dp\/|\/gp\/product\/|asin=)([A-Z0-9]{10})/i)?.[1]?.toUpperCase();
+    } else if (/aliexpress/i.test(host)) {
       platform = 'aliexpress';
-      const itemMatch = trimmed.match(/\/item\/(\d+)\.html/i);
-      if (itemMatch?.[1]) extractedId = itemMatch[1];
+      extractedId = trimmed.match(/\/item\/(\d+)\.html/i)?.[1];
     } else if (/noon\.com/i.test(host)) {
       platform = 'noon';
-      const noonMatch = trimmed.match(/(?:N\d+A|[A-Z0-9_-]{10,})/i);
-      if (noonMatch?.[0]) extractedId = noonMatch[0];
     } else if (/shein\.com/i.test(host)) {
       platform = 'shein';
-      const sheinMatch = trimmed.match(/-p-(\d+)\.html/i);
-      if (sheinMatch?.[1]) extractedId = sheinMatch[1];
     }
-
-    return {
-      isValid: true,
-      cleanUrl: `${parsed.origin}${parsed.pathname}`,
-      platform,
-      extractedId
-    };
+    return { isValid: true, cleanUrl: `${parsed.origin}${parsed.pathname}`, platform, extractedId };
   } catch {
-    return {
-      isValid: false,
-      cleanUrl: '',
-      platform: 'other',
-      errorMessage: 'رابط المنتج غير صالح.'
-    };
+    return { isValid: false, cleanUrl: '', platform: 'other', errorMessage: 'رابط المنتج غير صالح.' };
   }
 }
 
-/**
- * Preserve the owner's affiliate URL when one is supplied. Otherwise add only
- * the configured tracking parameter needed by the detected store.
- */
 export function buildAffiliateLink(
   productUrl: string,
-  options: {
-    affiliateTag?: string;
-    customAffiliateLink?: string;
-    platform?: SupportedCommercePlatform;
-  } = {}
+  options: { affiliateTag?: string; customAffiliateLink?: string; platform?: SupportedCommercePlatform } = {}
 ): string {
-  const custom = options.customAffiliateLink?.trim();
-  if (custom && /^https:\/\//i.test(custom)) return custom;
-
+  const custom = String(options.customAffiliateLink || '').trim();
+  if (/^https?:\/\//i.test(custom)) return custom;
   const sanitized = validateAndSanitizeUrl(productUrl);
   if (!sanitized.isValid) return productUrl;
-
   try {
     const url = new URL(productUrl);
+    const tag = String(options.affiliateTag || '').trim();
     const platform = options.platform || sanitized.platform;
-    const tag = options.affiliateTag?.trim();
-
-    if (!tag) return url.toString();
-
-    if (platform === 'amazon') {
-      url.searchParams.set('tag', tag);
-    } else if (platform === 'aliexpress') {
+    if (tag && platform === 'amazon') url.searchParams.set('tag', tag);
+    else if (tag && platform === 'aliexpress') {
       url.searchParams.set('aff_platform', 'true');
       url.searchParams.set('sk', tag);
-    } else if (platform === 'noon') {
-      url.searchParams.set('utm_source', 'affiliate');
-      url.searchParams.set('utm_campaign', tag);
     }
-
     return url.toString();
   } catch {
     return productUrl;
   }
 }
 
-/**
- * Lightweight URL parser used by UI helpers. It intentionally returns no fake
- * title, fake price, or fake product photo. The verified server extractor fills
- * those fields during generation.
- */
-export function extractBasicProductInfoFromUrl(
-  productUrl: string,
-  affiliateTag = ''
-): {
-  name: string;
-  brand: string;
-  cleanUrl: string;
-  affiliateUrl: string;
-  platform: SupportedCommercePlatform;
-  asinOrId?: string;
-} {
+export function extractBasicProductInfoFromUrl(productUrl: string, affiliateTag = '') {
   const sanitized = validateAndSanitizeUrl(productUrl);
-  const storeName =
-    sanitized.platform === 'amazon' ? 'Amazon' :
-    sanitized.platform === 'aliexpress' ? 'AliExpress' :
-    sanitized.platform === 'noon' ? 'Noon' :
-    sanitized.platform === 'shein' ? 'SHEIN' : 'Product';
-
+  const label = sanitized.platform === 'amazon' ? 'Amazon' : sanitized.platform === 'aliexpress' ? 'AliExpress' : 'Product';
   return {
-    name: sanitized.extractedId ? `${storeName} product ${sanitized.extractedId}` : `${storeName} product`,
+    name: sanitized.extractedId ? `${label} product ${sanitized.extractedId}` : `${label} product`,
     brand: '',
     cleanUrl: sanitized.cleanUrl,
-    affiliateUrl: buildAffiliateLink(productUrl, {
-      affiliateTag,
-      platform: sanitized.platform
-    }),
+    affiliateUrl: buildAffiliateLink(productUrl, { affiliateTag, platform: sanitized.platform }),
     platform: sanitized.platform,
     asinOrId: sanitized.extractedId
   };
 }
 
-const englishWords = (items: unknown[]): string[] =>
-  items
-    .filter((item): item is string => typeof item === 'string')
-    .map(item => item.trim())
-    .filter(Boolean);
+const strings = (value: unknown): string[] => Array.isArray(value)
+  ? value.filter((item): item is string => typeof item === 'string').map(item => item.trim()).filter(Boolean)
+  : [];
 
-const normalizePrice = (value: unknown): number => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+const numberOrZero = (value: unknown): number => {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
 };
 
 const productKindFrom = (title: string, category: string, features: string[]): string => {
-  const haystack = `${title} ${category} ${features.join(' ')}`.toLowerCase();
-  if (/tumbler|bottle|cup|mug|drinkware|hydration/.test(haystack)) return 'drinkware';
-  if (/vacuum|mop|cleaner|steam|stain|scrub|floor|window cleaner/.test(haystack)) return 'cleaning';
-  if (/air fryer|pressure cooker|blender|mixer|coffee|espresso|kettle|toaster|kitchen/.test(haystack)) return 'kitchen';
-  if (/watch|tracker|fitness|massage|gym|health/.test(haystack)) return 'fitness';
-  if (/lamp|lock|camera|sensor|smart home|speaker|switch/.test(haystack)) return 'smart-home';
-  if (/beauty|makeup|hair|skin|perfume|fragrance/.test(haystack)) return 'beauty';
-  if (/chair|table|sofa|furniture|decor|storage/.test(haystack)) return 'home-living';
+  const text = `${title} ${category} ${features.join(' ')}`.toLowerCase();
+  if (/tumbler|bottle|cup|mug|drinkware|hydration/.test(text)) return 'drinkware';
+  if (/vacuum|mop|cleaner|steam|stain|scrub|floor|window cleaner/.test(text)) return 'cleaning';
+  if (/air fryer|pressure cooker|blender|mixer|coffee|espresso|kettle|toaster|kitchen/.test(text)) return 'kitchen';
+  if (/watch|tracker|fitness|massage|gym|health/.test(text)) return 'fitness';
+  if (/beauty|makeup|hair|skin|perfume|fragrance/.test(text)) return 'beauty';
+  if (/lamp|lock|camera|sensor|smart home|speaker|switch/.test(text)) return 'smart-home';
   return 'general';
 };
 
-const lifestylePromptFor = (kind: string, title: string): string => {
-  const fidelity = `Keep the exact product design, color, proportions, controls, lid, handle, logo placement and visible details faithful to the verified reference for ${title}. Do not invent accessories or alter the product model.`;
-  switch (kind) {
-    case 'drinkware':
-      return `Premium lifestyle shot of ${title} being naturally used by an adult modest hijabi woman in a bright modern setting such as a garden, car, office, gym or seaside walk. ${fidelity}`;
-    case 'cleaning':
-      return `Realistic home-use demonstration of ${title} cleaning the surface it is actually designed for. Show believable operation and results only. ${fidelity}`;
-    case 'kitchen':
-      return `Modern kitchen lifestyle demonstration of ${title} in realistic use, focusing on the product's verified function and controls. ${fidelity}`;
-    case 'fitness':
-      return `Contemporary fitness or wellness lifestyle scene featuring ${title} in correct, realistic use by an adult. ${fidelity}`;
-    case 'beauty':
-      return `Premium beauty lifestyle scene featuring ${title} in a clean, elegant setting with an adult modest hijabi woman where appropriate. ${fidelity}`;
-    default:
-      return `Premium commercial lifestyle demonstration of ${title} in the environment where the verified product is genuinely used. ${fidelity}`;
-  }
-};
-
-const isBeforeAfterAppropriate = (kind: string): boolean => kind === 'cleaning';
+const safeEnglishFeature = (feature: string, fallback: string): string =>
+  /[\u0600-\u06ff]/.test(feature) ? fallback : feature;
 
 function buildEnglishVideoScript(
   title: string,
   brand: string,
   category: string,
-  features: string[],
-  heroImage: string,
+  rawFeatures: string[],
   generatedImages: string[],
-  price: number,
-  discountPrice: number
+  originalPrice: number,
+  currentPrice: number
 ): PromotionalVideoScript {
-  const kind = productKindFrom(title, category, features);
-  const hero = generatedImages[0] || heroImage;
-  const alternate = generatedImages[1] || hero;
-  const alternate2 = generatedImages[2] || alternate;
-  const featureOne = features[0] || 'Designed for practical everyday use';
-  const featureTwo = features[1] || features[0] || 'Built around the product’s verified features';
-  const featureThree = features[2] || features[1] || features[0] || 'Easy to understand and use';
-  const priceText = discountPrice > 0
-    ? `$${discountPrice.toFixed(2)}`
-    : price > 0 ? `$${price.toFixed(2)}` : 'Check current price';
+  const kind = productKindFrom(title, category, rawFeatures);
+  const hero = generatedImages[0];
+  const lifestyle1 = generatedImages[1] || hero;
+  const lifestyle2 = generatedImages[2] || lifestyle1;
+  const features = rawFeatures.map((f, index) => safeEnglishFeature(f, `Verified product feature ${index + 1}`));
+  const f1 = features[0] || 'Designed for practical everyday use';
+  const f2 = features[1] || 'Built around the verified product design';
+  const f3 = features[2] || 'Easy to understand and use';
+  const priceText = currentPrice > 0 ? `$${currentPrice.toFixed(2)}` : 'Check current price';
 
   const scenes: VideoScene[] = [
     {
-      timeRange: '00:00 - 00:05',
-      sceneType: 'action',
-      visualPrompt: `Cinematic hero reveal of ${title}. Preserve the verified product exactly. Clean premium lighting, crisp e-commerce commercial look.`,
+      timeRange: '00:00 - 00:05', sceneType: 'action',
+      visualPrompt: `Cinematic hero reveal of ${title}. Preserve the exact verified product design.`,
       voiceoverText: `Meet ${title}. Here is what makes this product worth a closer look.`,
-      screenText: brand ? `${brand} — Product Spotlight` : 'Product Spotlight',
-      sceneImage: hero
+      screenText: brand ? `${brand} — Product Spotlight` : 'Product Spotlight', sceneImage: hero
     },
     {
-      timeRange: '00:05 - 00:12',
-      sceneType: 'action',
-      visualPrompt: lifestylePromptFor(kind, title),
-      voiceoverText: featureOne,
-      screenText: featureOne,
-      sceneImage: alternate
+      timeRange: '00:05 - 00:12', sceneType: 'action',
+      visualPrompt: `Realistic premium lifestyle demonstration of ${title} in its genuine use environment.`,
+      voiceoverText: f1, screenText: f1, sceneImage: lifestyle1
     },
     {
-      timeRange: '00:12 - 00:20',
-      sceneType: 'specs',
-      visualPrompt: `Detailed close-ups of the real ${title}, showing only verified controls, materials, dimensions and functional details. No invented attachments.`,
-      voiceoverText: `${featureTwo}. ${featureThree}.`,
-      screenText: [featureTwo, featureThree].join(' • '),
-      sceneImage: alternate2
+      timeRange: '00:12 - 00:20', sceneType: 'specs',
+      visualPrompt: `Detailed close-ups of ${title}, showing only verified materials, controls and functional details.`,
+      voiceoverText: `${f2}. ${f3}.`, screenText: `${f2} • ${f3}`, sceneImage: lifestyle2
     }
   ];
 
-  if (isBeforeAfterAppropriate(kind)) {
+  if (kind === 'cleaning') {
     scenes.push({
-      timeRange: '00:20 - 00:29',
-      sceneType: 'before_after',
-      visualPrompt: `A realistic before-and-after demonstration for ${title}, only if the verified product is intended to clean or restore this exact surface. Keep lighting and camera angle consistent and avoid exaggerated results.`,
-      voiceoverText: `The result is easy to see when the product is used for the job it was designed to do.`,
-      screenText: 'Realistic Before & After',
-      sceneImage: generatedImages[2] || alternate2,
-      beforeImage: generatedImages[1] || alternate,
-      afterImage: generatedImages[2] || alternate2,
-      transformationNote: 'Use before/after only for a verified cleaning use case. Never fabricate a transformation.'
+      timeRange: '00:20 - 00:29', sceneType: 'before_after',
+      visualPrompt: `Realistic before-and-after use of ${title} only on the surface it is designed to clean. No exaggerated result.`,
+      voiceoverText: 'The difference is easy to see when the product is used for the job it was designed to do.',
+      screenText: 'Realistic Before & After', sceneImage: lifestyle2,
+      beforeImage: lifestyle1, afterImage: lifestyle2,
+      transformationNote: 'Before/after is used only for a verified cleaning use case.'
     });
   } else {
     scenes.push({
-      timeRange: '00:20 - 00:29',
-      sceneType: 'action',
-      visualPrompt: lifestylePromptFor(kind, title),
-      voiceoverText: `It fits naturally into the way this product is meant to be used, without adding claims that are not in the verified listing.`,
-      screenText: 'Designed for Everyday Use',
-      sceneImage: generatedImages[2] || alternate2
+      timeRange: '00:20 - 00:29', sceneType: 'action',
+      visualPrompt: `Second realistic lifestyle demonstration of ${title}, faithful to the verified product.`,
+      voiceoverText: 'It fits naturally into the way this product is meant to be used, without adding unverified claims.',
+      screenText: 'Designed for Everyday Use', sceneImage: lifestyle2
     });
   }
 
+  const discount = originalPrice > currentPrice && currentPrice > 0
+    ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
+    : 0;
   scenes.push({
-    timeRange: '00:29 - 00:36',
-    sceneType: 'cta',
-    visualPrompt: `Premium final pack shot of ${title}. Keep the verified product completely unchanged. Add a clean call-to-action layout without fake badges or fake discounts.`,
-    voiceoverText: `Want the full details? Check the product page for the latest price, availability and specifications.`,
-    screenText: `Check Product Details — ${priceText}`,
+    timeRange: '00:29 - 00:36', sceneType: 'cta',
+    visualPrompt: `Premium final pack shot of ${title}. No fake badges or invented claims.`,
+    voiceoverText: 'Check the product page for the latest price, availability and full specifications.',
+    screenText: discount > 0 ? `${discount}% Off • ${priceText}` : priceText,
     sceneImage: hero
   });
 
@@ -304,193 +182,124 @@ function buildEnglishVideoScript(
   };
 }
 
-function buildEnglishMarketing(
-  title: string,
-  brand: string,
-  category: string,
-  features: string[],
-  affiliateLink: string
-): { caption: string; hashtags: string[]; seoTitle: string; seoDescription: string; keywords: string[] } {
-  const hashtags = Array.from(new Set([
-    brand ? `#${brand.replace(/[^a-zA-Z0-9]+/g, '')}` : '',
-    category ? `#${category.replace(/[^a-zA-Z0-9]+/g, '')}` : '',
-    '#ProductReview',
-    '#SmartShopping',
-    '#YousraSmile'
-  ].filter(Boolean)));
-
-  const featureLines = features.slice(0, 3).map(feature => `• ${feature}`).join('\n');
-  const caption = [
-    title,
-    featureLines,
-    'See the current price, availability and full specifications at the product link.',
-    affiliateLink
-  ].filter(Boolean).join('\n\n');
-
-  return {
-    caption,
-    hashtags,
-    seoTitle: `${title} Review, Features & Current Deal`,
-    seoDescription: `${title}: review the verified product features, current price and availability before buying.`,
-    keywords: englishWords([title, brand, category, ...features.slice(0, 3), 'product review', 'current deal'])
-  };
-}
-
-/**
- * Kept for backwards compatibility with older callers. A fabricated local
- * campaign is intentionally no longer produced.
- */
 export function generateLocalVideoCampaignFallback(_input: ProductVideoServiceInput): ProductVideoCampaignResult {
   throw new Error('تعذر التحقق من المنتج الحقيقي من الرابط. لن يتم إنشاء فيديو عام أو بيانات وهمية.');
 }
 
-export async function generateProductVideoCampaign(
-  input: ProductVideoServiceInput
-): Promise<ProductVideoCampaignResult> {
+export async function generateProductVideoCampaign(input: ProductVideoServiceInput): Promise<ProductVideoCampaignResult> {
   const sanitized = validateAndSanitizeUrl(input.productUrl);
-  if (!sanitized.isValid) {
-    throw new Error(sanitized.errorMessage || 'رابط المنتج غير صالح.');
-  }
+  if (!sanitized.isValid) throw new Error(sanitized.errorMessage || 'رابط المنتج غير صالح.');
 
-  const currentUser = auth.currentUser;
-  if (!currentUser) {
-    throw new Error('سجّلي الدخول إلى لوحة التحكم أولاً حتى يتم تحليل رابط المنتج الحقيقي.');
-  }
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) throw new Error('سجّلي الدخول إلى لوحة التحكم أولاً.');
 
-  const idToken = await currentUser.getIdToken();
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${idToken}`
-  };
-  if (input.geminiApiKey) headers['x-gemini-key'] = input.geminiApiKey;
-
-  const response = await fetch('/api/agent/url-to-video-campaign', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      productUrl: input.productUrl.trim(),
-      affiliateLink: input.affiliateLink?.trim() || undefined,
-      affiliateTag: input.affiliateTag?.trim() || undefined,
-      platform: input.platform || 'tiktok',
-      targetAudience: input.targetAudience || 'online shoppers interested in the actual product',
-      customNotes: [
-        input.customNotes || '',
-        'All video narration, on-screen text, captions and hashtags must be English only.',
-        'Do not invent product claims, prices, accessories or results.',
-        'Do not use before/after unless the verified product genuinely supports that use case.',
-        'Store/source images are temporary references only; final Yousra Smile media must be original generated assets.'
-      ].filter(Boolean).join(' ')
-    })
+  // Canonical data source: the production Supabase extractor already used by the
+  // catalog. It reads the real listing and reports failure instead of guessing.
+  const { data: extraction, error: extractError } = await supabase.functions.invoke('product-extract', {
+    body: { url: input.productUrl.trim() }
   });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || !payload?.success || !payload?.data) {
-    const serverMessage = payload?.error || payload?.message || `HTTP ${response.status}`;
-    throw new Error(`تعذر استخراج المنتج الحقيقي من الرابط: ${serverMessage}`);
+  if (extractError) {
+    let detail = extractError.message;
+    try {
+      const response = (extractError as any)?.context;
+      if (response?.json) detail = (await response.json())?.error || detail;
+    } catch { /* use connector message */ }
+    throw new Error(`تعذر قراءة المنتج الحقيقي من الرابط: ${detail}`);
+  }
+  if (!extraction?.ok || !extraction?.data) {
+    throw new Error(extraction?.error || 'تعذر قراءة المنتج الحقيقي من الرابط.');
   }
 
-  const raw = payload.data;
-  const title = String(raw.productTitleEn || raw.productTitleAr || '').trim();
-  const brand = String(raw.brand || '').trim();
-  const category = String(raw.category || 'products').trim();
-  const features = englishWords(Array.isArray(raw.features) ? raw.features : []);
-  const referenceImages = englishWords(Array.isArray(raw.images) ? raw.images : []);
-  const sourceHeroImage = String(raw.heroImage || raw.imageUrl || raw.image || referenceImages[0] || '').trim();
-
-  if (!title || !sourceHeroImage.startsWith('https://')) {
-    throw new Error('تم الوصول للرابط، لكن لم أتمكن من مطابقة عنوان المنتج وصورته الحقيقية. أوقفت التوليد حتى لا يخرج فيديو خاطئ.');
+  const real = extraction.data;
+  const title = String(real.title || '').trim();
+  const brand = String(real.brand || '').trim();
+  const description = String(real.description || '').trim();
+  const features = strings(real.features);
+  const referenceImages = strings(real.images);
+  if (!title || referenceImages.length === 0) {
+    throw new Error('تم فتح المنتج، لكن لم يتم العثور على عنوان وصور مرجعية موثوقة. أوقفت التوليد حتى لا يخرج منتج مختلف.');
   }
 
-  const originalPrice = normalizePrice(raw.originalPrice);
-  const discountPrice = normalizePrice(raw.discountPrice) || originalPrice;
-  const affiliateLink = buildAffiliateLink(
-    String(raw.affiliateLink || input.productUrl),
-    {
-      affiliateTag: input.affiliateTag,
-      customAffiliateLink: input.affiliateLink || raw.affiliateLink,
-      platform: sanitized.platform
-    }
-  );
+  const breadcrumbs = strings(real.breadcrumbs);
+  const category = breadcrumbs[0] || 'products';
+  const subcategory = breadcrumbs[breadcrumbs.length - 1] || category;
+  const currentPrice = numberOrZero(real.price);
+  const listPrice = numberOrZero(real.listPrice);
+  const originalPrice = listPrice > currentPrice ? listPrice : currentPrice;
+  const currency = String(real.currency || 'USD');
+  const storageKey = String(real.asin || real.itemId || sanitized.extractedId || title);
+  const kind = productKindFrom(title, `${category} ${subcategory}`, features);
 
-  const allReferenceImages = Array.from(new Set([sourceHeroImage, ...referenceImages].filter(Boolean)));
-  const kind = productKindFrom(title, category, features);
-
-  // The commerce/store images above are temporary references only. This call
-  // generates NEW assets and stores only those generated images in Yousra Smile.
   const generatedMedia = await generateOriginalProductImages({
-    storageKey: String(raw.sourceProductId || sanitized.extractedId || title),
+    storageKey,
     productTitle: title,
     brand,
-    category,
+    category: `${category} ${subcategory}`,
     kind,
     features,
-    referenceImages: allReferenceImages,
-    sourceUrl: String(raw.sourceUrl || input.productUrl),
-    geminiApiKey: input.geminiApiKey
+    referenceImages,
+    sourceUrl: String(real.finalUrl || input.productUrl)
   });
 
-  const imagePriority = ['hero', 'lifestyle_home', 'lifestyle_outdoor', 'before_after', 'feature', 'thumbnail'];
-  const sortedGenerated = [...generatedMedia].sort((a, b) => {
-    const ai = imagePriority.indexOf(a.type);
-    const bi = imagePriority.indexOf(b.type);
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  const order = ['hero', 'lifestyle_home', 'lifestyle_outdoor', 'before_after', 'feature', 'thumbnail'];
+  const sorted = [...generatedMedia].sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
+  const generatedImages = sorted.map(item => item.url).filter(Boolean);
+  const heroImage = sorted.find(item => item.type === 'hero')?.url || generatedImages[0];
+  if (!heroImage) throw new Error('تم استخراج المنتج ولكن تعذر إنشاء صور أصلية له.');
+
+  const affiliateLink = buildAffiliateLink(input.productUrl, {
+    affiliateTag: input.affiliateTag,
+    customAffiliateLink: input.affiliateLink,
+    platform: sanitized.platform
   });
-  const generatedImages = sortedGenerated.map(item => item.url).filter(Boolean);
-  const heroImage = sortedGenerated.find(item => item.type === 'hero')?.url || generatedImages[0];
-
-  if (!heroImage || generatedImages.length === 0) {
-    throw new Error('تم استخراج المنتج، لكن لم يتم إنشاء صور أصلية قابلة للحفظ. لم يتم استخدام صور المتجر كبديل نهائي.');
-  }
-
-  const videoScript = buildEnglishVideoScript(
-    title,
-    brand,
-    category,
-    features,
-    heroImage,
-    generatedImages,
-    originalPrice,
-    discountPrice
-  );
-  const marketing = buildEnglishMarketing(title, brand, category, features, affiliateLink);
+  const videoScript = buildEnglishVideoScript(title, brand, category, features, generatedImages, originalPrice, currentPrice);
+  const discountPercent = originalPrice > currentPrice && currentPrice > 0
+    ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
+    : 0;
 
   const product: ExtractedProductInfo = {
-    nameAr: String(raw.productTitleAr || title),
+    nameAr: title,
     nameEn: title,
-    description: String(raw.seoDescription || title),
+    description: description || title,
     category,
-    subcategory: String(raw.subcategory || ''),
+    subcategory,
     brand,
     originalPrice,
-    discountPrice,
-    discountPercent: originalPrice > 0 && discountPrice > 0 && discountPrice < originalPrice
-      ? Math.round(((originalPrice - discountPrice) / originalPrice) * 100)
-      : 0,
-    currency: 'USD',
+    discountPrice: currentPrice || originalPrice,
+    discountPercent,
+    currency,
     features,
     affiliateLink,
-    sourceUrl: String(raw.sourceUrl || input.productUrl),
+    sourceUrl: String(real.finalUrl || input.productUrl),
     image: heroImage,
     images: generatedImages,
     youtubeUrl: undefined
   };
 
-  const cleaningBefore = sortedGenerated.find(item => item.type === 'lifestyle_home')?.url;
-  const cleaningAfter = sortedGenerated.find(item => item.type === 'before_after')?.url;
+  const hashtags = Array.from(new Set([
+    brand ? `#${brand.replace(/[^a-zA-Z0-9]+/g, '')}` : '',
+    '#ProductReview', '#SmartShopping', '#YousraSmile'
+  ].filter(Boolean)));
+  const socialCaption = [
+    title,
+    ...features.slice(0, 3).filter(feature => !/[\u0600-\u06ff]/.test(feature)).map(feature => `• ${feature}`),
+    'See the current price, availability and full specifications at the product link.',
+    affiliateLink
+  ].filter(Boolean).join('\n\n');
 
   return {
     product,
     videoScript,
-    socialCaption: marketing.caption,
-    hashtags: marketing.hashtags,
+    socialCaption,
+    hashtags,
     seoMetadata: {
-      title: marketing.seoTitle,
-      description: marketing.seoDescription,
-      keywords: marketing.keywords
+      title: `${title} Review, Features & Current Deal`,
+      description: description || `${title}: verified product details, current price and availability.`,
+      keywords: [title, brand, category, 'product review', 'Yousra Smile'].filter(Boolean)
     },
     suggestedVideoUrl: undefined,
     heroImage,
-    beforeImage: isBeforeAfterAppropriate(kind) ? cleaningBefore : undefined,
-    afterImage: isBeforeAfterAppropriate(kind) ? cleaningAfter : undefined
+    beforeImage: kind === 'cleaning' ? sorted.find(item => item.type === 'lifestyle_home')?.url : undefined,
+    afterImage: kind === 'cleaning' ? sorted.find(item => item.type === 'before_after')?.url : undefined
   };
 }
