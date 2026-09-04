@@ -1,21 +1,30 @@
-import { 
-  ProductVideoServiceInput, 
-  ProductVideoCampaignResult, 
-  ExtractedProductInfo, 
-  PromotionalVideoScript 
+import {
+  ProductVideoServiceInput,
+  ProductVideoCampaignResult,
+  ExtractedProductInfo,
+  PromotionalVideoScript,
+  VideoScene
 } from '../types';
+import { auth } from './googleWorkspace';
 
-/**
- * Validates, cleans, and sanitizes an incoming product URL to prevent security issues.
- * Strips tracking parameters while preserving necessary platform identifiers (ASIN, Item IDs).
- */
-export function validateAndSanitizeUrl(rawUrl: string): {
+export type SupportedCommercePlatform = 'amazon' | 'aliexpress' | 'noon' | 'shein' | 'other';
+
+export interface SanitizedProductUrl {
   isValid: boolean;
   cleanUrl: string;
-  platform: 'amazon' | 'aliexpress' | 'noon' | 'shein' | 'other';
+  platform: SupportedCommercePlatform;
   extractedId?: string;
   errorMessage?: string;
-} {
+}
+
+/**
+ * URL-first product workflow.
+ *
+ * This module deliberately does NOT invent product data, prices, stock images,
+ * product claims, or a generic before/after story. If the server cannot verify
+ * the real product from the supplied URL, generation stops and asks for review.
+ */
+export function validateAndSanitizeUrl(rawUrl: string): SanitizedProductUrl {
   if (!rawUrl || typeof rawUrl !== 'string' || rawUrl.trim() === '') {
     return {
       isValid: false,
@@ -26,8 +35,6 @@ export function validateAndSanitizeUrl(rawUrl: string): {
   }
 
   const trimmed = rawUrl.trim();
-
-  // Block dangerous schemes
   if (/^(javascript:|data:|file:|vbscript:)/i.test(trimmed)) {
     return {
       isValid: false,
@@ -37,473 +44,424 @@ export function validateAndSanitizeUrl(rawUrl: string): {
     };
   }
 
-  // Handle plain product queries/names entered instead of URLs
-  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+  if (!/^https?:\/\//i.test(trimmed)) {
     return {
-      isValid: true,
-      cleanUrl: trimmed,
+      isValid: false,
+      cleanUrl: '',
       platform: 'other',
+      errorMessage: 'استخدمي رابط المنتج الكامل من Amazon أو المتجر.'
     };
   }
 
   try {
     const parsed = new URL(trimmed);
     const host = parsed.hostname.toLowerCase();
-    let platform: 'amazon' | 'aliexpress' | 'noon' | 'shein' | 'other' = 'other';
+    let platform: SupportedCommercePlatform = 'other';
     let extractedId: string | undefined;
 
-    if (/amazon\.|amzn\.to|amzn\.eu/i.test(host) || /amzn\.to/i.test(trimmed)) {
+    if (/amazon\.|amzn\.to|amzn\.eu/i.test(host)) {
       platform = 'amazon';
-      const asinMatch = trimmed.match(/(?:\/dp\/|\/gp\/product\/|amzn\.to\/|asin=)([A-Z0-9]{10})/i);
-      if (asinMatch && asinMatch[1]) {
-        extractedId = asinMatch[1].toUpperCase();
-      }
+      const asinMatch = trimmed.match(/(?:\/dp\/|\/gp\/product\/|asin=)([A-Z0-9]{10})/i);
+      if (asinMatch?.[1]) extractedId = asinMatch[1].toUpperCase();
     } else if (/aliexpress\.com/i.test(host)) {
       platform = 'aliexpress';
-      const idMatch = trimmed.match(/\/item\/(\d+)\.html/i);
-      if (idMatch && idMatch[1]) {
-        extractedId = idMatch[1];
-      }
+      const itemMatch = trimmed.match(/\/item\/(\d+)\.html/i);
+      if (itemMatch?.[1]) extractedId = itemMatch[1];
     } else if (/noon\.com/i.test(host)) {
       platform = 'noon';
       const noonMatch = trimmed.match(/(?:N\d+A|[A-Z0-9_-]{10,})/i);
-      if (noonMatch) {
-        extractedId = noonMatch[0];
-      }
+      if (noonMatch?.[0]) extractedId = noonMatch[0];
     } else if (/shein\.com/i.test(host)) {
       platform = 'shein';
       const sheinMatch = trimmed.match(/-p-(\d+)\.html/i);
-      if (sheinMatch && sheinMatch[1]) {
-        extractedId = sheinMatch[1];
-      }
+      if (sheinMatch?.[1]) extractedId = sheinMatch[1];
     }
 
     return {
       isValid: true,
-      cleanUrl: parsed.origin + parsed.pathname,
+      cleanUrl: `${parsed.origin}${parsed.pathname}`,
       platform,
       extractedId
     };
   } catch {
     return {
-      isValid: true,
-      cleanUrl: trimmed,
-      platform: 'other'
+      isValid: false,
+      cleanUrl: '',
+      platform: 'other',
+      errorMessage: 'رابط المنتج غير صالح.'
     };
   }
 }
 
 /**
- * Combines a sanitized product link with the user's affiliate marketing tag or custom link
+ * Preserve the owner's affiliate URL when one is supplied. Otherwise add only
+ * the configured tracking parameter needed by the detected store.
  */
 export function buildAffiliateLink(
-  productUrl: string, 
+  productUrl: string,
   options: {
     affiliateTag?: string;
     customAffiliateLink?: string;
-    platform?: 'amazon' | 'aliexpress' | 'noon' | 'shein' | 'other';
+    platform?: SupportedCommercePlatform;
   } = {}
 ): string {
-  if (options.customAffiliateLink && options.customAffiliateLink.trim().startsWith('http')) {
-    return options.customAffiliateLink.trim();
-  }
+  const custom = options.customAffiliateLink?.trim();
+  if (custom && /^https:\/\//i.test(custom)) return custom;
 
-  const tag = options.affiliateTag || 'yousrasmile-21';
-  const sanitize = validateAndSanitizeUrl(productUrl);
-  const targetPlatform = options.platform || sanitize.platform;
+  const sanitized = validateAndSanitizeUrl(productUrl);
+  if (!sanitized.isValid) return productUrl;
 
-  if (productUrl.startsWith('http')) {
-    try {
-      const urlObj = new URL(productUrl);
-      if (targetPlatform === 'amazon') {
-        urlObj.searchParams.set('tag', tag);
-        return urlObj.toString();
-      } else if (targetPlatform === 'aliexpress') {
-        urlObj.searchParams.set('aff_platform', 'true');
-        urlObj.searchParams.set('sk', tag);
-        return urlObj.toString();
-      } else if (targetPlatform === 'noon') {
-        urlObj.searchParams.set('utm_source', 'affiliate');
-        urlObj.searchParams.set('utm_campaign', tag);
-        return urlObj.toString();
-      } else {
-        urlObj.searchParams.set('ref', tag);
-        return urlObj.toString();
-      }
-    } catch {
-      return `${productUrl}${productUrl.includes('?') ? '&' : '?'}tag=${tag}`;
+  try {
+    const url = new URL(productUrl);
+    const platform = options.platform || sanitized.platform;
+    const tag = options.affiliateTag?.trim();
+
+    if (!tag) return url.toString();
+
+    if (platform === 'amazon') {
+      url.searchParams.set('tag', tag);
+    } else if (platform === 'aliexpress') {
+      url.searchParams.set('aff_platform', 'true');
+      url.searchParams.set('sk', tag);
+    } else if (platform === 'noon') {
+      url.searchParams.set('utm_source', 'affiliate');
+      url.searchParams.set('utm_campaign', tag);
     }
-  }
 
-  // Fallback direct affiliate destination
-  return `https://www.amazon.sa/dp/${sanitize.extractedId || 'B0CXSAMPLE'}?tag=${tag}`;
+    return url.toString();
+  } catch {
+    return productUrl;
+  }
 }
 
 /**
- * Parses a given product link (Amazon, AliExpress, etc.) to extract platform, ID, and basic metadata
+ * Lightweight URL parser used by UI helpers. It intentionally returns no fake
+ * title, fake price, or fake product photo. The verified server extractor fills
+ * those fields during generation.
  */
 export function extractBasicProductInfoFromUrl(
-  productUrl: string, 
-  affiliateTag = 'yousrasmile-21'
+  productUrl: string,
+  affiliateTag = ''
 ): {
   name: string;
   brand: string;
   cleanUrl: string;
   affiliateUrl: string;
-  platform: 'amazon' | 'aliexpress' | 'noon' | 'shein' | 'other';
+  platform: SupportedCommercePlatform;
   asinOrId?: string;
 } {
-  const sanitize = validateAndSanitizeUrl(productUrl);
-  let brand = 'يسرى سمايل';
-  let name = 'منتج ذكي وعصري متطور';
-
-  if (sanitize.platform === 'amazon') {
-    brand = 'Amazon Choice';
-    name = sanitize.extractedId ? `جهاز ذكي بريميوم (ASIN: ${sanitize.extractedId})` : 'جهاز منزلي ذكي متطور من أمازون 2026';
-  } else if (sanitize.platform === 'aliexpress') {
-    brand = 'AliExpress Choice';
-    name = sanitize.extractedId ? `ابتكار إلكتروني حصري (ID: ${sanitize.extractedId})` : 'منتج ذكي حصري ومميز من علي إكسبريس 2026';
-  } else if (sanitize.platform === 'noon') {
-    brand = 'Noon Express';
-    name = 'منتج تقني عصري من نون 2026';
-  } else if (sanitize.cleanUrl && !sanitize.cleanUrl.startsWith('http')) {
-    name = sanitize.cleanUrl;
-  }
-
-  const affiliateUrl = buildAffiliateLink(productUrl, { affiliateTag, platform: sanitize.platform });
+  const sanitized = validateAndSanitizeUrl(productUrl);
+  const storeName =
+    sanitized.platform === 'amazon' ? 'Amazon' :
+    sanitized.platform === 'aliexpress' ? 'AliExpress' :
+    sanitized.platform === 'noon' ? 'Noon' :
+    sanitized.platform === 'shein' ? 'SHEIN' : 'Product';
 
   return {
-    name,
-    brand,
-    cleanUrl: sanitize.cleanUrl,
-    affiliateUrl,
-    platform: sanitize.platform,
-    asinOrId: sanitize.extractedId
+    name: sanitized.extractedId ? `${storeName} product ${sanitized.extractedId}` : `${storeName} product`,
+    brand: '',
+    cleanUrl: sanitized.cleanUrl,
+    affiliateUrl: buildAffiliateLink(productUrl, {
+      affiliateTag,
+      platform: sanitized.platform
+    }),
+    platform: sanitized.platform,
+    asinOrId: sanitized.extractedId
+  };
+}
+
+const englishWords = (items: unknown[]): string[] =>
+  items
+    .filter((item): item is string => typeof item === 'string')
+    .map(item => item.trim())
+    .filter(Boolean);
+
+const normalizePrice = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+};
+
+const productKindFrom = (title: string, category: string, features: string[]): string => {
+  const haystack = `${title} ${category} ${features.join(' ')}`.toLowerCase();
+  if (/tumbler|bottle|cup|mug|drinkware|hydration/.test(haystack)) return 'drinkware';
+  if (/vacuum|mop|cleaner|steam|stain|scrub|floor|window cleaner/.test(haystack)) return 'cleaning';
+  if (/air fryer|pressure cooker|blender|mixer|coffee|espresso|kettle|toaster|kitchen/.test(haystack)) return 'kitchen';
+  if (/watch|tracker|fitness|massage|gym|health/.test(haystack)) return 'fitness';
+  if (/lamp|lock|camera|sensor|smart home|speaker|switch/.test(haystack)) return 'smart-home';
+  if (/beauty|makeup|hair|skin|perfume|fragrance/.test(haystack)) return 'beauty';
+  if (/chair|table|sofa|furniture|decor|storage/.test(haystack)) return 'home-living';
+  return 'general';
+};
+
+const lifestylePromptFor = (kind: string, title: string): string => {
+  const fidelity = `Keep the exact product design, color, proportions, controls, lid, handle, logo placement and visible details faithful to the verified reference for ${title}. Do not invent accessories or alter the product model.`;
+  switch (kind) {
+    case 'drinkware':
+      return `Premium lifestyle shot of ${title} being naturally used by an adult modest hijabi woman in a bright modern setting such as a garden, car, office, gym or seaside walk. ${fidelity}`;
+    case 'cleaning':
+      return `Realistic home-use demonstration of ${title} cleaning the surface it is actually designed for. Show believable operation and results only. ${fidelity}`;
+    case 'kitchen':
+      return `Modern kitchen lifestyle demonstration of ${title} in realistic use, focusing on the product's verified function and controls. ${fidelity}`;
+    case 'fitness':
+      return `Contemporary fitness or wellness lifestyle scene featuring ${title} in correct, realistic use by an adult. ${fidelity}`;
+    case 'beauty':
+      return `Premium beauty lifestyle scene featuring ${title} in a clean, elegant setting with an adult modest hijabi woman where appropriate. ${fidelity}`;
+    default:
+      return `Premium commercial lifestyle demonstration of ${title} in the environment where the verified product is genuinely used. ${fidelity}`;
+  }
+};
+
+const isBeforeAfterAppropriate = (kind: string): boolean => kind === 'cleaning';
+
+function buildEnglishVideoScript(
+  title: string,
+  brand: string,
+  category: string,
+  features: string[],
+  heroImage: string,
+  referenceImages: string[],
+  price: number,
+  discountPrice: number
+): PromotionalVideoScript {
+  const kind = productKindFrom(title, category, features);
+  const hero = referenceImages[0] || heroImage;
+  const alternate = referenceImages[1] || hero;
+  const alternate2 = referenceImages[2] || alternate;
+  const featureOne = features[0] || 'Designed for practical everyday use';
+  const featureTwo = features[1] || features[0] || 'Built around the product’s verified features';
+  const featureThree = features[2] || features[1] || features[0] || 'Easy to understand and use';
+  const priceText = discountPrice > 0
+    ? `$${discountPrice.toFixed(2)}`
+    : price > 0 ? `$${price.toFixed(2)}` : 'Check current price';
+
+  const scenes: VideoScene[] = [
+    {
+      timeRange: '00:00 - 00:05',
+      sceneType: 'action',
+      visualPrompt: `Cinematic hero reveal of ${title}. Preserve the verified product exactly. Clean premium lighting, crisp e-commerce commercial look.`,
+      voiceoverText: `Meet ${title}. Here is what makes this product worth a closer look.`,
+      screenText: brand ? `${brand} — Product Spotlight` : 'Product Spotlight',
+      sceneImage: hero
+    },
+    {
+      timeRange: '00:05 - 00:12',
+      sceneType: 'action',
+      visualPrompt: lifestylePromptFor(kind, title),
+      voiceoverText: featureOne,
+      screenText: featureOne,
+      sceneImage: alternate
+    },
+    {
+      timeRange: '00:12 - 00:20',
+      sceneType: 'specs',
+      visualPrompt: `Detailed close-ups of the real ${title}, showing only verified controls, materials, dimensions and functional details. No invented attachments.`,
+      voiceoverText: `${featureTwo}. ${featureThree}.`,
+      screenText: [featureTwo, featureThree].join(' • '),
+      sceneImage: alternate2
+    }
+  ];
+
+  if (isBeforeAfterAppropriate(kind)) {
+    scenes.push({
+      timeRange: '00:20 - 00:29',
+      sceneType: 'before_after',
+      visualPrompt: `A realistic before-and-after demonstration for ${title}, only if the verified product is intended to clean or restore this exact surface. Keep lighting and camera angle consistent and avoid exaggerated results.`,
+      voiceoverText: `The result is easy to see when the product is used for the job it was designed to do.`,
+      screenText: 'Realistic Before & After',
+      sceneImage: alternate2,
+      beforeImage: alternate,
+      afterImage: alternate2,
+      transformationNote: 'Use before/after only for a verified cleaning use case. Never fabricate a transformation.'
+    });
+  } else {
+    scenes.push({
+      timeRange: '00:20 - 00:29',
+      sceneType: 'action',
+      visualPrompt: lifestylePromptFor(kind, title),
+      voiceoverText: `It fits naturally into the way this product is meant to be used, without adding claims that are not in the verified listing.`,
+      screenText: 'Designed for Everyday Use',
+      sceneImage: alternate2
+    });
+  }
+
+  scenes.push({
+    timeRange: '00:29 - 00:36',
+    sceneType: 'cta',
+    visualPrompt: `Premium final pack shot of ${title}. Keep the verified product completely unchanged. Add a clean call-to-action layout without fake badges or fake discounts.`,
+    voiceoverText: `Want the full details? Check the product page for the latest price, availability and specifications.`,
+    screenText: `Check Product Details — ${priceText}`,
+    sceneImage: hero
+  });
+
+  return {
+    videoTitle: `${title} — Product Review & Features`,
+    hook: `Meet ${title}. Here is what makes this product worth a closer look.`,
+    estimatedDuration: '36 seconds',
+    scenes,
+    callToAction: 'Check the product page for current price, availability and full specifications.',
+    suggestedBgm: 'Clean modern commercial beat, upbeat but unobtrusive'
+  };
+}
+
+function buildEnglishMarketing(
+  title: string,
+  brand: string,
+  category: string,
+  features: string[],
+  affiliateLink: string
+): { caption: string; hashtags: string[]; seoTitle: string; seoDescription: string; keywords: string[] } {
+  const hashtags = Array.from(new Set([
+    brand ? `#${brand.replace(/[^a-zA-Z0-9]+/g, '')}` : '',
+    category ? `#${category.replace(/[^a-zA-Z0-9]+/g, '')}` : '',
+    '#ProductReview',
+    '#SmartShopping',
+    '#YousraSmile'
+  ].filter(Boolean)));
+
+  const featureLines = features.slice(0, 3).map(feature => `• ${feature}`).join('\n');
+  const caption = [
+    title,
+    featureLines,
+    'See the current price, availability and full specifications at the product link.',
+    affiliateLink
+  ].filter(Boolean).join('\n\n');
+
+  return {
+    caption,
+    hashtags,
+    seoTitle: `${title} Review, Features & Current Deal`,
+    seoDescription: `${title}: review the verified product features, current price and availability before buying.`,
+    keywords: englishWords([title, brand, category, ...features.slice(0, 3), 'product review', 'current deal'])
   };
 }
 
 /**
- * Builds high-fidelity deterministic fallback video campaign data if external AI is experiencing high load
+ * Kept for backwards compatibility with older callers. A fabricated local
+ * campaign is intentionally no longer produced.
  */
-export function generateLocalVideoCampaignFallback(input: ProductVideoServiceInput): ProductVideoCampaignResult {
-  const { name, brand, affiliateUrl } = extractBasicProductInfoFromUrl(
-    input.productUrl, 
-    input.affiliateTag || 'yousrasmile-20'
-  );
+export function generateLocalVideoCampaignFallback(_input: ProductVideoServiceInput): ProductVideoCampaignResult {
+  throw new Error('تعذر التحقق من المنتج الحقيقي من الرابط. لن يتم إنشاء فيديو عام أو بيانات وهمية.');
+}
 
-  const customAffiliate = input.affiliateLink && input.affiliateLink.startsWith('http')
-    ? input.affiliateLink
-    : affiliateUrl;
-
-  let heroImage = 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80';
-  let beforeImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80';
-  let afterImage = 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80';
-  let originalPriceUsd = 129;
-  let discountPriceUsd = 89;
-
-  const lower = input.productUrl.toLowerCase();
-  if (lower.includes('karcher') || lower.includes('كارشر') || lower.includes('steam') || lower.includes('بخار') || lower.includes('easyfix')) {
-    heroImage = 'https://m.media-amazon.com/images/I/71Yyv-m2zFL._AC_SL1500_.jpg';
-    beforeImage = 'https://m.media-amazon.com/images/I/81xU-UvDqGL._AC_SL1500_.jpg';
-    afterImage = 'https://m.media-amazon.com/images/I/71n5S3+kUoL._AC_SL1500_.jpg';
-    originalPriceUsd = 249;
-    discountPriceUsd = 179;
-  } else if (lower.includes('fryer') || lower.includes('قلاية') || lower.includes('air-fryer') || lower.includes('ninja')) {
-    heroImage = 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80';
-    beforeImage = 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80';
-    afterImage = 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=800&q=80';
-    originalPriceUsd = 149;
-    discountPriceUsd = 99;
-  } else if (lower.includes('vacuum') || lower.includes('cleaner') || lower.includes('مكنسة') || lower.includes('roborock') || lower.includes('dyson')) {
-    heroImage = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80';
-    beforeImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80';
-    afterImage = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80';
-    originalPriceUsd = 349;
-    discountPriceUsd = 249;
-  } else if (lower.includes('coffee') || lower.includes('espresso') || lower.includes('قهوة') || lower.includes('delonghi')) {
-    heroImage = 'https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80';
-    beforeImage = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80';
-    afterImage = 'https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80';
-    originalPriceUsd = 299;
-    discountPriceUsd = 199;
-  } else if (lower.includes('watch') || lower.includes('ساعة') || lower.includes('fitbit')) {
-    heroImage = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80';
-    beforeImage = 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=800&q=80';
-    afterImage = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80';
-    originalPriceUsd = 119;
-    discountPriceUsd = 79;
+export async function generateProductVideoCampaign(
+  input: ProductVideoServiceInput
+): Promise<ProductVideoCampaignResult> {
+  const sanitized = validateAndSanitizeUrl(input.productUrl);
+  if (!sanitized.isValid) {
+    throw new Error(sanitized.errorMessage || 'رابط المنتج غير صالح.');
   }
 
-  const discountPercent = Math.round(((originalPriceUsd - discountPriceUsd) / originalPriceUsd) * 100);
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error('سجّلي الدخول إلى لوحة التحكم أولاً حتى يتم تحليل رابط المنتج الحقيقي.');
+  }
+
+  const idToken = await currentUser.getIdToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${idToken}`
+  };
+  if (input.geminiApiKey) headers['x-gemini-key'] = input.geminiApiKey;
+
+  const response = await fetch('/api/agent/url-to-video-campaign', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      productUrl: input.productUrl.trim(),
+      affiliateLink: input.affiliateLink?.trim() || undefined,
+      affiliateTag: input.affiliateTag?.trim() || undefined,
+      platform: input.platform || 'tiktok',
+      targetAudience: input.targetAudience || 'online shoppers interested in the actual product',
+      customNotes: [
+        input.customNotes || '',
+        'All video narration, on-screen text, captions and hashtags must be English only.',
+        'Do not invent product claims, prices, accessories or results.',
+        'Do not use before/after unless the verified product genuinely supports that use case.',
+        'Amazon/store images are temporary references only; final Yousra Smile media should be original generated assets.'
+      ].filter(Boolean).join(' ')
+    })
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload?.success || !payload?.data) {
+    const serverMessage = payload?.error || payload?.message || `HTTP ${response.status}`;
+    throw new Error(`تعذر استخراج المنتج الحقيقي من الرابط: ${serverMessage}`);
+  }
+
+  const raw = payload.data;
+  const title = String(raw.productTitleEn || raw.productTitleAr || '').trim();
+  const brand = String(raw.brand || '').trim();
+  const category = String(raw.category || 'products').trim();
+  const features = englishWords(Array.isArray(raw.features) ? raw.features : []);
+  const referenceImages = englishWords(Array.isArray(raw.images) ? raw.images : []);
+  const heroImage = String(raw.heroImage || raw.imageUrl || raw.image || referenceImages[0] || '').trim();
+
+  if (!title || !heroImage.startsWith('https://')) {
+    throw new Error('تم الوصول للرابط، لكن لم أتمكن من مطابقة عنوان المنتج وصورته الحقيقية. أوقفت التوليد حتى لا يخرج فيديو خاطئ.');
+  }
+
+  const originalPrice = normalizePrice(raw.originalPrice);
+  const discountPrice = normalizePrice(raw.discountPrice) || originalPrice;
+  const affiliateLink = buildAffiliateLink(
+    String(raw.affiliateLink || input.productUrl),
+    {
+      affiliateTag: input.affiliateTag,
+      customAffiliateLink: input.affiliateLink || raw.affiliateLink,
+      platform: sanitized.platform
+    }
+  );
+
+  const allReferenceImages = Array.from(new Set([heroImage, ...referenceImages].filter(Boolean)));
+  const videoScript = buildEnglishVideoScript(
+    title,
+    brand,
+    category,
+    features,
+    heroImage,
+    allReferenceImages,
+    originalPrice,
+    discountPrice
+  );
+  const marketing = buildEnglishMarketing(title, brand, category, features, affiliateLink);
 
   const product: ExtractedProductInfo = {
-    nameAr: `${name} - الإصدار الذكي 2026`,
-    nameEn: `Smart Advanced Tech Edition 2026`,
-    description: `حل ذكي متطور يختصر الوقت والجهد في المهام اليومية مع تقنية توفير الطاقة والتحكم السلس وضمان معتمد لمدة سنتين.`,
-    category: 'smart-home',
-    subcategory: 'أجهزة ذكية متطورة',
-    brand: brand,
-    originalPrice: originalPriceUsd,
-    discountPrice: discountPriceUsd,
-    discountPercent,
+    nameAr: String(raw.productTitleAr || title),
+    nameEn: title,
+    description: String(raw.seoDescription || title),
+    category,
+    subcategory: String(raw.subcategory || ''),
+    brand,
+    originalPrice,
+    discountPrice,
+    discountPercent: originalPrice > 0 && discountPrice > 0 && discountPrice < originalPrice
+      ? Math.round(((originalPrice - discountPrice) / originalPrice) * 100)
+      : 0,
     currency: 'USD',
-    features: [
-      'توفير حقيقي للوقت والجهد بنسبة تتجاوز 75%',
-      'تحكم فوري ذكي وسهل الاستخدام لجميع أفراد الأسرة',
-      'تصميم مدمج وأنيق ينسجم مع أرقى الديكورات العصرية',
-      'ضمان رسمي معتمد لمدة عامين مع دعم فني مستمر'
-    ],
-    affiliateLink: customAffiliate,
-    sourceUrl: input.productUrl
-  };
-
-  const videoScript: PromotionalVideoScript = {
-    videoTitle: `هذا الجهاز غير روتيني اليومي 180 درجة! تجربة ${product.nameAr} 🔥`,
-    hook: `لو لسه ما جربت هذا الابتكار في بيتك، فأنت تضيع وقت وجهد كل يوم بدون فائدة!`,
-    estimatedDuration: '35 ثانية',
-    scenes: [
-      {
-        timeRange: '00:00 - 00:06',
-        sceneType: 'before_problem',
-        visualPrompt: 'مشهد المعاناة اليومية والتعب قبل وجود الجهاز مع ألوان خافتة وإحباط.',
-        voiceoverText: 'تخيل كمية الوقت والمجهود اللي كنا نضيعه كل يوم قبل وجود هذا الجهاز الرهيب!',
-        screenText: 'المعاناة قبل الحل السحري! 😫❌',
-        sceneImage: beforeImage,
-        beforeImage: beforeImage,
-        afterImage: afterImage,
-        transformationNote: 'إبراز المشكلة السابقة بوضوح للمستهلك.'
-      },
-      {
-        timeRange: '00:06 - 00:14',
-        sceneType: 'action',
-        visualPrompt: 'لحظة تشغيل الجهاز لأول مرة بإضاءات جذابة وأداء سريع يبهر المشاهد.',
-        voiceoverText: 'بضغطة زر وحدة وبدون أي تعقيد، الجهاز يشتغل بقوة وسلاسة خرافية ويحل الموضوع في ثواني!',
-        screenText: 'تشغيل فوري بضغطة زر ⚡✨',
-        sceneImage: heroImage,
-        beforeImage: beforeImage,
-        afterImage: afterImage,
-        transformationNote: 'إظهار سهولة الاستخدام والتشغيل.'
-      },
-      {
-        timeRange: '00:14 - 00:22',
-        sceneType: 'specs',
-        visualPrompt: 'استعراض تفاصيل الخامات الفاخرة وشاشة التحكم الذكية والذكاء الاصطناعي المدمج.',
-        voiceoverText: 'خامات عالية الجودة، تصميم عصري فخم، وتقنيات ذكية متطورة صُممت لتدوم وتوفر طاقتك.',
-        screenText: 'جودة بريميوم وتقنيات ذكية 🛡️💎',
-        sceneImage: heroImage,
-        beforeImage: beforeImage,
-        afterImage: afterImage,
-        transformationNote: 'بناء الثقة ومواصفات الجودة.'
-      },
-      {
-        timeRange: '00:22 - 00:29',
-        sceneType: 'before_after',
-        visualPrompt: 'مقارنة جانبية مقسومة توضح النتيجة قبل استخدام الجهاز وبعده بفرق صادم ومبهر.',
-        voiceoverText: 'شوفوا الفرق الصادم بين قبل وبعد! نظافة وراحة ونتيجة احترافية 100% بدون أي تعب.',
-        screenText: 'مقارنة حقيقية: قبل ❌ وبعد ✅',
-        sceneImage: afterImage,
-        beforeImage: beforeImage,
-        afterImage: afterImage,
-        transformationNote: 'البرهان البصري قبل وبعد لرفع معدل التحويل.'
-      },
-      {
-        timeRange: '00:29 - 00:35',
-        sceneType: 'cta',
-        visualPrompt: 'المتحدث يشير لأسفل الشاشة مع بطاقة الخصم الحصري بالدولار ورابط الأفلييت المباشر.',
-        voiceoverText: 'رابط الشراء المباشر مع كود الخصم الحصري بتلقونه في البايو وأول تعليق، اطلبوه الآن قبل انتهاء العرض!',
-        screenText: 'الرابط والخصم في البايو 🔗🛒',
-        sceneImage: heroImage,
-        beforeImage: beforeImage,
-        afterImage: afterImage,
-        transformationNote: 'دعوة صريحة للنقر والشراء.'
-      }
-    ],
-    callToAction: 'رابط الشراء المباشر والخصم الحصري في البايو وأول تعليق — لا تفوت العرض!',
-    suggestedBgm: 'Upbeat Modern Tech Rhythm (TikTok Trending Sound)'
-  };
-
-  const hashtags = [
-    '#يسرى_سمايل',
-    '#أمازون',
-    '#علي_إكسبريس',
-    '#تسوق_ذكي',
-    '#عروض',
-    '#أجهزة_منزلية',
-    '#قبل_وبعد',
-    '#ترند'
-  ];
-
-  const socialCaption = `🔥 هذا الابتكار السحري غير كل روتيني اليومي ووفّر عليّ وقت ومجهود خرافي! 🤩
-
-✨ شوفوا الفرق في الفيديو بين قبل وبعد الاستخدام، والنتيجة مضمونة 100%.
-
-👇 رابط الشراء المباشر والخصم في البايو أو أول تعليق:
-🔗 ${customAffiliate}`;
-
-  const seoMetadata = {
-    title: `مراجعة وسعر ${product.nameAr}: المميزات، السعر ورابط الشراء`,
-    description: `اكتشف كل ما يهمك حول ${product.nameAr} - المواصفات الكاملة، أفضل سعر مخفض، ورابط الشراء الحصري بالعمولة ومقارنة قبل وبعد.`,
-    keywords: [name, 'تسوق ذكي', 'عروض أمازون', 'مراجعة يسرى سمايل', 'كود خصم', 'قبل وبعد']
+    features,
+    affiliateLink,
+    sourceUrl: String(raw.sourceUrl || input.productUrl),
+    image: heroImage,
+    images: allReferenceImages,
+    youtubeUrl: undefined
   };
 
   return {
     product,
     videoScript,
-    socialCaption,
-    hashtags,
-    seoMetadata,
-    suggestedVideoUrl: 'https://www.youtube.com/watch?v=p7H2N8r_f5E'
+    socialCaption: marketing.caption,
+    hashtags: marketing.hashtags,
+    seoMetadata: {
+      title: marketing.seoTitle,
+      description: marketing.seoDescription,
+      keywords: marketing.keywords
+    },
+    suggestedVideoUrl: undefined,
+    heroImage,
+    beforeImage: isBeforeAfterAppropriate(productKindFrom(title, category, features))
+      ? allReferenceImages[1] || heroImage
+      : undefined,
+    afterImage: isBeforeAfterAppropriate(productKindFrom(title, category, features))
+      ? allReferenceImages[2] || allReferenceImages[1] || heroImage
+      : undefined
   };
-}
-
-/**
- * Core Service Function:
- * Accepts a product URL (Amazon, AliExpress, Noon, etc.), extracts primary product details (name, description, price, features),
- * merges them with the user's affiliate marketing link, and generates a complete promotional video structure.
- *
- * @param input ProductVideoServiceInput containing productUrl, optional affiliateLink/tag, and platform preferences.
- * @returns Promise<ProductVideoCampaignResult>
- */
-export async function generateProductVideoCampaign(
-  input: ProductVideoServiceInput
-): Promise<ProductVideoCampaignResult> {
-  const sanitize = validateAndSanitizeUrl(input.productUrl);
-  if (!sanitize.isValid) {
-    throw new Error(sanitize.errorMessage || 'يرجى تزويد رابط منتج صالح.');
-  }
-
-  const effectiveTag = input.affiliateTag || 'yousrasmile-21';
-
-  try {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (input.agentApiKey) {
-      headers['x-agent-key'] = input.agentApiKey;
-    }
-    if (input.geminiApiKey) {
-      headers['x-gemini-key'] = input.geminiApiKey;
-    }
-
-    const response = await fetch('/api/agent/url-to-video-campaign', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        productUrl: input.productUrl.trim(),
-        affiliateLink: input.affiliateLink?.trim() || undefined,
-        affiliateTag: effectiveTag,
-        platform: input.platform || 'tiktok',
-        targetAudience: input.targetAudience,
-        customNotes: input.customNotes
-      })
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      if (result.success && result.data) {
-        const raw = result.data;
-
-        const mergedAffiliateLink = buildAffiliateLink(
-          raw.affiliateLink || input.productUrl, 
-          {
-            affiliateTag: effectiveTag,
-            customAffiliateLink: input.affiliateLink
-          }
-        );
-
-        let heroImage = raw.image || raw.imageUrl || raw.heroImage || '';
-        let beforeImage = raw.beforeImage || raw.imageUrl || raw.image || '';
-        let afterImage = raw.afterImage || raw.imageUrl || raw.image || '';
-
-        // Only use fallback if no real image was extracted
-        if (!heroImage || !heroImage.startsWith('http')) {
-          heroImage = 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80';
-          beforeImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80';
-          afterImage = 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80';
-
-          const lowerUrl = input.productUrl.toLowerCase();
-          if (lowerUrl.includes('karcher') || lowerUrl.includes('كارشر') || lowerUrl.includes('steam') || lowerUrl.includes('easyfix')) {
-            heroImage = 'https://m.media-amazon.com/images/I/71Yyv-m2zFL._AC_SL1500_.jpg';
-            beforeImage = 'https://m.media-amazon.com/images/I/81xU-UvDqGL._AC_SL1500_.jpg';
-            afterImage = 'https://m.media-amazon.com/images/I/71n5S3+kUoL._AC_SL1500_.jpg';
-          } else if (lowerUrl.includes('fryer') || lowerUrl.includes('قلاية') || lowerUrl.includes('ninja')) {
-            heroImage = 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80';
-            beforeImage = 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=800&q=80';
-            afterImage = 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=800&q=80';
-          } else if (lowerUrl.includes('vacuum') || lowerUrl.includes('مكنسة') || lowerUrl.includes('dyson')) {
-            heroImage = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80';
-            beforeImage = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80';
-            afterImage = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80';
-          } else if (lowerUrl.includes('coffee') || lowerUrl.includes('قهوة')) {
-            heroImage = 'https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80';
-            beforeImage = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80';
-            afterImage = 'https://images.unsplash.com/photo-1507499739999-097706ad8914?auto=format&fit=crop&w=800&q=80';
-          }
-        }
-
-        const product: ExtractedProductInfo = {
-          nameAr: raw.productTitleAr || 'منتج ذكي وعصري',
-          nameEn: raw.productTitleEn || 'Smart Product Edition',
-          description: raw.seoDescription || 'منتج عالي الجودة متوافق مع أعلى معايير الاستخدام اليومي ومقارنة قبل وبعد حقيقية.',
-          category: raw.category || 'smart-home',
-          subcategory: raw.subcategory || 'أجهزة ذكية متطورة',
-          brand: raw.brand || 'يسرى سمايل',
-          originalPrice: Number(raw.originalPrice) || 129,
-          discountPrice: Number(raw.discountPrice) || 89,
-          discountPercent: Number(raw.discountPercent) || 30,
-          currency: 'USD',
-          features: Array.isArray(raw.features) ? raw.features : ['أداء ذكي فائق وتوفير 75% من الوقت', 'ضمان معتمد لمدة سنتين'],
-          affiliateLink: mergedAffiliateLink,
-          sourceUrl: input.productUrl,
-          image: heroImage,
-          images: [heroImage, beforeImage, afterImage].filter(Boolean),
-          youtubeUrl: raw.suggestedVideoUrl || 'https://www.youtube.com/watch?v=p7H2N8r_f5E'
-        };
-
-        const mappedScenes = (Array.isArray(raw.videoScript?.scenes) ? raw.videoScript.scenes : []).map((sc: any, idx: number) => {
-          let sImg = sc.sceneImage || heroImage;
-          if (sc.sceneType === 'before_problem' || idx === 0) sImg = beforeImage;
-          if (sc.sceneType === 'before_after') sImg = afterImage;
-          return {
-            ...sc,
-            sceneImage: sImg,
-            beforeImage: sc.beforeImage || beforeImage,
-            afterImage: sc.afterImage || afterImage,
-            transformationNote: sc.transformationNote || (idx === 3 ? 'مقارنة قاطعة بالصوت والصورة لرفع التحويل' : undefined)
-          };
-        });
-
-        const videoScript: PromotionalVideoScript = {
-          videoTitle: raw.videoScript?.videoTitle || `مراجعة وتجربة ${product.nameAr}`,
-          hook: raw.videoScript?.hook || 'لو بعدك ما جربت هذا المنتج، فأنت تضيع نص وقتك ومجهودك!',
-          estimatedDuration: raw.videoScript?.estimatedDuration || '35 ثانية',
-          scenes: mappedScenes.length > 0 ? mappedScenes : generateLocalVideoCampaignFallback(input).videoScript.scenes,
-          callToAction: raw.videoScript?.callToAction || 'رابط الشراء المباشر والخصم في البايو وأول تعليق!',
-          suggestedBgm: raw.videoScript?.suggestedBgm || 'Trendy Tech Beat'
-        };
-
-        return {
-          product,
-          videoScript,
-          socialCaption: raw.socialCaption || `🔥 رابط الشراء المباشر والخصم:\n${mergedAffiliateLink}`,
-          hashtags: Array.isArray(raw.hashtags) ? raw.hashtags : ['#يسرى_سمايل', '#تسوق_ذكي', '#قبل_وبعد'],
-          seoMetadata: {
-            title: raw.seoTitle || product.nameAr,
-            description: raw.seoDescription || product.description,
-            keywords: Array.isArray(raw.keywords) ? raw.keywords : [product.nameAr, 'أجهزة ذكية', 'قبل وبعد']
-          },
-          suggestedVideoUrl: raw.suggestedVideoUrl || 'https://www.youtube.com/watch?v=p7H2N8r_f5E',
-          heroImage,
-          beforeImage,
-          afterImage
-        };
-      }
-    }
-  } catch (apiErr) {
-    console.warn('[ProductVideoService] API call failed, falling back to local extractor:', apiErr);
-  }
-
-  // Fallback to local intelligent extraction if server request fails
-  return generateLocalVideoCampaignFallback(input);
 }
