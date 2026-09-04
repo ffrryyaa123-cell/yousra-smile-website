@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { uploadLocalVideo, saveVideoRecord, MAX_VIDEO_BYTES } from '../services/videoAssets';
 import {
@@ -32,11 +32,61 @@ type UploadedResult = {
   title: string;
 };
 
-const ACCEPTED_VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|webm|ogg|ogv|mkv|avi|mpeg|mpg|3gp)$/i;
-const ACCEPT_ATTRIBUTE = '.mp4,.mov,.m4v,.webm,.ogg,.ogv,.mkv,.avi,.mpeg,.mpg,.3gp,video/*';
+const VIDEO_MIME_BY_EXTENSION: Record<string, string> = {
+  mp4: 'video/mp4',
+  mov: 'video/quicktime',
+  m4v: 'video/mp4',
+  webm: 'video/webm',
+  ogg: 'video/ogg',
+  ogv: 'video/ogg',
+  mkv: 'video/x-matroska',
+  avi: 'video/x-msvideo',
+  mpeg: 'video/mpeg',
+  mpg: 'video/mpeg',
+  '3gp': 'video/3gpp',
+  wmv: 'video/x-ms-wmv',
+  flv: 'video/x-flv',
+  ts: 'video/mp2t',
+  mts: 'video/mp2t',
+  m2ts: 'video/mp2t',
+  vob: 'video/mpeg'
+};
+
+const ACCEPTED_VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|webm|ogg|ogv|mkv|avi|mpeg|mpg|3gp|wmv|flv|ts|mts|m2ts|vob)$/i;
+const ACCEPT_ATTRIBUTE = '.mp4,.mov,.m4v,.webm,.ogg,.ogv,.mkv,.avi,.mpeg,.mpg,.3gp,.wmv,.flv,.ts,.mts,.m2ts,.vob,video/*';
+
+const getExtension = (file: File): string =>
+  (file.name.split('.').pop() || '').toLowerCase();
 
 const isLikelyVideo = (file: File): boolean =>
   Boolean(file.type?.startsWith('video/')) || ACCEPTED_VIDEO_EXTENSIONS.test(file.name);
+
+/**
+ * Windows, phone export tools and some video editors occasionally expose a
+ * perfectly valid MP4/MOV as application/octet-stream (or with an empty MIME
+ * type). Supabase validates MIME types at the bucket level, so normalise the
+ * browser File object from its known extension before upload.
+ */
+const normalizeVideoFile = (file: File): File => {
+  const inferred = VIDEO_MIME_BY_EXTENSION[getExtension(file)];
+  if (!inferred) return file;
+
+  if (file.type === inferred) return file;
+  if (!file.type || !file.type.startsWith('video/') || file.type === 'application/octet-stream') {
+    return new File([file], file.name, {
+      type: inferred,
+      lastModified: file.lastModified
+    });
+  }
+
+  // Standardise known extensions even when a browser reports a non-standard
+  // video MIME spelling. This prevents an allowed extension being rejected by
+  // Storage merely because the MIME label differed.
+  return new File([file], file.name, {
+    type: inferred,
+    lastModified: file.lastModified
+  });
+};
 
 const formatDuration = (totalSeconds: number): string => {
   if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return '00:00';
@@ -102,6 +152,14 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  /**
+   * The old effect reset `files` every time the products array changed. Product
+   * state updates happen frequently while the dashboard is open, so 2–3 files
+   * could appear for a moment and then vanish before the owner could press
+   * Upload. This ref makes the reset happen once per modal opening only.
+   */
+  const initializedForOpenRef = useRef(false);
+
   const currentProduct = useMemo(
     () => products.find(product => product.id === selectedProductId) || products[0],
     [products, selectedProductId]
@@ -119,7 +177,15 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
   }, [firstPreviewUrl]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      initializedForOpenRef.current = false;
+      return;
+    }
+
+    // Do not clear the files again merely because products refreshed or some
+    // other dashboard state changed while this modal is still open.
+    if (initializedForOpenRef.current) return;
+    initializedForOpenRef.current = true;
 
     const targetId = preselectedProductId || selectedProductId || products[0]?.id || '';
     setSelectedProductId(targetId);
@@ -135,7 +201,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
 
     const product = products.find(item => item.id === targetId) || products[0];
     setCustomTitle(product ? `فيديو استعراض وتجربة لـ ${product.titleAr}` : '');
-  }, [isOpen, preselectedProductId, defaultMode, isReplacing, products]);
+  }, [isOpen, preselectedProductId, defaultMode, isReplacing, products, selectedProductId]);
 
   if (!isOpen) return null;
 
@@ -153,20 +219,20 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
     const accepted: File[] = [];
     const rejected: string[] = [];
 
-    incoming.forEach(file => {
-      if (!isLikelyVideo(file)) {
-        rejected.push(`${file.name}: الصيغة لا تبدو كملف فيديو`);
+    incoming.forEach(originalFile => {
+      if (!isLikelyVideo(originalFile)) {
+        rejected.push(`${originalFile.name}: الصيغة لا تبدو كملف فيديو`);
         return;
       }
 
-      if (file.size > MAX_VIDEO_BYTES) {
+      if (originalFile.size > MAX_VIDEO_BYTES) {
         rejected.push(
-          `${file.name}: ${(file.size / 1048576).toFixed(0)} MB أكبر من الحد ${Math.round(MAX_VIDEO_BYTES / 1048576)} MB`
+          `${originalFile.name}: ${(originalFile.size / 1048576).toFixed(0)} MB أكبر من الحد ${Math.round(MAX_VIDEO_BYTES / 1048576)} MB`
         );
         return;
       }
 
-      accepted.push(file);
+      accepted.push(normalizeVideoFile(originalFile));
     });
 
     if (accepted.length > 0) {
@@ -475,7 +541,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
                 MP4 / MOV / M4V / WebM وغيرها — حتى {Math.round(MAX_VIDEO_BYTES / 1048576)}MB لكل ملف.
               </p>
               <p className="text-[11px] text-emerald-300 mt-1 font-bold">
-                فيديو 25 أو 30 أو 45 أو 60 ثانية مقبول؛ المدة ليست سبب الرفض.
+                فيديو 20 أو 30 أو 45 أو 60 ثانية مقبول؛ المدة ليست سبب الرفض.
               </p>
               <input
                 type="file"
@@ -520,7 +586,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
                       <div className="w-7 h-7 rounded-lg bg-purple-950 text-purple-300 flex items-center justify-center font-black text-xs">{index + 1}</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold truncate" dir="ltr">{file.name}</p>
-                        <p className="text-[10px] text-slate-500">{(file.size / 1048576).toFixed(1)} MB</p>
+                        <p className="text-[10px] text-slate-500">{(file.size / 1048576).toFixed(1)} MB · {file.type || getExtension(file)}</p>
                       </div>
                       {!isUploading && (
                         <button type="button" onClick={() => removeFile(index)} className="p-2 rounded-lg bg-red-950 text-red-300 hover:bg-red-900">
