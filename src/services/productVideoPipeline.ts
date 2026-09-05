@@ -95,7 +95,7 @@ export const generateVideosForProduct = async (
     const generated = await waitForAiProductVideo(job, message => {
       onProgress?.({ stage: 'rendering', percent: Math.min(90, 18 + index * 25), message });
     });
-    const videoId = `vid-${product.id}-${index}-${Date.now()}`;
+    const videoId = `veo-${generated.storagePath.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
     results.push({
       videoId,
       videoUrl: generated.videoUrl,

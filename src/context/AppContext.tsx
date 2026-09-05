@@ -816,10 +816,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newVideo: VideoReview = {
       ...videoData,
       id: videoData.id || `v-${Date.now()}`,
-      views: '1.2K',
-      date: 'اليوم'
+      views: '0',
+      date: new Date().toISOString()
     };
-    setVideos(prev => [newVideo, ...prev]);
+    setVideos(prev => [newVideo, ...prev.filter(video => video.id !== newVideo.id)]);
     void catalogDatabase.saveVideo(newVideo).catch(console.error);
   };
 

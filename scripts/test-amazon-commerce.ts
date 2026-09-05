@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { amazonPriceText, parseMoney } from '../supabase/functions/product-extract/amazonCommerce';
+assert.equal(parseMoney('$259.99'), 259.99);
+assert.equal(parseMoney('259,99 €'), 259.99);
+assert.equal(parseMoney('$1,259.99'), 1259.99);
+assert.equal(parseMoney('1.259,99 €'), 1259.99);
+assert.equal(parseMoney('$259 + $20'), null);
+assert.equal(parseMoney('259 99'), null);
+const recommendation = '<span class="a-offscreen">$10000</span>';
+const main = '<div id="corePriceDisplay_desktop_feature_div"><div><span class="a-price priceToPay"><span class="a-offscreen">$259.00</span></span></div></div>';
+assert.equal(amazonPriceText(recommendation + main), '$259.00');
+assert.equal(amazonPriceText(recommendation), '');
+assert.equal(amazonPriceText('<div id="corePriceDisplay_desktop_feature_div"><span class="a-text-price"><span class="a-offscreen">$349.99</span></span></div>'), '');
+console.log('Amazon price isolation and decimal tests passed.');

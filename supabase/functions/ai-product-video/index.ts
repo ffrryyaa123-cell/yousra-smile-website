@@ -96,7 +96,7 @@ Deno.serve(async (req: Request) => {
     }
     const payload: any = {
       instances: [instance],
-      parameters: { aspectRatio, numberOfVideos: 1, resolution: '720p', durationSeconds: 8 }
+      parameters: { aspectRatio, resolution: '720p', durationSeconds: 8 }
     };
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:predictLongRunning`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiApiKey },
@@ -128,7 +128,15 @@ Deno.serve(async (req: Request) => {
     const video = result.response?.generateVideoResponse?.generatedSamples?.[0]?.video ||
       result.response?.generatedVideos?.[0]?.video;
     const uri = video?.uri;
-    if (!uri) return json({ error: 'Veo completed without a downloadable video.', code: 'VEO_EMPTY_RESULT' }, 502);
+    if (!uri) {
+      const responseBody = result.response?.generateVideoResponse || result.response || {};
+      const reasons = responseBody.raiMediaFilteredReasons || result.response?.raiMediaFilteredReasons || [];
+      const detail = Array.isArray(reasons) ? reasons.join(' ') : String(reasons);
+      return json({
+        error: detail ? `Google could not generate this clip: ${detail}` : `Google returned no video file (response fields: ${Object.keys(responseBody).join(', ') || 'empty'}).`,
+        code: reasons.length ? 'VEO_FILTERED_RESULT' : 'VEO_EMPTY_RESULT'
+      }, 502);
+    }
     const download = await fetch(uri, { headers: { 'x-goog-api-key': geminiApiKey }, redirect: 'follow' });
     if (!download.ok) return json({ error: `Video download failed (${download.status}).` }, 502);
     const bytes = new Uint8Array(await download.arrayBuffer());
