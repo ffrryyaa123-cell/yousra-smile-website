@@ -197,6 +197,11 @@ export function formatPriceValue(priceInUsd: number, currencyCode: CurrencyCode,
   // shown, never a reason to take the page down.
   const safePrice = typeof priceInUsd === 'number' && Number.isFinite(priceInUsd) ? priceInUsd : 0;
 
+  if (safePrice <= 0) {
+    const unavailable = language === 'ar' ? 'تحقق من السعر' : 'Check current price';
+    return { amount: 0, formattedAmount: unavailable, symbol: '', fullText: unavailable };
+  }
+
   const converted = currencyCode === 'USD' ? safePrice : Math.round(safePrice * rate);
   
   const formattedAmount = (currencyCode === 'USD' && !Number.isInteger(converted))

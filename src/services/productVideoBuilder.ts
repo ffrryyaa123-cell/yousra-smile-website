@@ -97,14 +97,6 @@ export const buildVideoFromProduct = (product: Product): BuiltProductVideo => {
   const featureTwo = features[1] || specs[1]?.[1] || featureOne;
   const featureThree = features[2] || specs[2]?.[1] || featureTwo;
 
-  const currentPrice = product.discountPrice > 0 ? product.discountPrice : product.originalPrice;
-  const priceLine = formatPrice(currentPrice, product.currency || 'USD');
-  const discountPercent = product.discountPercent || (
-    product.originalPrice > 0 && product.discountPrice > 0 && product.discountPrice < product.originalPrice
-      ? Math.round(((product.originalPrice - product.discountPrice) / product.originalPrice) * 100)
-      : 0
-  );
-
   const hook = `Meet ${title}. Here is what makes this product worth a closer look.`;
 
   const scenes: VideoScene[] = [
@@ -162,7 +154,7 @@ export const buildVideoFromProduct = (product: Product): BuiltProductVideo => {
     sceneType: 'cta',
     visualPrompt: `Premium final pack shot of ${title}, faithful to the verified reference. Clean call-to-action layout with no fake badges or fake discount claims.`,
     voiceoverText: 'Check the product page for the latest price, availability and full specifications.',
-    screenText: discountPercent > 0 ? `${discountPercent}% Off • ${priceLine}` : priceLine,
+    screenText: 'Check Current Price',
     sceneImage: proxiedImageUrl(images.hero)
   });
 
@@ -177,8 +169,7 @@ export const buildVideoFromProduct = (product: Product): BuiltProductVideo => {
     title,
     brand ? `Brand: ${brand}` : '',
     ...features.slice(0, 3).map(feature => `• ${feature}`),
-    `Current price: ${priceLine}`,
-    'Check current availability and full specifications at the product link.',
+    'Price and availability can change. Check the live product page for the current offer.',
     affiliateUrl
   ].filter(Boolean).join('\n');
 

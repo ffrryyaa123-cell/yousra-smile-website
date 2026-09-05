@@ -122,7 +122,6 @@ function buildEnglishVideoScript(
   const f1 = features[0] || 'Designed for practical everyday use';
   const f2 = features[1] || 'Built around the verified product design';
   const f3 = features[2] || 'Easy to understand and use';
-  const priceText = currentPrice > 0 ? `$${currentPrice.toFixed(2)}` : 'Check current price';
 
   const scenes: VideoScene[] = [
     {
@@ -161,14 +160,11 @@ function buildEnglishVideoScript(
     });
   }
 
-  const discount = originalPrice > currentPrice && currentPrice > 0
-    ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
-    : 0;
   scenes.push({
     timeRange: '00:29 - 00:36', sceneType: 'cta',
     visualPrompt: `Premium final pack shot of ${title}. No fake badges or invented claims.`,
     voiceoverText: 'Check the product page for the latest price, availability and full specifications.',
-    screenText: discount > 0 ? `${discount}% Off • ${priceText}` : priceText,
+    screenText: 'Check Current Price',
     sceneImage: hero
   });
 
