@@ -5,7 +5,7 @@ import { VideoReview } from '../types';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 
 export const VideosPage: React.FC = () => {
-  const { videos, products, openVideoModal, openProductDetail, openThumbnailEditor, logAffiliateClick, language, formatPrice, getAffiliateUrl, openImportVideoModal } = useApp();
+  const { videos, visibleProducts: products, openVideoModal, openProductDetail, openThumbnailEditor, logAffiliateClick, language, formatPrice, getAffiliateUrl, openImportVideoModal } = useApp();
   const [platformFilter, setPlatformFilter] = useState<'all' | 'youtube' | 'tiktok' | 'pinterest'>('all');
   const [selectedExportVideo, setSelectedExportVideo] = useState<VideoReview | null>(null);
 
@@ -235,3 +235,4 @@ export const VideosPage: React.FC = () => {
     </div>
   );
 };
+

@@ -4,7 +4,7 @@ import { Clock, Eye, Sparkles } from 'lucide-react';
 import { ProductCard } from './ProductCard';
 
 export const RecentlyViewedSection: React.FC = () => {
-  const { products, recentlyViewedIds, openProductDetail, language, formatPrice } = useApp();
+  const { visibleProducts: products, recentlyViewedIds, openProductDetail, language, formatPrice } = useApp();
 
   const viewedProducts = (recentlyViewedIds || [])
     .map(id => (products || []).find(p => p.id === id))
@@ -41,3 +41,4 @@ export const RecentlyViewedSection: React.FC = () => {
     </section>
   );
 };
+

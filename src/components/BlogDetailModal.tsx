@@ -9,7 +9,7 @@ interface BlogDetailModalProps {
 }
 
 export const BlogDetailModal: React.FC<BlogDetailModalProps> = ({ post, onClose }) => {
-  const { language, products, openProductDetail, formatPrice } = useApp();
+  const { language, visibleProducts: products, openProductDetail, formatPrice } = useApp();
 
   if (!post) return null;
 
@@ -134,3 +134,4 @@ export const BlogDetailModal: React.FC<BlogDetailModalProps> = ({ post, onClose 
     </div>
   );
 };
+

@@ -9,6 +9,9 @@ import { catalogDatabase } from '../services/supabaseCatalog';
 
 interface AppContextType {
   products: Product[];
+  /** Catalog-safe products for every public storefront surface. Admin tools
+   * deliberately use `products` so owners can review hidden drafts. */
+  visibleProducts: Product[];
   blogPosts: BlogPost[];
   addBlogPost: (newPost: Omit<BlogPost, 'id' | 'publishedDate'>) => void;
   updateBlogPost: (updatedPost: BlogPost) => void;
@@ -86,7 +89,7 @@ interface AppContextType {
   filterByBrand: (brandName: string) => void;
   
   // Admin CRUD
-  addProduct: (newProduct: Omit<Product, 'id' | 'createdAt' | 'viewsCount'>) => void;
+  addProduct: (newProduct: Omit<Product, 'id' | 'createdAt' | 'viewsCount'> & Partial<Pick<Product, 'id' | 'createdAt' | 'viewsCount'>>) => Product;
   importProductsBulk: (newProducts: Product[]) => void;
   updateProduct: (updatedProduct: Product) => void;
   /** Updates only the given fields on one product, both locally and in the
@@ -819,15 +822,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const setLanguage = (lang: Language) => setLanguageState(lang);
 
   // Admin CRUD
-  const addProduct = (newProdData: Omit<Product, 'id' | 'createdAt' | 'viewsCount'>) => {
+  const addProduct = (newProdData: Omit<Product, 'id' | 'createdAt' | 'viewsCount'> & Partial<Pick<Product, 'id' | 'createdAt' | 'viewsCount'>>) => {
     const newProd: Product = {
       ...newProdData,
-      id: `prod-${Date.now()}`,
-      viewsCount: 1,
-      createdAt: new Date().toISOString().split('T')[0]
+      id: newProdData.id || `prod-${Date.now()}`,
+      viewsCount: newProdData.viewsCount ?? 1,
+      createdAt: newProdData.createdAt || new Date().toISOString().split('T')[0]
     };
     setProducts(prev => [newProd, ...prev]);
     void catalogDatabase.saveProduct(newProd).catch(console.error);
+    return newProd;
   };
 
   const importProductsBulk = (importedList: Product[]) => {
@@ -927,10 +931,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     console.log(`Affiliate click logged for product ${productId} on ${platform}`);
   };
 
+  const visibleProducts = products.filter(product => product.isActive !== false && !product.isHidden);
+
   return (
     <AppContext.Provider
       value={{
         products,
+        visibleProducts,
         favorites,
         cart,
         cartModalOpen,
@@ -1020,3 +1027,4 @@ export const useApp = () => {
   }
   return context;
 };
+

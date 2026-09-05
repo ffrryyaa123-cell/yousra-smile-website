@@ -52,7 +52,7 @@ export const Header: React.FC = () => {
     setSearchQuery,
     setSelectedCategory,
     selectedCategory,
-    products,
+    visibleProducts: products,
     openProductDetail,
     formatPrice,
     siteSettings
@@ -715,3 +715,4 @@ export const Header: React.FC = () => {
     </header>
   );
 };
+

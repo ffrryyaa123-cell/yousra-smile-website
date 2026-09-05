@@ -41,7 +41,7 @@ import { InstantVideoStudio } from '../components/InstantVideoStudio';
 
 export const HomePage: React.FC = () => {
   const { 
-    products, 
+    visibleProducts: products,
     setPage, 
     setSelectedCategory, 
     openVideoModal,
@@ -711,3 +711,4 @@ export const HomePage: React.FC = () => {
     </div>
   );
 };
+

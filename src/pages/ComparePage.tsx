@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Scale, Trash2, ShoppingBag, ExternalLink, Star, ArrowLeft } from 'lucide-react';
 
 export const ComparePage: React.FC = () => {
-  const { products, compareList, toggleCompare, clearCompare, setPage, logAffiliateClick, formatPrice, getAffiliateUrl, language } = useApp();
+  const { visibleProducts: products, compareList, toggleCompare, clearCompare, setPage, logAffiliateClick, formatPrice, getAffiliateUrl, language } = useApp();
 
   const comparedProducts = products.filter(p => compareList.includes(p.id));
 
@@ -183,3 +183,4 @@ export const ComparePage: React.FC = () => {
     </div>
   );
 };
+

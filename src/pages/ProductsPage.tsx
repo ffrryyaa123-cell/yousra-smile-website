@@ -8,7 +8,7 @@ import { Grid, List, SlidersHorizontal, Search, PackageX, ChevronRight, ChevronL
 
 export const ProductsPage: React.FC = () => {
   const { 
-    products, 
+    visibleProducts: products,
     selectedCategory, 
     selectedSubcategory, 
     searchQuery, 
@@ -326,3 +326,4 @@ export const ProductsPage: React.FC = () => {
     </div>
   );
 };
+

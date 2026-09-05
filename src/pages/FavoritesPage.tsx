@@ -5,7 +5,7 @@ import { Heart, Trash2, ArrowLeft, Bell, Mail, ShoppingBag, ShoppingCart, ArrowR
 
 export const FavoritesPage: React.FC = () => {
   const { 
-    products, 
+    visibleProducts: products,
     favorites, 
     toggleFavorite, 
     setPage, 
@@ -171,4 +171,5 @@ export const FavoritesPage: React.FC = () => {
     </div>
   );
 };
+
 

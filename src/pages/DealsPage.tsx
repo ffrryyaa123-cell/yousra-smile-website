@@ -4,7 +4,7 @@ import { ProductCard } from '../components/ProductCard';
 import { Tag, Flame, Percent, ArrowLeft } from 'lucide-react';
 
 export const DealsPage: React.FC = () => {
-  const { products } = useApp();
+  const { visibleProducts: products } = useApp();
   const [minDiscount, setMinDiscount] = useState<number>(20);
 
   const discountedProducts = products
@@ -70,3 +70,4 @@ export const DealsPage: React.FC = () => {
     </div>
   );
 };
+

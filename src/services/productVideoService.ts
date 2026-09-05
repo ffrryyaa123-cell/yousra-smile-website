@@ -133,7 +133,7 @@ function buildEnglishVideoScript(
     },
     {
       timeRange: '00:05 - 00:12', sceneType: 'action',
-      visualPrompt: `Realistic premium lifestyle demonstration of ${title} in its genuine use environment.`,
+      visualPrompt: `Realistic premium lifestyle demonstration of ${title} in its genuine use environment. If a woman appears, she is an adult hijabi woman in modern modest clothing.`,
       voiceoverText: f1, screenText: f1, sceneImage: lifestyle1
     },
     {
@@ -146,7 +146,7 @@ function buildEnglishVideoScript(
   if (kind === 'cleaning') {
     scenes.push({
       timeRange: '00:20 - 00:29', sceneType: 'before_after',
-      visualPrompt: `Realistic before-and-after use of ${title} only on the surface it is designed to clean. No exaggerated result.`,
+      visualPrompt: `Realistic before-and-after use of ${title} only on the surface it is designed to clean. An adult hijabi woman in modern modest clothing operates it correctly. No exaggerated result.`,
       voiceoverText: 'The difference is easy to see when the product is used for the job it was designed to do.',
       screenText: 'Realistic Before & After', sceneImage: lifestyle2,
       beforeImage: lifestyle1, afterImage: lifestyle2,
@@ -155,7 +155,7 @@ function buildEnglishVideoScript(
   } else {
     scenes.push({
       timeRange: '00:20 - 00:29', sceneType: 'action',
-      visualPrompt: `Second realistic lifestyle demonstration of ${title}, faithful to the verified product.`,
+      visualPrompt: `Second realistic lifestyle demonstration of ${title}, faithful to the verified product. If a woman appears, she is an adult hijabi woman in modern modest clothing.`,
       voiceoverText: 'It fits naturally into the way this product is meant to be used, without adding unverified claims.',
       screenText: 'Designed for Everyday Use', sceneImage: lifestyle2
     });
@@ -273,6 +273,7 @@ export async function generateProductVideoCampaign(input: ProductVideoServiceInp
     sourceUrl: String(real.finalUrl || input.productUrl),
     image: heroImage,
     images: generatedImages,
+    generatedImagePaths: sorted.map(item => item.storagePath),
     youtubeUrl: undefined
   };
 
@@ -303,3 +304,4 @@ export async function generateProductVideoCampaign(input: ProductVideoServiceInp
     afterImage: kind === 'cleaning' ? sorted.find(item => item.type === 'before_after')?.url : undefined
   };
 }
+

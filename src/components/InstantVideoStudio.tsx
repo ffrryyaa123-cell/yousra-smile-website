@@ -5,7 +5,7 @@ import {
   ArrowRight, ShieldCheck, Tag, Eye, Clock, Download, Plus
 } from 'lucide-react';
 import { generateProductVideoCampaign, extractBasicProductInfoFromUrl, buildAffiliateLink } from '../services/productVideoService';
-import { renderRealVideoAsset } from '../services/realVideoRenderer';
+import { startAiProductVideo, waitForAiProductVideo } from '../services/aiProductVideo';
 import { useApp } from '../context/AppContext';
 import { Product, VideoReview } from '../types';
 
@@ -22,7 +22,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
   onClose,
   onProductPublished
 }) => {
-  const { siteSettings, addProduct, addVideo, formatPrice, openImportVideoModal } = useApp();
+  const { siteSettings, addProduct, updateProduct, patchProduct, addVideo, formatPrice, openImportVideoModal } = useApp();
   
   // Single input state - ONLY the link!
   const [productLink, setProductLink] = useState(
@@ -36,6 +36,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Real Video Rendering states
@@ -130,7 +131,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
     try {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'ar-SA';
+      utterance.lang = 'en-US';
       utterance.rate = 1.05;
       utterance.pitch = 1.0;
       window.speechSynthesis.speak(utterance);
@@ -221,14 +222,16 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
 
     setIsLoading(true);
     setPublishSuccess(false);
+    setPipelineError(null);
     restartVideo();
 
     try {
-      // 1. First extract or synthesize immediately
+      // Parse only the URL shape locally. All product facts come from the
+      // server-side extractor; this helper never supplies commerce data.
       const parsedInfo = extractBasicProductInfoFromUrl(productLink.trim(), siteSettings.amazonTag);
       const builtAffiliate = buildAffiliateLink(productLink.trim(), { affiliateTag: siteSettings.amazonTag });
 
-      // 2. Call service with automatic fast fallback
+      // Extract verified facts and generate original images server-side.
       const campaign = await generateProductVideoCampaign({
         productUrl: productLink.trim(),
         affiliateLink: builtAffiliate,
@@ -236,36 +239,28 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
         platform: 'tiktok'
       });
 
-      // 3. Pick image - ALWAYS prioritize the genuine extracted product image
-      let chosenImage = campaign.product.image || campaign.heroImage || initialProduct?.image || '';
-      if (!chosenImage || !chosenImage.startsWith('http')) {
-        chosenImage = 'https://images.unsplash.com/photo-1558002038-1055907df827?w=800&auto=format&fit=crop&q=80';
-        if (/airfryer|fryer|قلاية/i.test(productLink)) {
-          chosenImage = 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&auto=format&fit=crop&q=80';
-        } else if (/vacuum|cleaner|مكنسة/i.test(productLink)) {
-          chosenImage = 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?w=800&auto=format&fit=crop&q=80';
-        } else if (/lock|قفل/i.test(productLink)) {
-          chosenImage = 'https://images.unsplash.com/photo-1558002038-1055907df827?w=800&auto=format&fit=crop&q=80';
-        } else if (/watch|ساعة/i.test(productLink)) {
-          chosenImage = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80';
-        } else if (/camera|كاميرا/i.test(productLink)) {
-          chosenImage = 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop&q=80';
-        }
-      }
+      const chosenImage = campaign.product.image || campaign.heroImage || '';
+      if (!chosenImage) throw new Error('لم يتم إنشاء صورة أصلية قابلة للنشر لهذا المنتج.');
 
-      const effectiveBrand = customBrand.trim() || campaign.product.brand || parsedInfo.brand || 'Amazon Choice';
+      const effectiveBrand = customBrand.trim() || campaign.product.brand || parsedInfo.brand || '';
 
       setCampaignData({
+        draftProductId: initialProduct?.id || `draft-${parsedInfo.asinOrId || Date.now()}`,
         productTitleAr: campaign.product.nameAr,
         productTitleEn: campaign.product.nameEn,
+        description: campaign.product.description,
         category: campaign.product.category || 'smart-home',
+        subcategory: campaign.product.subcategory || '',
         brand: effectiveBrand,
-        originalPrice: campaign.product.originalPrice || 450,
-        discountPrice: campaign.product.discountPrice || 299,
-        discountPercent: campaign.product.discountPercent || 33,
-        features: campaign.product.features || ['جودة واعتمادية عالية', 'سعر مخفض لفترة محدودة', 'ضمان معتمد'],
+        originalPrice: campaign.product.originalPrice || 0,
+        discountPrice: campaign.product.discountPrice || 0,
+        discountPercent: campaign.product.discountPercent || 0,
+        currency: campaign.product.currency || 'USD',
+        features: campaign.product.features || [],
         affiliateLink: campaign.product.affiliateLink || builtAffiliate,
         image: chosenImage,
+        images: campaign.product.images || [chosenImage],
+        generatedImagePaths: campaign.product.generatedImagePaths || [],
         beforeImage: campaign.beforeImage || chosenImage,
         afterImage: campaign.afterImage || chosenImage,
         suggestedVideoUrl: campaign.product.youtubeUrl || (campaign as any).suggestedVideoUrl,
@@ -274,67 +269,66 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
         videoScript: campaign.videoScript
       });
 
+      // Save the fully generated result immediately as an admin-visible draft.
+      // Public catalog screens already respect isHidden, so this persists the
+      // work across refresh/login without exposing it before owner approval.
+      const draftProductId = initialProduct?.id || `draft-${parsedInfo.asinOrId || Date.now()}`;
+      const hiddenDraft: Product = {
+        id: draftProductId,
+        titleAr: campaign.product.nameAr,
+        titleEn: campaign.product.nameEn,
+        description: campaign.product.description,
+        descriptionEn: campaign.product.description,
+        longDescription: campaign.socialCaption,
+        longDescriptionEn: campaign.socialCaption,
+        category: (campaign.product.category || 'smart-home') as Product['category'],
+        subcategory: campaign.product.subcategory || '',
+        subcategoryEn: campaign.product.subcategory || '',
+        brand: effectiveBrand,
+        image: chosenImage,
+        images: campaign.product.images || [chosenImage],
+        amazonUrl: campaign.product.affiliateLink,
+        originalPrice: campaign.product.originalPrice || 0,
+        discountPrice: campaign.product.discountPrice || 0,
+        discountPercent: campaign.product.discountPercent || 0,
+        currency: campaign.product.currency || 'USD',
+        rating: 0,
+        reviewCount: 0,
+        features: campaign.product.features || [],
+        featuresEn: campaign.product.features || [],
+        specs: {},
+        specsEn: {},
+        keywords: campaign.seoMetadata?.keywords || [],
+        isFeatured: false,
+        isTopSelling: false,
+        isLatest: true,
+        isHidden: true,
+        isActive: true,
+        viewsCount: 0,
+        createdAt: initialProduct?.createdAt || new Date().toISOString(),
+        sourceProductUrl: productLink.trim(),
+        thumbnail: campaign.product.images?.at(-1) || chosenImage,
+        mediaPipeline: {
+          script: campaign.videoScript,
+          captions: campaign.videoScript.scenes.map(scene => scene.screenText).filter(Boolean),
+          hashtags: campaign.hashtags,
+          generatedImagePaths: campaign.product.generatedImagePaths || [],
+          generatedVideoPaths: [],
+          generatedAt: new Date().toISOString(),
+          status: 'images_ready'
+        }
+      };
+      addProduct(hiddenDraft);
+
       // Auto start video playback after 400ms
       setTimeout(() => {
         setIsPlaying(true);
       }, 400);
 
     } catch (err: any) {
-      console.warn("Fast link generation fallback triggered:", err);
-      // Even if network fails, construct complete beautiful result
-      const parsed = extractBasicProductInfoFromUrl(productLink, siteSettings.amazonTag);
-      const effectiveBrand = customBrand.trim() || parsed.brand || 'يسرى بريميوم';
-      setCampaignData({
-        productTitleAr: parsed.name,
-        productTitleEn: 'Smart Product Edition 2026',
-        category: 'smart-home',
-        brand: effectiveBrand,
-        originalPrice: 399,
-        discountPrice: 269,
-        discountPercent: 32,
-        features: ['تقنية عصرية متطورة', 'ضمان سنتين معتمد', 'توصيل سريع'],
-        affiliateLink: parsed.affiliateUrl,
-        image: 'https://images.unsplash.com/photo-1558002038-1055907df827?w=800&auto=format&fit=crop&q=80',
-        socialCaption: `🔥 أقوى عرض لـ ${parsed.name}!\n🛒 اطلب الآن: ${parsed.affiliateUrl}\n#يسرى_سمايل #تسوق_ذكي`,
-        hashtags: ['#يسرى_سمايل', '#تخفيضات', '#أمازون'],
-        videoScript: {
-          videoTitle: `مراجعة ${parsed.name}`,
-          hook: 'هل يستحق هذا المنتج الشراء؟ شاهد قبل أن تطلب!',
-          estimatedDuration: '0:35',
-          scenes: [
-            {
-              sceneNumber: 1,
-              timeRange: '00:00 - 00:08',
-              visualPrompt: 'لقطة افتتاحية سريعة للمنتج',
-              voiceoverText: `تعال أوريك هذا الجهاز الذكي وليش الكل بيتكلم عنه!`,
-              screenText: 'أقوى منتج لعام 2026 🔥'
-            },
-            {
-              sceneNumber: 2,
-              timeRange: '00:08 - 00:18',
-              visualPrompt: 'استعراض مواصفات المنتج واستخدامه',
-              voiceoverText: `يوفر لك أعلى درجات الراحة مع خامات ممتازة وضمان سنتين.`,
-              screenText: 'أداء فائق وسهل الاستخدام ⭐'
-            },
-            {
-              sceneNumber: 3,
-              timeRange: '00:18 - 00:26',
-              visualPrompt: 'عرض السعر الترويجي والخصم',
-              voiceoverText: `وسعره حالياً مخفض لفترة محدودة بخصم أكثر من 30 بالمئة!`,
-              screenText: 'سعر خاص: 269 $ فقط 💰'
-            },
-            {
-              sceneNumber: 4,
-              timeRange: '00:26 - 00:35',
-              visualPrompt: 'دعوة للشراء بالضغط على الرابط',
-              voiceoverText: `الرابط المباشر للطلب موجود بالأسفل مع كود الخصم!`,
-              screenText: 'اضغط على الرابط للشراء الآن 🛒'
-            }
-          ],
-          callToAction: 'اضغط على الرابط بالأسفل للشراء برابط الأفلييت المباشر!'
-        }
-      });
-      setTimeout(() => setIsPlaying(true), 400);
+      console.error('URL-to-media pipeline failed:', err);
+      setCampaignData(null);
+      setPipelineError(err?.message || 'تعذر استخراج المنتج أو إنشاء وسائط أصلية. لم يتم إنشاء أي بيانات بديلة.');
     } finally {
       setIsLoading(false);
     }
@@ -346,51 +340,71 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
     setIsPublishing(true);
 
     const newProd: Product = {
-      id: `prod-${Date.now()}`,
+      id: campaignData.draftProductId || `prod-${Date.now()}`,
       titleAr: campaignData.productTitleAr,
       titleEn: campaignData.productTitleEn,
-      description: `${campaignData.productTitleAr} — جهاز ذكي متطور مع ضمان سنتين وسعر خاص.`,
-      longDescription: `${campaignData.socialCaption || ''}\n\nالمميزات:\n${campaignData.features?.join('\n') || ''}`,
-      originalPrice: campaignData.originalPrice || 399,
-      discountPrice: campaignData.discountPrice || 269,
-      discountPercent: campaignData.discountPercent || 30,
-      currency: 'SAR',
-      rating: 4.9,
-      reviewCount: 120,
-      viewsCount: 310,
+      description: campaignData.description || campaignData.productTitleEn,
+      descriptionEn: campaignData.description || campaignData.productTitleEn,
+      longDescription: campaignData.socialCaption || campaignData.productTitleEn,
+      longDescriptionEn: campaignData.socialCaption || campaignData.productTitleEn,
+      originalPrice: Number(campaignData.originalPrice) || 0,
+      discountPrice: Number(campaignData.discountPrice) || Number(campaignData.originalPrice) || 0,
+      discountPercent: Number(campaignData.discountPercent) || 0,
+      currency: campaignData.currency || 'USD',
+      rating: 0,
+      reviewCount: 0,
+      viewsCount: 0,
       createdAt: new Date().toISOString(),
       category: campaignData.category || 'smart-home',
-      subcategory: 'أجهزة ذكية متطورة',
-      brand: campaignData.brand || 'يسرى سمايل',
-      features: campaignData.features || ['أداء فائق', 'ضمان سنتين', 'توفير طاقة'],
-      specs: { 'الضمان': 'سنتان', 'التوصيل': 'شحن سريع' },
+      subcategory: campaignData.subcategory || '',
+      brand: campaignData.brand || '',
+      features: campaignData.features || [],
+      featuresEn: campaignData.features || [],
+      specs: campaignData.specs || {},
+      specsEn: campaignData.specs || {},
       image: campaignData.image,
-      images: [campaignData.image],
+      images: campaignData.images || [campaignData.image],
       amazonUrl: campaignData.affiliateLink,
-      youtubeUrl: 'https://www.youtube.com/watch?v=p7H2N8r_f5E',
-      isFeatured: true,
-      isTopSelling: true,
+      videoUrl: renderedBlobUrl || undefined,
+      isFeatured: false,
+      isTopSelling: false,
+      isHidden: false,
       isActive: true,
-      keywords: campaignData.hashtags || ['أجهزة_ذكية', 'تسوق']
+      keywords: campaignData.hashtags || [],
+      sourceProductUrl: productLink.trim(),
+      thumbnail: campaignData.images?.find((url: string) => /thumbnail/i.test(url)) || campaignData.image,
+      mediaPipeline: {
+        script: campaignData.videoScript,
+        captions: campaignData.videoScript?.scenes?.map((scene: any) => scene.screenText).filter(Boolean) || [],
+        hashtags: campaignData.hashtags || [],
+        generatedImagePaths: campaignData.generatedImagePaths || [],
+        generatedVideoPaths: [],
+        generatedAt: new Date().toISOString(),
+        status: renderedBlobUrl ? 'video_ready' : 'images_ready'
+      }
     };
 
-    addProduct(newProd);
+    // This is the explicit owner approval action: reveal the existing draft.
+    // Updating the same ID prevents a second/duplicate product from being made.
+    updateProduct(newProd);
 
-    // Also add to video reviews
+    // Attach a video record only when a real generated/uploaded video exists.
+    if (renderedBlobUrl) {
     const newVideo: VideoReview = {
       id: `vid-${Date.now()}`,
       productId: newProd.id,
       productTitle: newProd.titleAr,
       productImage: newProd.image,
-      platform: 'youtube',
-      embedId: 'p7H2N8r_f5E',
-      videoUrl: 'https://www.youtube.com/watch?v=p7H2N8r_f5E',
+      platform: 'generated',
+      embedId: `generated-${newProd.id}`,
+      videoUrl: renderedBlobUrl,
       title: campaignData.videoScript?.videoTitle || `مراجعة ${newProd.titleAr}`,
       views: '15.2K',
       date: 'اليوم',
       duration: campaignData.videoScript?.estimatedDuration || '0:35'
     };
     addVideo(newVideo);
+    }
 
     if (onProductPublished) {
       onProductPublished(newProd);
@@ -407,35 +421,65 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
     setRenderProgress({ percent: 10, message: 'بدء تهيئة محرك الفيديو وتجهيز الصور...' });
 
     try {
-      const renderRes = await renderRealVideoAsset({
-        productTitle: campaignData.productTitleAr,
-        productTitleEn: campaignData.productTitleEn,
-        brand: campaignData.brand,
-        price: campaignData.originalPrice,
-        discountPrice: campaignData.discountPrice,
-        currency: '$',
-        heroImage: campaignData.image,
-        scenes: campaignData.videoScript?.scenes?.map((s: any, idx: number) => ({
-          sceneNumber: idx + 1,
-          durationSeconds: 6,
-          sceneType: s.sceneType || 'feature',
-          visualPrompt: s.visualPrompt || '',
-          voiceoverScriptAr: s.voiceoverText || '',
-          voiceoverScriptEn: s.voiceoverText || '',
-          onScreenTextAr: s.screenText || '',
-          onScreenTextEn: s.screenText || '',
-          transition: 'fade',
-          callToAction: idx === ((campaignData.videoScript?.scenes?.length || 1) - 1) ? 'اطلب الآن بخصم خاص' : undefined
-        })) || [],
-        affiliateUrl: campaignData.affiliateLink,
-        aspectRatio: aspectRatio,
-        onProgress: (pct, msg) => {
-          setRenderProgress({ percent: pct, message: msg });
+      const sourceScenes = campaignData.videoScript?.scenes || [];
+      const clipScenes = (sourceScenes.length ? sourceScenes : [{
+        visualPrompt: `Animate ${campaignData.productTitleEn} in a realistic product demonstration.`,
+        voiceoverText: campaignData.videoScript?.hook || campaignData.productTitleEn,
+        screenText: campaignData.productTitleEn
+      }]).slice(0, 3);
+      const generatedPaths: string[] = [];
+      let firstVideoUrl = '';
+
+      for (let index = 0; index < clipScenes.length; index += 1) {
+        const scene = clipScenes[index];
+        const prompt = `${scene.visualPrompt || `Animate ${campaignData.productTitleEn} in a realistic product demonstration.`}\nEnglish narrator says: "${scene.voiceoverText || campaignData.videoScript?.hook}"\nOn-screen text: "${scene.screenText || campaignData.productTitleEn}"\nThis is connected clip ${index + 1} of ${clipScenes.length}; focus on one verified feature and maintain visual continuity with the other clips.`;
+        setRenderProgress({
+          percent: 10 + Math.round((index / clipScenes.length) * 80),
+          message: `إنشاء الفيديو ${index + 1} من ${clipScenes.length} بصوت إنجليزي...`
+        });
+        const job = await startAiProductVideo({
+          productId: campaignData.draftProductId,
+          prompt,
+          aspectRatio,
+          referenceImageUrl: campaignData.images?.[index] || campaignData.image
+        });
+        const generated = await waitForAiProductVideo(job, message => {
+          setRenderProgress(current => ({ percent: Math.min(92, (current?.percent || 20) + 2), message }));
+        });
+        if (!firstVideoUrl) firstVideoUrl = generated.videoUrl;
+        generatedPaths.push(generated.storagePath);
+        addVideo({
+          id: `vid-${campaignData.draftProductId}-${index}-${Date.now()}`,
+          productId: campaignData.draftProductId,
+          productTitle: campaignData.productTitleEn,
+          productImage: campaignData.image,
+          platform: 'generated',
+          embedId: `veo-${index}-${Date.now()}`,
+          videoUrl: generated.videoUrl,
+          storagePath: generated.storagePath,
+          title: `${campaignData.videoScript?.videoTitle || campaignData.productTitleEn} — Clip ${index + 1}`,
+          views: '0',
+          date: new Date().toISOString(),
+          duration: '00:08',
+          scenes: [scene],
+          script: campaignData.videoScript
+        });
+      }
+
+      setRenderedBlobUrl(firstVideoUrl);
+      patchProduct(campaignData.draftProductId, {
+        videoUrl: firstVideoUrl,
+        mediaPipeline: {
+          script: campaignData.videoScript,
+          captions: clipScenes.map((scene: any) => scene.screenText).filter(Boolean),
+          hashtags: campaignData.hashtags || [],
+          generatedImagePaths: campaignData.generatedImagePaths || [],
+          generatedVideoPaths: generatedPaths,
+          generatedAt: new Date().toISOString(),
+          status: 'video_ready'
         }
       });
-
-      setRenderedBlobUrl(renderRes.videoUrl);
-      setRenderProgress({ percent: 100, message: 'تم إنتاج الفيديو بنجاح! جاهز للمعاينة والتحميل.' });
+      setRenderProgress({ percent: 100, message: `تم إنتاج ${clipScenes.length} فيديوهات متحركة بصوت وحفظها على الموقع.` });
     } catch (err: any) {
       console.error('Real video render error:', err);
       alert(`حدث خطأ أثناء تصيير الفيديو: ${err?.message || 'يرجى المحاولة مجدداً'}`);
@@ -638,6 +682,13 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
           </button>
         </div>
       </div>
+
+      {pipelineError && (
+        <div role="alert" className="rounded-2xl border border-red-500/50 bg-red-950/60 p-4 text-sm text-red-200">
+          <strong className="block mb-1">توقفت العملية بدون إنشاء بيانات أو وسائط وهمية</strong>
+          <span>{pipelineError}</span>
+        </div>
+      )}
 
       {/* 🎬 ACTIVE VIDEO STUDIO & PLAYER */}
       {campaignData ? (
@@ -1243,3 +1294,4 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
     </div>
   );
 };
+

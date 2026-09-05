@@ -77,6 +77,20 @@ export interface Product {
   isActive?: boolean;
   viewsCount: number;
   createdAt: string;
+  sourceProductUrl?: string;
+  thumbnail?: string;
+  mediaPipeline?: {
+    script?: PromotionalVideoScript;
+    captions?: string[];
+    hashtags?: string[];
+    generatedImagePaths?: string[];
+    generatedVideoPaths?: string[];
+    imageModel?: string;
+    videoModel?: string;
+    generatedAt?: string;
+    status?: 'draft' | 'images_ready' | 'video_pending' | 'video_ready' | 'failed';
+    lastError?: string;
+  };
 }
 
 export interface Category {
@@ -204,6 +218,7 @@ export interface ExtractedProductInfo {
   image?: string;
   images?: string[];
   youtubeUrl?: string;
+  generatedImagePaths?: string[];
 }
 
 export interface ProductVideoCampaignResult {
@@ -248,3 +263,4 @@ export type PageView =
   | 'terms' 
   | 'cookies' 
   | 'disclosure';
+
