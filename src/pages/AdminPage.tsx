@@ -59,6 +59,7 @@ import { GeminiApiKeyManager } from '../components/GeminiApiKeyManager';
 import { GoogleWorkspaceHub } from '../components/GoogleWorkspaceHub';
 import { AdminUsersPanel } from '../components/AdminUsersPanel';
 import { ProductImagesField } from '../components/ProductImagesField';
+import { ProductCouponFields } from '../components/ProductCoupon';
 import { ProductVideosManager } from '../components/ProductVideosManager';
 import { generateVideosForProduct, toRenderedAsset, toVideoReview } from '../services/productVideoPipeline';
 import { auth, ownerGoogleSignIn, consumeOwnerRedirectResult, describeAuthError, logoutGoogle } from '../services/googleWorkspace';
@@ -2799,6 +2800,8 @@ export const AdminPage: React.FC = () => {
                     the owner's computer; the first one stays the main image so
                     every existing listing keeps rendering exactly as before.
                   */}
+                  {editingProduct && <ProductCouponFields value={editingProduct.coupon}
+                    onChange={coupon => setEditingProduct(current => current ? { ...current, coupon } : current)} />}
                   <ProductImagesField
                     productId={editingProduct?.id || 'new-product'}
                     images={

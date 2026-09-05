@@ -1,4 +1,5 @@
 import React from 'react';
+import { ProductCouponBadge } from './ProductCoupon';
 import { Product } from '../types';
 import { useApp } from '../context/AppContext';
 import { 
@@ -133,11 +134,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
               </span>
               <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
                 <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                <span>{product.rating}</span>
+                <span>{product.rating > 0 && product.rating <= 5 ? `${product.rating} / 5` : 'التقييم غير متاح'}</span>
                 <span className="text-slate-300 font-normal">({product.reviewCount})</span>
               </div>
             </div>
 
+            <ProductCouponBadge coupon={product.coupon} />
             <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 mb-1.5 font-['Tajawal']">
               {displayTitle}
             </h3>
@@ -326,11 +328,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
             </span>
             <div className="flex items-center gap-1 text-amber-400 font-bold">
               <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-              <span>{product.rating}</span>
+              <span>{product.rating > 0 && product.rating <= 5 ? `${product.rating} / 5` : 'التقييم غير متاح'}</span>
               <span className="text-slate-300 font-normal">({product.reviewCount})</span>
             </div>
           </div>
 
+          <ProductCouponBadge coupon={product.coupon} />
           <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-2 font-['Tajawal'] leading-tight">
             {displayTitle}
           </h3>

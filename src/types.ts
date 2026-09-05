@@ -37,6 +37,7 @@ export interface BlogPost {
 }
 
 export interface Product {
+  coupon?: { label: string; code: string; terms: string; expiresOn: string; isPublic: boolean };
   id: string;
   titleAr: string;
   titleEn: string;

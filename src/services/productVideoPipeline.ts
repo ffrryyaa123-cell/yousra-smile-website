@@ -120,7 +120,7 @@ export const generateVideosForProduct = async (
     aspectRatio,
     storagePaths: results.map(video => video.storagePath)
   });
-  onProgress?.({ stage: 'done', percent: 100, message: `تم إنشاء ${results.length} فيديوهات متحركة بصوت وحفظها للمراجعة.` });
+  onProgress?.({ stage: 'done', percent: 100, message: `تم حفظ ${results.length} ملفات فيديو للمراجعة. شغّلي كل مقطع للتأكد من الحركة والصوت قبل إظهاره.` });
   return results;
 };
 
