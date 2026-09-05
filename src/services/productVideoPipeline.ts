@@ -45,6 +45,7 @@ export const generateVideosForProduct = async (
   options: {
     aspectRatio?: '9:16' | '16:9';
     onProgress?: (progress: PipelineProgress) => void;
+    onClipReady?: (clip: GeneratedProductVideo) => void | Promise<void>;
   } = {}
 ): Promise<GeneratedProductVideo[]> => {
   const { aspectRatio = '9:16', onProgress } = options;
@@ -111,6 +112,7 @@ export const generateVideosForProduct = async (
       scenes: [scene],
       temporary: false
     });
+    await options.onClipReady?.(results[results.length - 1]);
   }
 
   void adminAccount.logActivity('product_video_campaign_generated', 'product', product.id, {

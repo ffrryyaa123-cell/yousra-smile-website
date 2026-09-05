@@ -204,6 +204,8 @@ export interface PromotionalVideoScript {
 }
 
 export interface ExtractedProductInfo {
+  rating?: number;
+  reviewCount?: number;
   nameAr: string;
   nameEn: string;
   description: string;

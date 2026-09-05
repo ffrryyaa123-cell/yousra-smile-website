@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Play, Pause, RotateCcw, Volume2, VolumeX, Sparkles, Zap, 
-  ExternalLink, Copy, Check, ShoppingBag, Video, Share2, 
+import {
+  Play, Pause, RotateCcw, Volume2, VolumeX, Sparkles, Zap,
+  ExternalLink, Copy, Check, ShoppingBag, Video, Share2,
   ArrowRight, ShieldCheck, Tag, Eye, Clock, Download, Plus
 } from 'lucide-react';
 import { generateProductVideoCampaign, extractBasicProductInfoFromUrl, buildAffiliateLink } from '../services/productVideoService';
-import { startAiProductVideo, waitForAiProductVideo } from '../services/aiProductVideo';
+import { generateVideosForProduct, toVideoReview } from '../services/productVideoPipeline';
+import { catalogDatabase } from '../services/supabaseCatalog';
 import { useApp } from '../context/AppContext';
 import { Product, VideoReview } from '../types';
 
@@ -23,16 +24,16 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
   onProductPublished
 }) => {
   const { siteSettings, addProduct, updateProduct, patchProduct, addVideo, formatPrice, openImportVideoModal } = useApp();
-  
+
   // Single input state - ONLY the link!
   const [productLink, setProductLink] = useState(
     initialUrl || (initialProduct?.amazonUrl || initialProduct?.aliexpressUrl || '')
   );
-  
+
   // Freedom to choose ANY brand/trademark or leave auto-extracted
   const [customBrand, setCustomBrand] = useState(initialProduct?.brand || '');
   const [showBrandOption, setShowBrandOption] = useState(false);
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState(false);
@@ -43,6 +44,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
   const [isRenderingRealVideo, setIsRenderingRealVideo] = useState(false);
   const [renderProgress, setRenderProgress] = useState<{ percent: number; message: string } | null>(null);
   const [renderedBlobUrl, setRenderedBlobUrl] = useState<string | null>(null);
+  const [completedClips, setCompletedClips] = useState<Array<{ videoUrl: string; storagePath: string }>>([]);
 
   // Campaign & Video Result State
   const [campaignData, setCampaignData] = useState<any>(() => {
@@ -109,7 +111,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
   const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9'>('9:16');
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [videoPlayerMode, setVideoPlayerMode] = useState<'storyboard' | 'device_video' | 'rendered_video' | 'youtube'>('storyboard');
-  
+
   const deviceVideoInputRef = useRef<HTMLInputElement>(null);
   const playTimerRef = useRef<any>(null);
   const startTimeRef = useRef<number>(0);
@@ -255,6 +257,8 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
         originalPrice: campaign.product.originalPrice || 0,
         discountPrice: campaign.product.discountPrice || 0,
         discountPercent: campaign.product.discountPercent || 0,
+        rating: campaign.product.rating || 0,
+        reviewCount: campaign.product.reviewCount || 0,
         currency: campaign.product.currency || 'USD',
         features: campaign.product.features || [],
         affiliateLink: campaign.product.affiliateLink || builtAffiliate,
@@ -292,8 +296,8 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
         discountPrice: campaign.product.discountPrice || 0,
         discountPercent: campaign.product.discountPercent || 0,
         currency: campaign.product.currency || 'USD',
-        rating: 0,
-        reviewCount: 0,
+        rating: campaign.product.rating || 0,
+        reviewCount: campaign.product.reviewCount || 0,
         features: campaign.product.features || [],
         featuresEn: campaign.product.features || [],
         specs: {},
@@ -318,12 +322,11 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
           status: 'images_ready'
         }
       };
+      await catalogDatabase.saveProduct(hiddenDraft);
       addProduct(hiddenDraft);
+      await generateCampaignClips(hiddenDraft);
 
-      // Auto start video playback after 400ms
-      setTimeout(() => {
-        setIsPlaying(true);
-      }, 400);
+      // Storyboard is a plan; only completed MP4s are playable results.
 
     } catch (err: any) {
       console.error('URL-to-media pipeline failed:', err);
@@ -337,6 +340,11 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
   // Publish Directly to Store
   const handlePublishToStore = () => {
     if (!campaignData) return;
+    if (campaignData.draftProductId) {
+      patchProduct(campaignData.draftProductId, { isHidden: false });
+      setPublishSuccess(true);
+      return;
+    }
     setIsPublishing(true);
 
     const newProd: Product = {
@@ -351,8 +359,8 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
       discountPrice: Number(campaignData.discountPrice) || Number(campaignData.originalPrice) || 0,
       discountPercent: Number(campaignData.discountPercent) || 0,
       currency: campaignData.currency || 'USD',
-      rating: 0,
-      reviewCount: 0,
+      rating: campaignData.rating || 0,
+      reviewCount: campaignData.reviewCount || 0,
       viewsCount: 0,
       createdAt: new Date().toISOString(),
       category: campaignData.category || 'smart-home',
@@ -414,78 +422,74 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
     setPublishSuccess(true);
   };
 
-  // Real Video Synthesis with Canvas & Audio
-  const handleRenderRealVideo = async () => {
-    if (!campaignData) return;
+  // Shared by automatic URL import and explicit retries. Persist each completed
+  // clip before requesting the next, so a later failure cannot lose it.
+  const generateCampaignClips = async (product: Product) => {
     setIsRenderingRealVideo(true);
-    setRenderProgress({ percent: 10, message: 'بدء تهيئة محرك الفيديو وتجهيز الصور...' });
-
+    setPipelineError(null);
+    setCompletedClips([]);
+    const paths: string[] = [];
+    let firstVideoUrl = '';
     try {
-      const sourceScenes = campaignData.videoScript?.scenes || [];
-      const clipScenes = (sourceScenes.length ? sourceScenes : [{
-        visualPrompt: `Animate ${campaignData.productTitleEn} in a realistic product demonstration.`,
-        voiceoverText: campaignData.videoScript?.hook || campaignData.productTitleEn,
-        screenText: campaignData.productTitleEn
-      }]).slice(0, 3);
-      const generatedPaths: string[] = [];
-      let firstVideoUrl = '';
-
-      for (let index = 0; index < clipScenes.length; index += 1) {
-        const scene = clipScenes[index];
-        const prompt = `${scene.visualPrompt || `Animate ${campaignData.productTitleEn} in a realistic product demonstration.`}\nEnglish narrator says: "${scene.voiceoverText || campaignData.videoScript?.hook}"\nOn-screen text: "${scene.screenText || campaignData.productTitleEn}"\nThis is connected clip ${index + 1} of ${clipScenes.length}; focus on one verified feature and maintain visual continuity with the other clips.`;
-        setRenderProgress({
-          percent: 10 + Math.round((index / clipScenes.length) * 80),
-          message: `إنشاء الفيديو ${index + 1} من ${clipScenes.length} بصوت إنجليزي...`
-        });
-        const job = await startAiProductVideo({
-          productId: campaignData.draftProductId,
-          prompt,
-          aspectRatio,
-          referenceImageUrl: campaignData.images?.[index] || campaignData.image
-        });
-        const generated = await waitForAiProductVideo(job, message => {
-          setRenderProgress(current => ({ percent: Math.min(92, (current?.percent || 20) + 2), message }));
-        });
-        if (!firstVideoUrl) firstVideoUrl = generated.videoUrl;
-        generatedPaths.push(generated.storagePath);
-        addVideo({
-          id: `vid-${campaignData.draftProductId}-${index}-${Date.now()}`,
-          productId: campaignData.draftProductId,
-          productTitle: campaignData.productTitleEn,
-          productImage: campaignData.image,
-          platform: 'generated',
-          embedId: `veo-${index}-${Date.now()}`,
-          videoUrl: generated.videoUrl,
-          storagePath: generated.storagePath,
-          title: `${campaignData.videoScript?.videoTitle || campaignData.productTitleEn} — Clip ${index + 1}`,
-          views: '0',
-          date: new Date().toISOString(),
-          duration: '00:08',
-          scenes: [scene],
-          script: campaignData.videoScript
-        });
-      }
-
-      setRenderedBlobUrl(firstVideoUrl);
-      patchProduct(campaignData.draftProductId, {
-        videoUrl: firstVideoUrl,
-        mediaPipeline: {
-          script: campaignData.videoScript,
-          captions: clipScenes.map((scene: any) => scene.screenText).filter(Boolean),
-          hashtags: campaignData.hashtags || [],
-          generatedImagePaths: campaignData.generatedImagePaths || [],
-          generatedVideoPaths: generatedPaths,
-          generatedAt: new Date().toISOString(),
-          status: 'video_ready'
+      await generateVideosForProduct(product, {
+        aspectRatio,
+        onProgress: progress => setRenderProgress({ percent: progress.percent, message: progress.message }),
+        onClipReady: async clip => {
+          const review = { id: clip.videoId, ...toVideoReview(product, clip) };
+          await catalogDatabase.saveVideo(review);
+          addVideo(review);
+          paths.push(clip.storagePath);
+          setCompletedClips(current => [...current, { videoUrl: clip.videoUrl, storagePath: clip.storagePath }]);
+          if (!firstVideoUrl) {
+            firstVideoUrl = clip.videoUrl;
+            setRenderedBlobUrl(clip.videoUrl);
+            setVideoPlayerMode('rendered_video');
+          }
+          const patch = {
+            videoUrl: firstVideoUrl,
+            mediaPipeline: {
+              ...product.mediaPipeline,
+              generatedVideoPaths: [...paths],
+              generatedAt: new Date().toISOString(),
+              status: paths.length === 3 ? 'video_ready' : 'video_partial'
+            }
+          };
+          await catalogDatabase.patchProduct(product.id, patch);
+          patchProduct(product.id, patch);
         }
       });
-      setRenderProgress({ percent: 100, message: `تم إنتاج ${clipScenes.length} فيديوهات متحركة بصوت وحفظها على الموقع.` });
+      setRenderProgress({ percent: 100, message: 'تم حفظ 3 فيديوهات. شغّليها لمراجعة الحركة والصوت قبل الإظهار.' });
     } catch (err: any) {
-      console.error('Real video render error:', err);
-      alert(`حدث خطأ أثناء تصيير الفيديو: ${err?.message || 'يرجى المحاولة مجدداً'}`);
+      const message = `اكتمل ${paths.length} من 3 فيديوهات. ${err?.message || 'تعذر إكمال التوليد.'}`;
+      setPipelineError(message);
+      setRenderProgress({ percent: Math.round(paths.length / 3 * 100), message });
     } finally {
       setIsRenderingRealVideo(false);
     }
+  };
+
+  const handleRenderRealVideo = async () => {
+    if (!campaignData) return;
+    const product = {
+      ...initialProduct,
+      id: campaignData.draftProductId || initialProduct?.id,
+      titleAr: campaignData.productTitleAr,
+      titleEn: campaignData.productTitleEn,
+      image: campaignData.image,
+      images: campaignData.images || [campaignData.image],
+      amazonUrl: campaignData.affiliateLink,
+      brand: campaignData.brand,
+      features: campaignData.features || [],
+      featuresEn: campaignData.features || [],
+      specs: {},
+      category: campaignData.category,
+      originalPrice: campaignData.originalPrice,
+      discountPrice: campaignData.discountPrice,
+      currency: campaignData.currency || 'USD',
+      keywords: []
+    } as Product;
+    if (!product.id) { setPipelineError('احفظي المنتج أولاً لربط الفيديوهات به.'); return; }
+    await generateCampaignClips(product);
   };
 
   const copyText = (text: string, key: string) => {
@@ -499,7 +503,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
 
   return (
     <div className="bg-slate-950 text-white rounded-3xl border border-indigo-500/40 shadow-2xl overflow-hidden p-4 sm:p-7 space-y-6">
-      
+
       {/* 🌟 Top Header: Simple & Focused */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div className="flex items-center gap-3">
@@ -563,7 +567,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
           <button
             type="button"
             onClick={handleInstantGenerate}
-            disabled={isLoading || !productLink.trim()}
+            disabled={isLoading || isRenderingRealVideo || !productLink.trim()}
             className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 via-pink-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xl shadow-red-600/30 transition-all cursor-pointer disabled:opacity-50 shrink-0"
           >
             {isLoading ? (
@@ -626,8 +630,8 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
                     type="button"
                     onClick={() => setCustomBrand(b)}
                     className={`px-2 py-0.5 rounded-md border cursor-pointer transition-colors ${
-                      customBrand === b 
-                        ? 'bg-amber-400 text-slate-950 font-bold border-amber-400' 
+                      customBrand === b
+                        ? 'bg-amber-400 text-slate-950 font-bold border-amber-400'
                         : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700'
                     }`}
                   >
@@ -693,10 +697,10 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
       {/* 🎬 ACTIVE VIDEO STUDIO & PLAYER */}
       {campaignData ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fadeIn">
-          
+
           {/* Left Column: Interactive Simulated Video Player (TikTok/Reels format) */}
           <div className="lg:col-span-5 flex flex-col items-center">
-            
+
             {/* Video Mode Tabs */}
             <div className="flex items-center gap-1.5 mb-3 w-full max-w-[340px] overflow-x-auto pb-1">
               <button
@@ -708,7 +712,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
                     : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                 }`}
               >
-                <span>⚡ العرض الذكي</span>
+                <span>خطة المشاهد — صور وليست فيديو</span>
               </button>
 
               {uploadedVideoUrl ? (
@@ -804,7 +808,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
             />
 
             {/* Video Canvas Phone Frame */}
-            <div 
+            <div
               className={`relative bg-black rounded-3xl overflow-hidden border-4 border-slate-800 shadow-2xl w-full transition-all duration-300 flex flex-col justify-between ${
                 aspectRatio === '9:16' ? 'max-w-[340px] aspect-[9/16] min-h-[500px]' : 'aspect-video max-w-full'
               }`}
@@ -920,7 +924,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
 
                   {/* Video Captions & Animated Scene Box */}
                   <div className="relative z-10 p-3.5 space-y-2.5 mt-auto">
-                    
+
                     {/* Onscreen Badge */}
                     <div className="inline-block px-3 py-1 rounded-xl bg-amber-500 text-slate-950 font-black text-xs shadow-lg animate-bounce">
                       {currentScene?.screenText || 'عرض خاص وحصري 🔥'}
@@ -970,7 +974,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
 
                     {/* Video Timeline Progress Bar */}
                     <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="bg-red-500 h-full transition-all duration-100"
                         style={{ width: `${progressPercent}%` }}
                       ></div>
@@ -1057,24 +1061,24 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 text-amber-300" />
-                      <span>🎬 تصيير وتحميل ملف الفيديو (MP4/WebM)</span>
+                      <span>🎬 توليد 3 فيديوهات متحركة مع صوت (MP4)</span>
                     </>
                   )}
                 </button>
               ) : (
                 <div className="space-y-3">
                   <div className="rounded-xl overflow-hidden border border-emerald-500/50 bg-black aspect-[9/16] max-h-56 mx-auto">
-                    <video 
-                      src={renderedBlobUrl} 
-                      controls 
-                      autoPlay 
+                    <video
+                      src={renderedBlobUrl}
+                      controls
+                      autoPlay
                       loop
                       className="w-full h-full object-contain"
                     />
                   </div>
                   <a
                     href={renderedBlobUrl}
-                    download={`yousra-video-${Date.now()}.webm`}
+                    download={`yousra-video-${Date.now()}.mp4`}
                     className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl flex items-center justify-center gap-2 shadow-lg cursor-pointer transition-all"
                   >
                     <Download className="w-4 h-4" />
@@ -1083,10 +1087,17 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
                 </div>
               )}
 
+              {completedClips.map((clip, index) => (
+                <div key={clip.storagePath} className="space-y-2 border-t border-slate-700 pt-3">
+                  <p>الفيديو {index + 1} من 3 — راجعي الحركة والصوت</p>
+                  <video src={clip.videoUrl} controls preload="metadata" className="w-full rounded-xl" />
+                  <a href={clip.videoUrl} download={`product-clip-${index + 1}.mp4`}>تنزيل المقطع {index + 1}</a>
+                </div>
+              ))}
               {isRenderingRealVideo && renderProgress && (
                 <div className="space-y-1.5">
                   <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700">
-                    <div 
+                    <div
                       className="bg-gradient-to-r from-purple-500 to-amber-400 h-full transition-all duration-300"
                       style={{ width: `${renderProgress.percent}%` }}
                     ></div>
@@ -1102,7 +1113,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
 
           {/* Right Column: Extracted Product Info, Verified Affiliate Link, Social Caption & 1-Click Publishing */}
           <div className="lg:col-span-7 space-y-4">
-            
+
             {/* 🏷️ Extracted Details Card */}
             <div className="bg-slate-900/90 border border-slate-800 p-4 sm:p-5 rounded-2xl space-y-3">
               <div className="flex items-start justify-between gap-3">
@@ -1118,7 +1129,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
                   </h3>
                   <p className="text-xs text-slate-400 font-mono">{campaignData.productTitleEn}</p>
                 </div>
-                
+
                 <div className="text-left shrink-0">
                   <div className="text-lg font-black text-emerald-400 font-['Tajawal']">
                     {formatPrice(campaignData.discountPrice)}
@@ -1211,15 +1222,15 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
 
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {scenes.map((sc: any, idx: number) => (
-                  <div 
+                  <div
                     key={idx}
                     onClick={() => {
                       setCurrentSceneIdx(idx);
                       speakCurrentScene(sc.voiceoverText);
                     }}
                     className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
-                      currentSceneIdx === idx 
-                        ? 'bg-indigo-950/60 border-indigo-500 text-white' 
+                      currentSceneIdx === idx
+                        ? 'bg-indigo-950/60 border-indigo-500 text-white'
                         : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
                     }`}
                   >

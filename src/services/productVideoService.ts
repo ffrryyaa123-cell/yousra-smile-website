@@ -254,6 +254,8 @@ export async function generateProductVideoCampaign(input: ProductVideoServiceInp
     : 0;
 
   const product: ExtractedProductInfo = {
+    rating: Number(real.rating) > 0 && Number(real.rating) <= 5 ? Number(real.rating) : 0,
+    reviewCount: Number.isInteger(Number(real.reviewCount)) && Number(real.reviewCount) >= 0 ? Number(real.reviewCount) : 0,
     nameAr: title,
     nameEn: title,
     description: description || title,

@@ -114,7 +114,7 @@ Deno.serve(async (req: Request) => {
     const operationName = String(body.operationName || '');
     const productId = safeId(String(body.productId || ''));
     const aspectRatio = body.aspectRatio === '16:9' ? '16:9' : '9:16';
-    if (!operationName.startsWith('operations/') || !productId) return json({ error: 'Invalid video job.' }, 400);
+    if (!/^(?:models\/[a-zA-Z0-9._-]+\/)?operations\/[a-zA-Z0-9._-]+$/.test(operationName) || !productId) return json({ error: 'Invalid video job.' }, 400);
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${operationName}`, {
       headers: { 'x-goog-api-key': geminiApiKey }, signal: AbortSignal.timeout(30000)
     });
