@@ -70,7 +70,7 @@ interface AppContextType {
   closeThumbnailEditor: () => void;
   updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
   removeVideoThumbnail: (videoId: string) => Promise<void>;
-  addVideo: (videoData: Omit<VideoReview, 'id' | 'views' | 'date'>) => void;
+  addVideo: (videoData: Omit<VideoReview, 'id' | 'views' | 'date'> & { id?: string; views?: string; date?: string }) => void;
   deleteVideo: (videoId: string) => Promise<void>;
   
   // Video Import & Replacement Modal (from device or link)

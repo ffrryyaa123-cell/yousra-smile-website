@@ -1,9 +1,8 @@
 import { Product, VideoReview, VideoScene } from '../types';
 import { RenderedVideoAsset } from './videoGenerator';
 import { buildVideoFromProduct } from './productVideoBuilder';
-import { renderRealVideoAsset } from './realVideoRenderer';
-import { uploadProductVideo, saveVideoRecord, VideoRecord } from './videoAssets';
 import { adminAccount } from './adminAccount';
+import { startAiProductVideo, waitForAiProductVideo } from './aiProductVideo';
 
 /**
  * End-to-end generation of a promotional video for a product that is already in
@@ -41,15 +40,14 @@ export interface GeneratedProductVideo {
   temporary: boolean;
 }
 
-export const generateVideoForProduct = async (
+export const generateVideosForProduct = async (
   product: Product,
   options: {
-    aspectRatio?: '9:16' | '16:9' | '1:1';
-    replaceStoragePath?: string;
+    aspectRatio?: '9:16' | '16:9';
     onProgress?: (progress: PipelineProgress) => void;
   } = {}
-): Promise<GeneratedProductVideo> => {
-  const { aspectRatio = '9:16', replaceStoragePath, onProgress } = options;
+): Promise<GeneratedProductVideo[]> => {
+  const { aspectRatio = '9:16', onProgress } = options;
 
   onProgress?.({
     stage: 'preparing',
@@ -61,117 +59,74 @@ export const generateVideoForProduct = async (
   // missing — better a clear message than a video nobody can buy from.
   const plan = buildVideoFromProduct(product);
 
-  onProgress?.({
-    stage: 'rendering',
-    percent: 15,
-    message: 'جاري رسم مشاهد الفيديو من صور المنتج الحقيقية...'
-  });
+  const scenes = plan.scenes.slice(0, 3);
+  const images = [product.image, ...(product.images ?? [])].filter(Boolean);
+  const results: GeneratedProductVideo[] = [];
 
-  const rendered = await renderRealVideoAsset({
-    productTitle: plan.videoTitle,
-    productTitleEn: product.titleEn,
-    brand: product.brand,
-    price: product.originalPrice,
-    discountPrice: product.discountPrice,
-    currency: product.currency === 'USD' ? '$' : product.currency,
-    heroImage: plan.heroImage,
-    beforeImage: plan.beforeImage,
-    afterImage: plan.afterImage,
-    scenes: plan.scenes,
-    affiliateUrl: plan.affiliateUrl,
-    aspectRatio,
-    onProgress: (pct, msg) => {
-      onProgress?.({
-        stage: 'rendering',
-        percent: Math.min(15 + Math.round(pct * 0.6), 75),
-        message: msg
-      });
-    }
-  });
+  for (let index = 0; index < scenes.length; index += 1) {
+    const scene = scenes[index];
+    const safe = (value: string | undefined, fallback: string) => {
+      const ascii = (value || '').replace(/[^\x20-\x7E]/g, ' ').replace(/\s+/g, ' ').trim();
+      return ascii || fallback;
+    };
+    const prompt = [
+      safe(scene.visualPrompt, 'Create a realistic product demonstration with genuine physical motion.'),
+      `A clear natural English female narrator says: "${safe(scene.voiceoverText, 'See how this product supports everyday use.')}"`,
+      `On-screen English text: "${safe(scene.screenText, 'Product spotlight')}"`,
+      `Connected clip ${index + 1} of ${scenes.length}. Maintain the exact same product, lighting, location, and visual continuity across the campaign.`,
+      'This must be a genuinely moving commercial video, not a slideshow, still image, photo pan, zoom, or Ken Burns effect.',
+      'The video must NOT be silent. Include synchronized spoken narration and subtle modern background music under the voice.',
+      'Preserve the exact referenced product model, color, proportions, controls, logo placement, and visible details. Do not invent accessories or claims.',
+      'If a woman appears, she must be an adult modest hijabi woman. Do not show any non-hijabi woman.'
+    ].join('\n');
 
-  const videoId = `vid-${product.id}-${Date.now()}`;
-  let videoUrl = rendered.videoUrl;
-  let storagePath = '';
-  let temporary = true;
-
-  onProgress?.({
-    stage: 'uploading',
-    percent: 80,
-    message: 'جاري رفع الفيديو إلى التخزين الدائم...'
-  });
-
-  try {
-    const stored = await uploadProductVideo(product.id, rendered.videoBlob, {
-      aspectRatio,
-      replacePath: replaceStoragePath
+    onProgress?.({
+      stage: 'rendering',
+      percent: 10 + Math.round((index / scenes.length) * 78),
+      message: `جاري إنشاء الفيديو المتحرك ${index + 1} من ${scenes.length} عبر Veo مع صوت إنجليزي...`
     });
-    videoUrl = stored.videoUrl;
-    storagePath = stored.storagePath;
-    temporary = false;
-  } catch (uploadError) {
-    // Keep the blob URL so the owner can still preview and download what was
-    // rendered; the caller surfaces the reason it was not saved.
-    console.warn('Video upload failed, keeping temporary URL:', uploadError);
-    throw Object.assign(
-      new Error((uploadError as Error).message),
-      { partial: { videoUrl: rendered.videoUrl, blob: rendered.videoBlob } }
-    );
+    const job = await startAiProductVideo({
+      productId: product.id,
+      prompt,
+      aspectRatio,
+      referenceImageUrl: images[index] || images[0]
+    });
+    const generated = await waitForAiProductVideo(job, message => {
+      onProgress?.({ stage: 'rendering', percent: Math.min(90, 18 + index * 25), message });
+    });
+    const videoId = `vid-${product.id}-${index}-${Date.now()}`;
+    results.push({
+      videoId,
+      videoUrl: generated.videoUrl,
+      storagePath: generated.storagePath,
+      thumbnailUrl: images[index] || images[0],
+      durationSeconds: 8,
+      aspectRatio,
+      caption: plan.caption,
+      hashtags: plan.hashtags,
+      affiliateUrl: plan.affiliateUrl,
+      title: `${plan.videoTitle} — Clip ${index + 1}`,
+      hook: plan.hook,
+      callToAction: plan.callToAction,
+      scenes: [scene],
+      temporary: false
+    });
   }
 
-  onProgress?.({
-    stage: 'saving',
-    percent: 92,
-    message: 'جاري حفظ بيانات الفيديو وربطه بالمنتج...'
+  void adminAccount.logActivity('product_video_campaign_generated', 'product', product.id, {
+    videoIds: results.map(video => video.videoId),
+    aspectRatio,
+    storagePaths: results.map(video => video.storagePath)
   });
-
-  const record: VideoRecord = {
-    id: videoId,
-    productId: product.id,
-    videoUrl,
-    storagePath,
-    thumbnailUrl: product.image,
-    durationSeconds: rendered.durationSeconds,
-    aspectRatio,
-    title: plan.videoTitle,
-    caption: plan.caption,
-    hashtags: plan.hashtags,
-    affiliateUrl: plan.affiliateUrl,
-    createdAt: new Date().toISOString()
-  };
-
-  try {
-    await saveVideoRecord(record);
-  } catch (saveError) {
-    // The file is already safely uploaded; a failed metadata row should not
-    // discard it.
-    console.warn('Video metadata not saved:', saveError);
-  }
-
-  void adminAccount.logActivity('product_video_generated', 'product', product.id, {
-    videoId,
-    aspectRatio,
-    storagePath
-  });
-
-  onProgress?.({ stage: 'done', percent: 100, message: 'تم إنشاء الفيديو وحفظه بنجاح.' });
-
-  return {
-    videoId,
-    videoUrl,
-    storagePath,
-    thumbnailUrl: product.image,
-    durationSeconds: rendered.durationSeconds,
-    aspectRatio,
-    caption: plan.caption,
-    hashtags: plan.hashtags,
-    affiliateUrl: plan.affiliateUrl,
-    title: plan.videoTitle,
-    hook: plan.hook,
-    callToAction: plan.callToAction,
-    scenes: plan.scenes,
-    temporary
-  };
+  onProgress?.({ stage: 'done', percent: 100, message: `تم إنشاء ${results.length} فيديوهات متحركة بصوت وحفظها للمراجعة.` });
+  return results;
 };
+
+/** Backwards-compatible single-clip entry point for older callers. */
+export const generateVideoForProduct = async (
+  product: Product,
+  options: Parameters<typeof generateVideosForProduct>[1] = {}
+): Promise<GeneratedProductVideo> => (await generateVideosForProduct(product, options))[0];
 
 /**
  * Shapes the pipeline result for the dashboard's existing preview modal, which

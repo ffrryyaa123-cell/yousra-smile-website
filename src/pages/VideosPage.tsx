@@ -66,6 +66,9 @@ export const VideosPage: React.FC = () => {
 
   const filteredVideos = videos.filter(vid => {
     if (platformFilter !== 'all' && vid.platform !== platformFilter) return false;
+    // A review linked to a hidden/draft product is owner-only. As soon as the
+    // owner publishes that product it automatically becomes visible here too.
+    if (!canManageReviews && vid.productId && !products.some(product => product.id === vid.productId)) return false;
     return true;
   });
 

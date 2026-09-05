@@ -60,7 +60,7 @@ import { GoogleWorkspaceHub } from '../components/GoogleWorkspaceHub';
 import { AdminUsersPanel } from '../components/AdminUsersPanel';
 import { ProductImagesField } from '../components/ProductImagesField';
 import { ProductVideosManager } from '../components/ProductVideosManager';
-import { generateVideoForProduct, toRenderedAsset, toVideoReview } from '../services/productVideoPipeline';
+import { generateVideosForProduct, toRenderedAsset, toVideoReview } from '../services/productVideoPipeline';
 import { auth, ownerGoogleSignIn, consumeOwnerRedirectResult, describeAuthError, logoutGoogle } from '../services/googleWorkspace';
 import { adminAccount, AdminProfile, supabase } from '../services/adminAccount';
 
@@ -82,6 +82,7 @@ export const AdminPage: React.FC = () => {
     addProduct, 
     importProductsBulk,
     updateProduct, 
+    patchProduct,
     deleteProduct, 
     resetCatalog,
     openThumbnailEditor,
@@ -714,7 +715,7 @@ export const AdminPage: React.FC = () => {
     });
 
     try {
-      const generated = await generateVideoForProduct(prod, {
+      const generatedVideos = await generateVideosForProduct(prod, {
         aspectRatio: '9:16',
         onProgress: prog => {
           setVideoGenerationProgress({
@@ -724,6 +725,8 @@ export const AdminPage: React.FC = () => {
           } as VideoGenerationProgress);
         }
       });
+      const generated = generatedVideos[0];
+      if (!generated) throw new Error('لم يرجع Veo أي فيديو مكتمل.');
 
       // 1. Attach the permanent video URL to the product record.
       const updatedProduct: Product = {
@@ -732,13 +735,22 @@ export const AdminPage: React.FC = () => {
         videoThumbnailUrl: generated.thumbnailUrl,
         videoStoragePath: generated.storagePath
       };
-      updateProduct(updatedProduct);
+      patchProduct(prod.id, {
+        videoUrl: generated.videoUrl,
+        videoThumbnailUrl: generated.thumbnailUrl,
+        videoStoragePath: generated.storagePath,
+        mediaPipeline: {
+          generatedVideoPaths: generatedVideos.map(video => video.storagePath),
+          generatedAt: new Date().toISOString(),
+          status: 'video_ready'
+        }
+      });
 
       // 2. Register it in the site's video catalog, linked to this product.
-      addVideo(toVideoReview(prod, generated));
+      generatedVideos.forEach(video => addVideo({ id: video.videoId, ...toVideoReview(prod, video) }));
 
       // 3. Show the preview.
-      setVideoSuccessToast(`تم إنشاء الفيديو وحفظه وربطه بالمنتج "${prod.titleAr}" 🎉`);
+      setVideoSuccessToast(`تم إنشاء ${generatedVideos.length} فيديوهات متحركة بصوت وحفظها للمراجعة 🎉`);
       setGeneratedVideoModal({ product: updatedProduct, videoAsset: toRenderedAsset(prod, generated) });
       setTimeout(() => setVideoSuccessToast(null), 6000);
     } catch (error: any) {
