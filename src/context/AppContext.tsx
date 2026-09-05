@@ -69,8 +69,9 @@ interface AppContextType {
   openThumbnailEditor: (video: VideoReview) => void;
   closeThumbnailEditor: () => void;
   updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
+  removeVideoThumbnail: (videoId: string) => Promise<void>;
   addVideo: (videoData: Omit<VideoReview, 'id' | 'views' | 'date'>) => void;
-  deleteVideo: (videoId: string) => void;
+  deleteVideo: (videoId: string) => Promise<void>;
   
   // Video Import & Replacement Modal (from device or link)
   importVideoModalOpen: boolean;
@@ -237,7 +238,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (remoteProducts.length > 0) setProducts(remoteProducts.map(normalizeProduct));
     }, error => console.warn('Supabase products unavailable; using local catalog.', error));
     const stopVideos = catalogDatabase.subscribeVideos(remoteVideos => {
-      if (remoteVideos.length > 0) setVideos(remoteVideos);
+      setVideos(remoteVideos);
     }, error => console.warn('Supabase videos unavailable; using local catalog.', error));
     return () => { stopProducts(); stopVideos(); };
   }, []);
@@ -783,10 +784,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateVideoThumbnail = (videoId: string, newThumbnailUrl: string) => {
     setVideos(prev => prev.map(v => {
       if (v.id !== videoId) return v;
-      const updated = { ...v, thumbnailUrl: newThumbnailUrl };
+      const updated = { ...v, thumbnailUrl: newThumbnailUrl, hideThumbnail: false };
       void catalogDatabase.saveVideo(updated).catch(console.error);
       return updated;
     }));
+  };
+
+  const removeVideoThumbnail = async (videoId: string) => {
+    const existing = videos.find(video => video.id === videoId);
+    if (!existing) return;
+    const updated: VideoReview = { ...existing, thumbnailUrl: undefined, hideThumbnail: true };
+    setVideos(prev => prev.map(video => video.id === videoId ? updated : video));
+    try {
+      await catalogDatabase.saveVideo(updated);
+      if (existing.thumbnailUrl && existing.thumbnailUrl !== existing.productImage) {
+        await catalogDatabase.deleteStoredFile(existing.thumbnailUrl);
+      }
+    } catch (error) {
+      setVideos(prev => prev.map(video => video.id === videoId ? existing : video));
+      throw error;
+    }
   };
 
   const addVideo = (videoData: Omit<VideoReview, 'id' | 'views' | 'date'> & { id?: string }) => {
@@ -806,11 +823,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     void catalogDatabase.saveVideo(newVideo).catch(console.error);
   };
 
-  const deleteVideo = (videoId: string) => {
+  const deleteVideo = async (videoId: string) => {
     const existing = videos.find(video => video.id === videoId);
     setVideos(prev => prev.filter(v => v.id !== videoId));
-    void catalogDatabase.deleteVideo(videoId).catch(console.error);
-    void catalogDatabase.deleteStoredFile(existing?.storagePath || existing?.videoUrl).catch(console.error);
+    try {
+      await catalogDatabase.deleteVideo(videoId);
+      await catalogDatabase.deleteStoredFile(existing?.storagePath || existing?.videoUrl);
+      if (existing?.thumbnailUrl && existing.thumbnailUrl !== existing.productImage) {
+        await catalogDatabase.deleteStoredFile(existing.thumbnailUrl);
+      }
+    } catch (error) {
+      if (existing) setVideos(prev => prev.some(video => video.id === videoId) ? prev : [existing, ...prev]);
+      throw error;
+    }
   };
 
   const isSubscribedToAlert = (productId: string) => {
@@ -989,6 +1014,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         openThumbnailEditor,
         closeThumbnailEditor,
         updateVideoThumbnail,
+        removeVideoThumbnail,
         addVideo,
         deleteVideo,
         importVideoModalOpen,

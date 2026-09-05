@@ -85,6 +85,8 @@ export const AdminPage: React.FC = () => {
     deleteProduct, 
     resetCatalog,
     openThumbnailEditor,
+    removeVideoThumbnail,
+    deleteVideo,
     language,
     formatPrice,
     setPage,
@@ -1680,12 +1682,18 @@ export const AdminPage: React.FC = () => {
                 className="bg-slate-950 rounded-2xl border border-slate-700 overflow-hidden flex flex-col justify-between hover:border-amber-500/50 transition-colors group text-white"
               >
                 <div className="relative h-44 bg-slate-900 overflow-hidden">
-                  <img 
-                    src={video.thumbnailUrl || video.productImage} 
-                    alt={video.title} 
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+                  {video.hideThumbnail ? (
+                    <div className="w-full h-full flex items-center justify-center text-slate-600">
+                      <ImageIcon className="w-10 h-10" />
+                    </div>
+                  ) : (
+                    <img
+                      src={video.thumbnailUrl || video.productImage}
+                      alt={video.title}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  )}
                   
                   <span className="absolute top-2.5 left-2.5 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase shadow-md">
                     {video.platform}
@@ -1719,6 +1727,26 @@ export const AdminPage: React.FC = () => {
                     >
                       <Share2 className="w-3 h-3" />
                       تصدير اجتماعي
+                    </button>
+                  </div>
+                  <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm('حذف صورة هذه المراجعة فقط؟')) void removeVideoThumbnail(video.id);
+                      }}
+                      className="px-2 py-1.5 rounded-lg border border-amber-600/50 text-amber-300 bg-amber-950/30 font-bold"
+                    >
+                      حذف الصورة
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm(`حذف المراجعة والفيديو "${video.title}"؟`)) void deleteVideo(video.id);
+                      }}
+                      className="px-2 py-1.5 rounded-lg bg-red-700 text-white font-bold"
+                    >
+                      حذف المراجعة
                     </button>
                   </div>
                 </div>

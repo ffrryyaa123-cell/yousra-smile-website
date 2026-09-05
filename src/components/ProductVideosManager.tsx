@@ -40,7 +40,7 @@ export const ProductVideosManager: React.FC<ProductVideosManagerProps> = ({ prod
    * ever change that one field and nothing else on the product. */
   const removeOne = async (videoId: string, storagePath?: string, videoUrl?: string) => {
     if (storagePath) await deleteProductVideo(storagePath);
-    deleteVideo(videoId);
+    await deleteVideo(videoId);
     if (videoUrl && product.videoUrl === videoUrl) {
       const remaining = linked.filter(v => v.id !== videoId);
       patchProduct(product.id, {

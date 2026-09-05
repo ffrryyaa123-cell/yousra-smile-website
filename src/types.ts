@@ -109,6 +109,8 @@ export interface VideoReview {
   productTitle: string;
   productImage: string;
   thumbnailUrl?: string;
+  /** When true, the owner removed the review-card image deliberately. */
+  hideThumbnail?: boolean;
   platform: 'youtube' | 'tiktok' | 'pinterest' | 'instagram' | 'snapchat' | 'direct' | 'local' | 'generated';
   embedId: string;
   videoUrl: string;

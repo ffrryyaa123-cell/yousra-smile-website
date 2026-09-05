@@ -1,13 +1,68 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { PlaySquare, Youtube, Video, Sparkles, ExternalLink, ShoppingBag, Pencil, Share2, Plus, Upload, RefreshCw, HardDrive } from 'lucide-react';
+import { PlaySquare, Youtube, Video, Sparkles, ExternalLink, ShoppingBag, Share2, Plus, Upload, RefreshCw, Trash2, ImageOff, ShieldCheck } from 'lucide-react';
 import { VideoReview } from '../types';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
+import { adminAccount } from '../services/adminAccount';
 
 export const VideosPage: React.FC = () => {
-  const { videos, visibleProducts: products, openVideoModal, openProductDetail, openThumbnailEditor, logAffiliateClick, language, formatPrice, getAffiliateUrl, openImportVideoModal } = useApp();
+  const { videos, visibleProducts: products, openVideoModal, removeVideoThumbnail, deleteVideo, logAffiliateClick, formatPrice, getAffiliateUrl, openImportVideoModal } = useApp();
   const [platformFilter, setPlatformFilter] = useState<'all' | 'youtube' | 'tiktok' | 'pinterest'>('all');
   const [selectedExportVideo, setSelectedExportVideo] = useState<VideoReview | null>(null);
+  const [canManageReviews, setCanManageReviews] = useState(false);
+  const [busyVideoId, setBusyVideoId] = useState<string | null>(null);
+  const [managementError, setManagementError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    const refresh = async () => {
+      const profile = await adminAccount.loadProfile().catch(() => null);
+      if (active) setCanManageReviews(Boolean(profile));
+    };
+    void refresh();
+    const stop = adminAccount.onSessionChange(() => { window.setTimeout(() => void refresh(), 0); });
+    return () => { active = false; stop(); };
+  }, []);
+
+  const duplicateIds = useMemo(() => {
+    const seen = new Set<string>();
+    const duplicates = new Set<string>();
+    for (const video of videos) {
+      const mediaIdentity = (video.videoUrl || video.embedId || '').trim().toLowerCase();
+      if (!mediaIdentity) continue;
+      const key = `${video.productId || video.productTitle}::${mediaIdentity}`;
+      if (seen.has(key)) duplicates.add(video.id);
+      else seen.add(key);
+    }
+    return duplicates;
+  }, [videos]);
+
+  const handleDeleteReview = async (video: VideoReview) => {
+    if (!window.confirm(`حذف مراجعة الفيديو "${video.title}" نهائياً؟`)) return;
+    setBusyVideoId(video.id);
+    setManagementError('');
+    try { await deleteVideo(video.id); }
+    catch (error: any) { setManagementError(error?.message || 'تعذر حذف المراجعة.'); }
+    finally { setBusyVideoId(null); }
+  };
+
+  const handleRemoveImage = async (video: VideoReview) => {
+    if (!window.confirm('حذف صورة هذه المراجعة فقط؟ الفيديو والمراجعة سيبقيان موجودين.')) return;
+    setBusyVideoId(video.id);
+    setManagementError('');
+    try { await removeVideoThumbnail(video.id); }
+    catch (error: any) { setManagementError(error?.message || 'تعذر حذف صورة المراجعة.'); }
+    finally { setBusyVideoId(null); }
+  };
+
+  const handleDeleteDuplicates = async () => {
+    if (!duplicateIds.size || !window.confirm(`حذف ${duplicateIds.size} مراجعة مكررة مطابقة مع إبقاء نسخة واحدة من كل فيديو؟`)) return;
+    setBusyVideoId('duplicates');
+    setManagementError('');
+    try { for (const id of duplicateIds) await deleteVideo(id); }
+    catch (error: any) { setManagementError(error?.message || 'تعذر حذف بعض النسخ المكررة.'); }
+    finally { setBusyVideoId(null); }
+  };
 
   const filteredVideos = videos.filter(vid => {
     if (platformFilter !== 'all' && vid.platform !== platformFilter) return false;
@@ -106,6 +161,25 @@ export const VideosPage: React.FC = () => {
         </button>
       </div>
 
+      {canManageReviews && (
+        <div className="rounded-2xl border border-emerald-500/40 bg-emerald-950/30 p-3 flex flex-wrap items-center justify-between gap-3" dir="rtl">
+          <span className="text-xs font-bold text-emerald-200 flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4" /> أدوات المالكة مفعّلة — يمكنك حذف الصورة أو المراجعة من كل بطاقة.
+          </span>
+          {duplicateIds.size > 0 && (
+            <button type="button" disabled={busyVideoId === 'duplicates'} onClick={() => void handleDeleteDuplicates()}
+              className="px-3 py-2 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-black flex items-center gap-1.5">
+              <Trash2 className="w-4 h-4" /> حذف النسخ المكررة المطابقة ({duplicateIds.size})
+            </button>
+          )}
+        </div>
+      )}
+      {managementError && (
+        <p role="alert" className="rounded-xl bg-red-950/60 border border-red-500/40 p-3 text-xs font-bold text-red-200">
+          {managementError}
+        </p>
+      )}
+
       {/* Videos Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredVideos.map(video => {
@@ -120,12 +194,18 @@ export const VideosPage: React.FC = () => {
                 onClick={() => openVideoModal(video)}
                 className="relative h-52 bg-slate-950 cursor-pointer overflow-hidden"
               >
-                <img 
-                  src={video.thumbnailUrl || video.productImage} 
-                  alt={video.title} 
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
-                />
+                {video.hideThumbnail ? (
+                  <div className="w-full h-full flex items-center justify-center text-slate-500">
+                    <ImageOff className="w-12 h-12" />
+                  </div>
+                ) : (
+                  <img
+                    src={video.thumbnailUrl || video.productImage}
+                    alt={video.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
+                  />
+                )}
                 <div className="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/20 transition-colors flex items-center justify-center">
                   <div className="w-16 h-16 rounded-full bg-red-600 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
                     <PlaySquare className="w-8 h-8 fill-white text-white" />
@@ -141,6 +221,11 @@ export const VideosPage: React.FC = () => {
                 <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase shadow-md">
                   {video.platform}
                 </span>
+                {duplicateIds.has(video.id) && (
+                  <span className="absolute bottom-3 left-3 bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-1 rounded-md">
+                    نسخة مكررة
+                  </span>
+                )}
 
                 {/* Social Share / Export Button */}
                 <button
@@ -193,6 +278,27 @@ export const VideosPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {canManageReviews && (
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-wrap gap-2" dir="rtl">
+                    <button
+                      type="button"
+                      disabled={busyVideoId === video.id}
+                      onClick={() => void handleRemoveImage(video)}
+                      className="flex-1 px-3 py-2 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 text-[11px] font-black flex items-center justify-center gap-1 disabled:opacity-50"
+                    >
+                      <ImageOff className="w-3.5 h-3.5" /> حذف الصورة فقط
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busyVideoId === video.id}
+                      onClick={() => void handleDeleteReview(video)}
+                      className="flex-1 px-3 py-2 rounded-xl bg-red-600 text-white text-[11px] font-black flex items-center justify-center gap-1 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> حذف المراجعة والفيديو
+                    </button>
+                  </div>
+                )}
 
                 {/* Direct Purchase Action */}
                 {linkedProd && (
