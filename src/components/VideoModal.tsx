@@ -72,7 +72,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
               <video 
                 className="w-full h-full object-contain"
                 src={video.videoUrl}
-                poster={video.thumbnailUrl || video.productImage}
+                    poster={video.hideThumbnail ? undefined : video.thumbnailUrl || video.productImage}
                 controls
                 autoPlay
                 playsInline

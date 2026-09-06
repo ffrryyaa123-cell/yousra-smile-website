@@ -109,6 +109,7 @@ export const AdminPage: React.FC = () => {
   const isUnlocked = Boolean(adminProfile) || firebaseOwner;
   const [isSigningIn, setIsSigningIn] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string>('');
+  const [removingThumbnailId, setRemovingThumbnailId] = useState<string | null>(null);
   const [loginEmail, setLoginEmail] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'messages' | 'analytics' | 'settings' | 'ai-assistant' | 'agent-hub' | 'workspace' | 'users'>('overview');
@@ -1746,12 +1747,17 @@ export const AdminPage: React.FC = () => {
                   <div className="pt-2 border-t border-slate-800 grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        if (window.confirm('حذف صورة هذه المراجعة فقط؟')) void removeVideoThumbnail(video.id);
+                      disabled={Boolean(removingThumbnailId) || video.hideThumbnail}
+                      onClick={async () => {
+                        if (!window.confirm('حذف صورة هذه المراجعة فقط؟ سيبقى الفيديو والمنتج دون حذف.')) return;
+                        setRemovingThumbnailId(video.id);
+                        try { await removeVideoThumbnail(video.id); }
+                        catch { window.alert('لم يتم حذف الصورة. تعذر حفظ التغيير في قاعدة البيانات. تأكدي من تسجيل دخول المالك وصلاحية تعديل المراجعات ثم أعيدي المحاولة.'); }
+                        finally { setRemovingThumbnailId(null); }
                       }}
                       className="px-2 py-1.5 rounded-lg border border-amber-600/50 text-amber-300 bg-amber-950/30 font-bold"
                     >
-                      حذف الصورة
+                      {removingThumbnailId === video.id ? 'جارٍ حذف الصورة…' : video.hideThumbnail ? 'تم حذف الصورة' : 'حذف الصورة'}
                     </button>
                     <button
                       type="button"

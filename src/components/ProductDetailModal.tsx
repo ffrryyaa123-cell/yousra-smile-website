@@ -180,7 +180,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
       if (!url || seen.has(url)) return;
       items.push({
         url,
-        thumbnail: videoItem.thumbnailUrl || videoItem.productImage || product.videoThumbnailUrl || product.image,
+        thumbnail: videoItem.hideThumbnail ? '' : videoItem.thumbnailUrl || videoItem.productImage || product.videoThumbnailUrl || product.image,
         title: videoItem.title || product.titleAr,
         isLocal: videoItem.platform === 'local' || videoItem.platform === 'direct' || /\.(mp4|webm|mov|m4v)(?:$|\?)/i.test(url)
       });
@@ -469,7 +469,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     <video
                       key={activeMediaVideo.url}
                       src={activeMediaVideo.url}
-                      poster={activeMediaVideo.thumbnail || product.image}
+                      poster={activeMediaVideo.thumbnail || undefined}
                       controls
                       autoPlay
                       playsInline
@@ -582,12 +582,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       }`}
                       title={mediaVideo.title}
                     >
-                      <img
-                        src={mediaVideo.thumbnail || product.image}
+                      {mediaVideo.thumbnail && <img
+                        src={mediaVideo.thumbnail}
                         alt={mediaVideo.title}
                         className="w-full h-full object-cover opacity-75"
                         referrerPolicy="no-referrer"
-                      />
+                      />}
                       <span className="absolute inset-0 flex items-center justify-center">
                         <span className="w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center shadow">
                           <Play className="w-3.5 h-3.5 fill-white" />
@@ -987,7 +987,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 if (!v.videoUrl || seenUrls.has(v.videoUrl)) return;
                 gallery.push({
                   url: v.videoUrl,
-                  thumbnail: v.thumbnailUrl || product.image,
+                  thumbnail: v.hideThumbnail ? '' : v.thumbnailUrl || product.image,
                   title: v.title || product.titleAr,
                   isLocal: v.platform === 'local' || v.platform === 'direct'
                 });

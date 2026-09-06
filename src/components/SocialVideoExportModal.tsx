@@ -41,7 +41,7 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
 
   const linkedProduct = products.find(p => p.id === video.productId);
   const targetUrl = video.videoUrl || `https://www.youtube.com/watch?v=${video.embedId}`;
-  const thumbnail = video.thumbnailUrl || video.productImage;
+  const thumbnail = video.hideThumbnail ? '' : video.thumbnailUrl || video.productImage;
 
   // Pinterest Pin URL Creation
   const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(

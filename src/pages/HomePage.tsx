@@ -4,7 +4,6 @@ import { useApp } from '../context/AppContext';
 import { HeroBanner } from '../components/HeroBanner';
 import { ProductCard } from '../components/ProductCard';
 import { CATEGORIES } from '../data/categories';
-import { SAMPLE_VIDEOS } from '../data/sampleVideos';
 import { 
   Flame, 
   Sparkles, 
@@ -42,6 +41,7 @@ import { InstantVideoStudio } from '../components/InstantVideoStudio';
 export const HomePage: React.FC = () => {
   const { 
     visibleProducts: products,
+    videos,
     setPage, 
     setSelectedCategory, 
     openVideoModal,
@@ -52,6 +52,7 @@ export const HomePage: React.FC = () => {
   } = useApp();
 
   const featuredProducts = products.filter(p => p.isFeatured || p.discountPercent >= 25).slice(0, 8);
+  const publicVideos = videos.filter(video => !video.productId || products.some(p => p.id === video.productId));
   const editorialStripProducts = products.slice(0, 4);
   const topSellingProducts = products.filter(p => p.isTopSelling).slice(0, 6);
 
@@ -382,25 +383,25 @@ export const HomePage: React.FC = () => {
             onClick={() => setPage('videos')}
             className="text-xs font-bold text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
           >
-            {language === 'en' ? `Watch All Videos (${SAMPLE_VIDEOS.length})` : `مشاهدة جميع الفيديوهات (${SAMPLE_VIDEOS.length})`}
+            {language === 'en' ? `Watch All Videos (${publicVideos.length})` : `مشاهدة جميع الفيديوهات (${publicVideos.length})`}
             <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-0 ltr:rotate-180" />
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-          {SAMPLE_VIDEOS.slice(0, 3).map(video => (
+          {publicVideos.slice(0, 3).map(video => (
             <div
               key={video.id}
               onClick={() => openVideoModal(video)}
               className="group bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden hover:shadow-xl hover:border-purple-600 transition-all duration-300 cursor-pointer flex flex-col justify-between"
             >
               <div className="relative h-40 bg-slate-950 overflow-hidden">
-                <img 
-                  src={video.productImage} 
+                {!video.hideThumbnail && <img
+                  src={video.thumbnailUrl || video.productImage}
                   alt={video.title}
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
-                />
+                />}
                 <div className="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/20 transition-colors flex items-center justify-center">
                   <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
                     <PlaySquare className="w-6 h-6 fill-white text-white" />

@@ -59,7 +59,7 @@ export const ThumbnailEditorModal: React.FC<ThumbnailEditorModalProps> = ({ vide
   
   const [currentUrl, setCurrentUrl] = useState<string>(() => {
     if (!video) return '';
-    return video.thumbnailUrl || video.productImage;
+    return video.hideThumbnail ? '' : video.thumbnailUrl || video.productImage;
   });
   const [customInputUrl, setCustomInputUrl] = useState('');
   const [isSaved, setIsSaved] = useState(false);
@@ -170,16 +170,16 @@ export const ThumbnailEditorModal: React.FC<ThumbnailEditorModalProps> = ({ vide
             </div>
 
             <div className="relative aspect-video w-full rounded-2xl overflow-hidden border-2 border-amber-500/40 shadow-2xl group bg-slate-950">
-              <img 
+              {currentUrl && <img
                 src={currentUrl} 
                 alt="Thumbnail Preview" 
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  // Fallback if image fails to load
-                  (e.target as HTMLImageElement).src = video.productImage;
+                  // Do not silently restore a cover the owner removed.
+                  (e.target as HTMLImageElement).style.visibility = 'hidden';
                 }}
-              />
+              />}
               
               {/* YouTube Overlay Badges */}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/20 pointer-events-none flex flex-col justify-between p-4">

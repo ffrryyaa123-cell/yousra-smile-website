@@ -14,7 +14,8 @@ import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.jpg';
 import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
 
 export const HeroBanner: React.FC = () => {
-  const { setPage, setSelectedCategory, searchQuery, setSearchQuery, language, t } = useApp();
+  const { setPage, setSelectedCategory, searchQuery, setSearchQuery, language, t, videos, visibleProducts, openVideoModal } = useApp();
+  const showcase = videos.find(video => !video.productId || visibleProducts.some(p => p.id === video.productId));
 
   return (
     <div className="relative w-full overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 text-white rounded-3xl my-4 sm:my-6 border border-purple-800/60 shadow-2xl">
@@ -115,19 +116,19 @@ export const HeroBanner: React.FC = () => {
 
             {/* Showcase Product Preview */}
             <div className="relative h-44 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800">
-              <img 
-                src="https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80" 
-                alt="Roborock S8 Pro" 
+              {showcase && !showcase.hideThumbnail && <img
+                src={showcase.thumbnailUrl || showcase.productImage}
+                alt={showcase.productTitle || showcase.title}
                 className="w-full h-full object-cover"
-              />
+              />}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent flex items-end p-3">
                 <div className="w-full flex items-center justify-between">
                   <div>
                     <span className="text-[10px] text-amber-300 font-bold block">{t.reviewOfTheWeek} 🔥</span>
-                    <h5 className="text-xs font-bold text-white">Roborock S8 Pro Ultra</h5>
+                    <h5 className="text-xs font-bold text-white">{showcase?.productTitle || showcase?.title || (language === 'ar' ? 'مراجعات المنتجات' : 'Product reviews')}</h5>
                   </div>
                   <button 
-                    onClick={() => setPage('videos')}
+                    onClick={() => showcase ? openVideoModal(showcase) : setPage('videos')}
                     className="p-2 bg-red-600 hover:bg-red-500 rounded-full text-white shadow-md transition-transform hover:scale-110"
                   >
                     <PlaySquare className="w-4 h-4" />

@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Product, PageView, VideoReview, PriceAlert, CartItem, SiteSettings, BlogPost } from '../types';
 import { INITIAL_PRODUCTS } from '../data/initialProducts';
-import { SAMPLE_VIDEOS } from '../data/sampleVideos';
 import { SAMPLE_BLOG_POSTS } from '../data/blogPosts';
 import { translations, Language } from '../utils/i18n';
 import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../utils/currency';
@@ -218,16 +217,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = localStorage.getItem(LOCAL_STORAGE_VIDEOS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const existingIds = new Set(parsed.map((video: VideoReview) => video.id));
-          const newlyPublishedVideos = SAMPLE_VIDEOS.filter(video => !existingIds.has(video.id));
-          return [...newlyPublishedVideos, ...parsed];
+        if (Array.isArray(parsed)) {
+          return parsed;
         }
       }
     } catch (e) {
       console.error('Error loading videos from localStorage:', e);
     }
-    return SAMPLE_VIDEOS;
+    return [];
   });
 
   // Live catalog shared across every device, backed by Supabase/PostgreSQL.
@@ -793,17 +790,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const removeVideoThumbnail = async (videoId: string) => {
     const existing = videos.find(video => video.id === videoId);
     if (!existing) return;
-    const updated: VideoReview = { ...existing, thumbnailUrl: undefined, hideThumbnail: true };
-    setVideos(prev => prev.map(video => video.id === videoId ? updated : video));
-    try {
-      await catalogDatabase.saveVideo(updated);
-      if (existing.thumbnailUrl && existing.thumbnailUrl !== existing.productImage) {
-        await catalogDatabase.deleteStoredFile(existing.thumbnailUrl);
-      }
-    } catch (error) {
-      setVideos(prev => prev.map(video => video.id === videoId ? existing : video));
-      throw error;
-    }
+    // Detach this review's cover only. Its storage file may be shared by products.
+    await catalogDatabase.removeVideoThumbnail(videoId);
+    setVideos(prev => prev.map(video => video.id === videoId
+      ? { ...video, thumbnailUrl: '', hideThumbnail: true } : video));
   };
 
   const addVideo = (videoData: Omit<VideoReview, 'id' | 'views' | 'date'> & { id?: string }) => {

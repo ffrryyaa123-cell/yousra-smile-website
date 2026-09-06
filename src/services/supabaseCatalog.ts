@@ -134,6 +134,16 @@ export const catalogDatabase = {
     if (error) throw error;
   },
 
+  async removeVideoThumbnail(videoId: string) {
+    const { data: row, error } = await supabase.from('videos').select('data, updated_at').eq('id', videoId).single();
+    if (error) throw error;
+    const updated = { ...row.data, thumbnailUrl: '', hideThumbnail: true };
+    let request = supabase.from('videos').update({ data: updated, updated_at: new Date().toISOString() }).eq('id', videoId);
+    request = row.updated_at ? request.eq('updated_at', row.updated_at) : request.is('updated_at', null);
+    const { data: saved, error: saveError } = await request.select('id').single();
+    if (saveError || !saved) throw saveError || new Error('تعذر حفظ حذف الصورة. حدّثي الصفحة وأعيدي المحاولة.');
+  },
+
   async deleteVideo(videoId: string) {
     const { error } = await supabase.from('videos').delete().eq('id', videoId);
     if (error) throw error;
