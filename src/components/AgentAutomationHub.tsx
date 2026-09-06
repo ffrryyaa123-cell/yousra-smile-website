@@ -140,9 +140,10 @@ export const AgentAutomationHub: React.FC = () => {
       const contentType = res.headers.get('content-type') || '';
       if (res.ok && contentType.includes('application/json')) {
         const data = await res.json();
-        setStatsData(data);
-      }
+        setStatsData(data?.success === true && data?.measurementStatus === 'session_only' ? data : null);
+      } else { setStatsData(null); }
     } catch (e) {
+      setStatsData(null);
       console.warn('[Agent Hub] Could not fetch live stats:', e);
     } finally {
       setIsLoadingStats(false);
@@ -2714,6 +2715,7 @@ ${urlCampaignResult.hashtags?.join(' ')}
       {activeSubTab === 'tracking_analytics' && (
         <div className="space-y-6">
           
+          <p className="text-xs text-amber-500">{statsData ? 'عدادات جلسة الخادم فقط؛ تصفر عند إعادة تشغيله وليست إجماليًا تاريخيًا أو تقرير مبيعات.' : 'مصدر القياس غير متصل؛ لا نعرض أرقامًا تجريبية.'}</p>
           {/* Top Metrics Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
@@ -2722,7 +2724,7 @@ ${urlCampaignResult.hashtags?.join(' ')}
                 <Eye className="w-4 h-4" />
               </div>
               <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 font-['Tajawal']">
-                {statsData?.metrics?.totalPageViews || 1420}
+                {statsData?.metrics?.totalPageViews ?? 'غير متاح'}
               </span>
             </div>
 
@@ -2732,17 +2734,17 @@ ${urlCampaignResult.hashtags?.join(' ')}
                 <MousePointerClick className="w-4 h-4" />
               </div>
               <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-['Tajawal']">
-                {statsData?.metrics?.totalAffiliateClicks || 485}
+                {statsData?.metrics?.totalAffiliateClicks ?? 'غير متاح'}
               </span>
             </div>
 
             <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
               <div className="flex items-center justify-between text-amber-500">
-                <span className="text-[11px] text-slate-400 font-bold">📈 معدل التحويل (CTR)</span>
+                <span className="text-[11px] text-slate-400 font-bold">📈 نسبة النقرات إلى الزيارات — ليست مبيعات</span>
                 <TrendingUp className="w-4 h-4" />
               </div>
               <span className="text-xl font-black text-amber-500 font-['Tajawal']">
-                {statsData?.metrics?.conversionRatePercent || '34.1%'}
+                {statsData?.metrics?.conversionRatePercent ?? 'غير متاح'}
               </span>
             </div>
 
@@ -2752,7 +2754,7 @@ ${urlCampaignResult.hashtags?.join(' ')}
                 <ShoppingBag className="w-4 h-4" />
               </div>
               <span className="text-xl font-black text-orange-500 font-['Tajawal']">
-                {statsData?.metrics?.amazonClicks || 320}
+                {statsData?.metrics?.amazonClicks ?? 'غير متاح'}
               </span>
             </div>
 
@@ -2762,7 +2764,7 @@ ${urlCampaignResult.hashtags?.join(' ')}
                 <Video className="w-4 h-4" />
               </div>
               <span className="text-xl font-black text-red-500 font-['Tajawal']">
-                {statsData?.metrics?.videoScriptsGenerated || 24}
+                {statsData?.metrics?.videoScriptsGenerated ?? 'غير متاح'}
               </span>
             </div>
 
@@ -2772,7 +2774,7 @@ ${urlCampaignResult.hashtags?.join(' ')}
                 <Bot className="w-4 h-4" />
               </div>
               <span className="text-xl font-black text-purple-500 font-['Tajawal']">
-                {statsData?.metrics?.agentUploadedProducts || 12}
+                {statsData?.metrics?.agentUploadedProducts ?? 'غير متاح'}
               </span>
             </div>
           </div>
@@ -2821,7 +2823,7 @@ ${urlCampaignResult.hashtags?.join(' ')}
                   <span>سجل مهام الوكيل الذكي (Agent Task Logs)</span>
                 </span>
                 <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full font-bold">
-                  Autopilot Active
+                  سجل العمليات المتاحة
                 </span>
               </div>
 

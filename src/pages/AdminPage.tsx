@@ -1000,7 +1000,7 @@ export const AdminPage: React.FC = () => {
     e.target.value = '';
   };
 
-  const totalViews = products.reduce((acc, p) => acc + (p.viewsCount || 0), 3240);
+  const totalViews = 'غير متاح — التتبع غير مربوط';
   const flashDealsCount = products.filter(p => p.discountPercent >= 15).length;
 
   return (
@@ -1108,10 +1108,10 @@ export const AdminPage: React.FC = () => {
 
         <div className="bg-slate-900 p-4 rounded-2xl border border-slate-700 shadow-md space-y-1">
           <div className="flex items-center justify-between text-pink-400">
-            <span className="text-xs text-slate-200 font-bold">❤️ عدد المفضلة</span>
+            <span className="text-xs text-slate-200 font-bold">❤️ مفضلة هذا المتصفح</span>
             <Heart className="w-4 h-4" />
           </div>
-          <span className="text-xl font-black text-pink-400 font-['Tajawal']">{favorites.length || 14}</span>
+          <span className="text-xl font-black text-pink-400 font-['Tajawal']">{favorites.length}</span>
         </div>
 
         <div className="bg-slate-900 p-4 rounded-2xl border border-slate-700 shadow-md space-y-1">
@@ -1127,15 +1127,16 @@ export const AdminPage: React.FC = () => {
             <span className="text-xs text-slate-200 font-bold">🛒 نقرات أمازون</span>
             <MousePointerClick className="w-4 h-4" />
           </div>
-          <span className="text-xl font-black text-sky-400 font-['Tajawal']">1,890+</span>
+          <span className="text-xl font-black text-sky-400 font-['Tajawal']">غير متاح — التتبع غير مربوط</span>
         </div>
 
         <div className="bg-slate-900 p-4 rounded-2xl border border-amber-500/40 shadow-md space-y-1 bg-amber-500/10">
           <div className="flex items-center justify-between text-amber-400">
-            <span className="text-xs text-amber-300 font-bold">💰 الأرباح التقديرية</span>
+            <span className="text-xs text-amber-300 font-bold">💰 عمولات مسجلة في الموقع</span>
             <DollarSign className="w-4 h-4" />
           </div>
-          <span className="text-xl font-black text-amber-300 font-['Tajawal']">$1,420</span>
+          <span className="text-xl font-black text-amber-300 font-['Tajawal']">$0.00</span>
+          <p className="text-xs text-slate-300">تقارير Amazon وAliExpress غير مربوطة؛ هذا ليس كشف رصيد من المتاجر.</p>
         </div>
       </div>
 
@@ -1981,41 +1982,7 @@ export const AdminPage: React.FC = () => {
             <p className="text-xs text-slate-300">تحليل أكثر المنتجات والفيديوهات والأقسام والكلمات بحثاً</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
-              <h4 className="text-xs font-bold text-amber-300">أكثر كلمات البحث كتابةً بواسطة الزوار:</h4>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between p-2 bg-slate-900 rounded-lg">
-                  <span className="text-white font-bold">مكنسة روبوت دايسون</span>
-                  <span className="font-bold text-amber-400">420 مرة</span>
-                </div>
-                <div className="flex justify-between p-2 bg-slate-900 rounded-lg">
-                  <span className="text-white font-bold">Roborock S8 Ultra</span>
-                  <span className="font-bold text-amber-400">380 مرة</span>
-                </div>
-                <div className="flex justify-between p-2 bg-slate-900 rounded-lg">
-                  <span className="text-white font-bold">قلاية كوسوري 6.8 لتر</span>
-                  <span className="font-bold text-amber-400">290 مرة</span>
-                </div>
-                <div className="flex justify-between p-2 bg-slate-900 rounded-lg">
-                  <span className="text-white font-bold">عروض مكنسة بيسيل غسيل السجاد</span>
-                  <span className="font-bold text-amber-400">210 مرة</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
-              <h4 className="text-xs font-bold text-emerald-300">أكثر روابط أمازون نقراً وتحويلاً:</h4>
-              <div className="space-y-2 text-xs">
-                {products.slice(0, 4).map(p => (
-                  <div key={p.id} className="flex justify-between p-2 bg-slate-900 rounded-lg">
-                    <span className="text-white font-bold truncate max-w-[200px]">{p.titleAr}</span>
-                    <span className="font-bold text-emerald-400">{(p.viewsCount || 50) * 3} نقرة</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <p className="text-sm text-amber-300">تتبع الزوار والبحث ونقرات الأفلييت غير مربوط حاليًا. لا توجد بيانات مقاسة لعرضها، والنقرات ليست مبيعات أو عمولات مؤكدة.</p>
         </div>
       )}
 

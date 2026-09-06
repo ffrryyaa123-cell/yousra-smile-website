@@ -759,24 +759,15 @@ async function startServer() {
 
   // Global In-Memory Store for Agent Events, Tracking, and Logs
   const agentTrackingStore = {
-    totalPageViews: 1420,
-    totalAffiliateClicks: 485,
-    amazonClicks: 320,
-    aliexpressClicks: 165,
-    agentUploadedProducts: 12,
-    videoScriptsGenerated: 24,
-    comparisonsGenerated: 18,
-    recentEvents: [
-      { id: "evt-1", type: "page_view", path: "/", timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), meta: { device: "mobile", country: "SA" } },
-      { id: "evt-2", type: "affiliate_click", platform: "amazon", productId: "prod-1", timestamp: new Date(Date.now() - 1000 * 60 * 12).toISOString(), meta: { title: "Roborock S8 Pro Ultra" } },
-      { id: "evt-3", type: "agent_auto_curate", timestamp: new Date(Date.now() - 1000 * 60 * 35).toISOString(), meta: { prompt: "Dyson V15 Detect Vacuum" } },
-      { id: "evt-4", type: "video_script_created", timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), meta: { platform: "tiktok", product: "Cosori Dual Blaze" } }
-    ] as Array<{ id: string; type: string; timestamp: string; [key: string]: any }>,
-    agentLogs: [
-      { id: "log-1", source: "Agent-01-Curator", action: "Product SEO & Specs Sync", status: "success", timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString() },
-      { id: "log-2", source: "Agent-02-VideoMaker", action: "Generated Viral TikTok Script", status: "success", timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString() },
-      { id: "log-3", source: "Agent-03-Tracker", action: "Affiliate Link Health Check: 100% Active", status: "success", timestamp: new Date(Date.now() - 1000 * 60 * 90).toISOString() }
-    ] as Array<{ id: string; source: string; action: string; status: string; timestamp: string; details?: any }>
+    totalPageViews: 0,
+    totalAffiliateClicks: 0,
+    amazonClicks: 0,
+    aliexpressClicks: 0,
+    agentUploadedProducts: 0,
+    videoScriptsGenerated: 0,
+    comparisonsGenerated: 0,
+    recentEvents: [] as Array<{ id: string; type: string; timestamp: string; [key: string]: any }>,
+    agentLogs: [] as Array<{ id: string; source: string; action: string; status: string; timestamp: string; details?: any }>
   };
 
   // Agent APIs are authenticated with the signed-in Firebase user's ID token.
@@ -1797,6 +1788,7 @@ async function startServer() {
     res.json({
       success: true,
       timestamp: new Date().toISOString(),
+      measurementStatus: 'session_only',
       metrics: {
         totalPageViews: agentTrackingStore.totalPageViews,
         totalAffiliateClicks: agentTrackingStore.totalAffiliateClicks,
