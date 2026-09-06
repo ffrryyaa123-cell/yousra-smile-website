@@ -196,10 +196,11 @@ export const GeminiApiKeyManager: React.FC<GeminiApiKeyManagerProps> = ({
         <div className="flex items-center gap-3">
           <ShieldCheck className={`w-5 h-5 ${keyStatus?.hasKey ? 'text-emerald-400' : 'text-amber-400'}`} />
           <div>
-            <div className="text-sm font-bold">{keyStatus?.hasKey ? 'Gemini متصل' : 'Gemini غير مهيأ'}</div>
+            <div className="text-sm font-bold">{keyStatus?.hasKey ? 'إعداد Gemini محفوظ' : 'Gemini غير مهيأ'}</div>
             <div className="text-[11px] text-slate-400">
-              {keyStatus?.hasKey ? `${keyStatus.maskedKey} • ${keyStatus.model}` : 'أضيفي المفتاح مرة واحدة من حساب المالك.'}
+              {keyStatus?.hasKey ? `بصمة الإعداد: ${keyStatus.maskedKey.replace(/^[•.]+/, '')} • نموذج الصور: ${keyStatus.model}` : 'أضيفي المفتاح مرة واحدة من حساب المالك.'}
             </div>
+            {keyStatus?.hasKey && <p className="text-[11px] text-amber-300 mt-2">هذه بصمة حسابية وليست آخر أحرف المفتاح؛ لا تقارنيها بقائمة مفاتيح Google. وجود الإعداد لا يؤكد الرصيد أو نجاح التوليد.</p>}
           </div>
         </div>
         {keyStatus?.hasKey && (
