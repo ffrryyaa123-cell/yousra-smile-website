@@ -65,6 +65,8 @@ import { generateVideosForProduct, toRenderedAsset, toVideoReview } from '../ser
 import { auth, ownerGoogleSignIn, consumeOwnerRedirectResult, describeAuthError, logoutGoogle } from '../services/googleWorkspace';
 import { adminAccount, AdminProfile, supabase } from '../services/adminAccount';
 import { ReviewOpenCount } from '../components/ReviewOpenCount';
+import { AdminActivityPanel } from '../components/AdminActivityPanel';
+import { ActivityReport, loadActivityReport } from '../services/siteActivity';
 
 // Accounts allowed to open the dashboard. Kept as a list so a second owner mailbox
 // can be used without locking anyone out of the panel.
@@ -109,6 +111,15 @@ export const AdminPage: React.FC = () => {
   const [adminProfile, setAdminProfile] = useState<AdminProfile | null>(null);
   const [firebaseOwner, setFirebaseOwner] = useState<boolean>(false);
   const isUnlocked = Boolean(adminProfile) || firebaseOwner;
+  const [activitySummary, setActivitySummary] = useState<ActivityReport | null>(null);
+  useEffect(() => {
+    if (!isUnlocked) { setActivitySummary(null); return; }
+    let stopped = false;
+    const refresh = () => { if (document.visibilityState !== 'hidden') void loadActivityReport(1).then(report => { if (!stopped) setActivitySummary(report); }).catch(() => { if (!stopped) setActivitySummary(null); }); };
+    refresh();
+    const timer = window.setInterval(refresh, 30000);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, [isUnlocked]);
   const [isSigningIn, setIsSigningIn] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string>('');
   const [removingThumbnailId, setRemovingThumbnailId] = useState<string | null>(null);
@@ -1093,7 +1104,7 @@ export const AdminPage: React.FC = () => {
             <span className="text-xs text-slate-200 font-bold">📦 إجمالي المنتجات</span>
             <ShoppingBag className="w-4 h-4" />
           </div>
-          <span className="text-xl font-black text-white font-['Tajawal']">{products.length}</span>
+          <span className="text-xl font-black text-white font-['Tajawal']">{activitySummary?.catalog.products ?? 'غير متاح'}</span>
         </div>
 
         <div className="bg-slate-900 p-4 rounded-2xl border border-slate-700 shadow-md space-y-1">
@@ -1101,7 +1112,7 @@ export const AdminPage: React.FC = () => {
             <span className="text-xs text-slate-200 font-bold">🎥 عدد الفيديوهات</span>
             <PlaySquare className="w-4 h-4" />
           </div>
-          <span className="text-xl font-black text-red-400 font-['Tajawal']">{videos.length}</span>
+          <span className="text-xl font-black text-red-400 font-['Tajawal']">{activitySummary?.catalog.reviews ?? 'غير متاح'}</span>
         </div>
 
         <div className="bg-slate-900 p-4 rounded-2xl border border-slate-700 shadow-md space-y-1">
@@ -1122,18 +1133,18 @@ export const AdminPage: React.FC = () => {
 
         <div className="bg-slate-900 p-4 rounded-2xl border border-slate-700 shadow-md space-y-1">
           <div className="flex items-center justify-between text-emerald-400">
-            <span className="text-xs text-slate-200 font-bold">👁️ عدد الزيارات</span>
+            <span className="text-xs text-slate-200 font-bold">👁️ فتح الصفحات — آخر 24 ساعة</span>
             <Eye className="w-4 h-4" />
           </div>
-          <span className="text-xl font-black text-emerald-400 font-['Tajawal']">{totalViews}</span>
+          <span className="text-xl font-black text-emerald-400 font-['Tajawal']">{activitySummary?.totals.page_views ?? 'غير متاح'}</span>
         </div>
 
         <div className="bg-slate-900 p-4 rounded-2xl border border-slate-700 shadow-md space-y-1">
           <div className="flex items-center justify-between text-sky-400">
-            <span className="text-xs text-slate-200 font-bold">🛒 نقرات أمازون</span>
+            <span className="text-xs text-slate-200 font-bold">🛒 نقرات المتاجر — آخر 24 ساعة</span>
             <MousePointerClick className="w-4 h-4" />
           </div>
-          <span className="text-xl font-black text-sky-400 font-['Tajawal']">غير متاح — التتبع غير مربوط</span>
+          <span className="text-xl font-black text-sky-400 font-['Tajawal']">{activitySummary?.totals.clicks ?? 'غير متاح'}</span>
         </div>
 
         <div className="bg-slate-900 p-4 rounded-2xl border border-amber-500/40 shadow-md space-y-1 bg-amber-500/10">
@@ -1141,7 +1152,7 @@ export const AdminPage: React.FC = () => {
             <span className="text-xs text-amber-300 font-bold">💰 عمولات مسجلة في الموقع</span>
             <DollarSign className="w-4 h-4" />
           </div>
-          <span className="text-xl font-black text-amber-300 font-['Tajawal']">$0.00</span>
+          <span className="text-xl font-black text-amber-300 font-['Tajawal']">غير مربوط</span>
           <p className="text-xs text-slate-300">تقارير Amazon وAliExpress غير مربوطة؛ هذا ليس كشف رصيد من المتاجر.</p>
         </div>
       </div>
@@ -2009,7 +2020,7 @@ export const AdminPage: React.FC = () => {
             <p className="text-xs text-slate-300">تحليل أكثر المنتجات والفيديوهات والأقسام والكلمات بحثاً</p>
           </div>
 
-          <p className="text-sm text-amber-300">تتبع الزوار والبحث ونقرات الأفلييت غير مربوط حاليًا. لا توجد بيانات مقاسة لعرضها، والنقرات ليست مبيعات أو عمولات مؤكدة.</p>
+          <AdminActivityPanel />
         </div>
       )}
 

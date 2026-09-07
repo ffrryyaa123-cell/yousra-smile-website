@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const source=readFileSync(new URL('../src/services/adminAccount.ts',import.meta.url),'utf8');
+const url=source.match(/const SUPABASE_URL = '([^']+)'/)[1];
+const key=source.match(/const SUPABASE_PUBLISHABLE_KEY = '([^']+)'/)[1];
+const send=(apikey,origin,body)=>fetch(url+'/functions/v1/site-engagement',{method:'POST',headers:{apikey,origin,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(15000)});
+const body={eventId:crypto.randomUUID(),visitorId:crypto.randomUUID(),sessionId:crypto.randomUUID(),kind:'product_view',page:'products',productId:'missing-'+crypto.randomUUID()};
+assert.equal((await send('invalid','https://yousrasmile.com',body)).status,401);
+assert.equal((await send(key,'https://unrelated.example',body)).status,403);
+const valid=await send(key,'https://yousrasmile.com',body);
+assert.equal(valid.status,404,await valid.text());
+assert.equal((await send(key,'https://yousrasmile.com',{...body,page:'admin'})).status,400);
+const raw=await fetch(url+'/rest/v1/site_activity_events?select=*',{headers:{apikey:key}});
+assert.ok([401,403].includes(raw.status));
+const report=await fetch(url+'/rest/v1/rpc/site_activity_report',{method:'POST',headers:{apikey:key,'Content-Type':'application/json'},body:JSON.stringify({p_days:7})});
+assert.ok([401,403].includes(report.status));
+console.log('PASS: API key/origin/event validation; missing products create no metrics; public cannot read events/reports');

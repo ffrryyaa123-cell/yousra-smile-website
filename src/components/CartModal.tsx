@@ -238,12 +238,12 @@ export const CartModal: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => {
-                  cartItems.forEach(i => logAffiliateClick(i.product.id, 'amazon'));
+                  if (cartItems[0]) logAffiliateClick(cartItems[0].product.id, 'amazon');
                 }}
                 className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all text-center"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>{language === 'ar' ? 'شراء منتجات السلة عبر Amazon' : 'Buy Cart via Amazon'}</span>
+                <span>{language === 'ar' ? 'فتح أول منتج على Amazon' : 'Open first item on Amazon'}</span>
               </a>
 
               {cartItems.some(i => i.product.aliexpressUrl) && (
@@ -252,7 +252,8 @@ export const CartModal: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => {
-                    cartItems.forEach(i => logAffiliateClick(i.product.id, 'aliexpress'));
+                    const selected = cartItems.find(i => i.product.aliexpressUrl);
+                    if (selected) logAffiliateClick(selected.product.id, 'aliexpress');
                   }}
                   className="w-full py-3 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all text-center"
                 >

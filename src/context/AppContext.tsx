@@ -6,6 +6,7 @@ import { translations, Language } from '../utils/i18n';
 import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../utils/currency';
 import { catalogDatabase } from '../services/supabaseCatalog';
 import { loadReviewCounts, recordReviewOpen } from '../services/reviewEngagement';
+import { recordSiteActivity } from '../services/siteActivity';
 
 interface AppContextType {
   products: Product[];
@@ -358,6 +359,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const getAffiliateUrl = useCallback((product: Product, platform: 'amazon' | 'aliexpress'): string => {
     if (platform === 'amazon') {
       const url = product.amazonUrl || 'https://www.amazon.com';
+      // Preserve an owner's tagged or shortened affiliate URL byte-for-byte.
+      try {
+        const saved = new URL(url);
+        if (saved.searchParams.has('tag') || ['amzn.to','a.co'].includes(saved.hostname.toLowerCase())) return url;
+      } catch { /* Existing invalid-link handling below remains unchanged. */ }
       if (siteSettings.amazonTag) {
         try {
           const parsedUrl = new URL(url);
@@ -376,6 +382,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return url;
     } else {
       const url = product.aliexpressUrl || 'https://www.aliexpress.com';
+      try {
+        const saved = new URL(url);
+        if (saved.hostname.toLowerCase() === 's.click.aliexpress.com' || ['aff_id','aff_fcid','aff_trace_key','aff_platform'].some(key => saved.searchParams.has(key))) return url;
+      } catch { /* Existing invalid-link handling below remains unchanged. */ }
       if (siteSettings.aliexpressTag) {
         try {
           const parsedUrl = new URL(url);
@@ -449,6 +459,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [currency, language]);
 
   const [activePage, setActivePage] = useState<PageView>('home');
+  useEffect(() => {
+    // Delay also prevents React StrictMode's discarded mount from counting twice.
+    const timer = window.setTimeout(() => void recordSiteActivity('page_view', activePage), 250);
+    return () => window.clearTimeout(timer);
+  }, [activePage]);
   const [activeStaticTab, setActiveStaticTab] = useState<'about' | 'contact' | 'privacy' | 'terms' | 'cookies' | 'disclosure'>('about');
   const [selectedCategory, setSelectedCategoryState] = useState<string>('all');
   const [selectedSubcategory, setSelectedSubcategoryState] = useState<string>('all');
@@ -762,10 +777,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const filtered = prev.filter(id => id !== product.id);
       return [product.id, ...filtered].slice(0, 10);
     });
-    // Increment view count
-    setProducts(prev => 
-      prev.map(p => p.id === product.id ? { ...p, viewsCount: p.viewsCount + 1 } : p)
-    );
+    void recordSiteActivity('product_view', activePage, product.id);
   };
 
   const closeProductDetail = () => setSelectedProduct(null);
@@ -975,7 +987,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logAffiliateClick = (productId: string, platform: 'amazon' | 'aliexpress') => {
-    console.log(`Affiliate click logged for product ${productId} on ${platform}`);
+    void recordSiteActivity('affiliate_click', activePage, productId, platform);
   };
 
   const visibleProducts = products.filter(product => product.isActive !== false && !product.isHidden);
