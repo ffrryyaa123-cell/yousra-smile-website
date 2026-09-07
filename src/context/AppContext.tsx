@@ -5,6 +5,7 @@ import { SAMPLE_BLOG_POSTS } from '../data/blogPosts';
 import { translations, Language } from '../utils/i18n';
 import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../utils/currency';
 import { catalogDatabase } from '../services/supabaseCatalog';
+import { loadReviewCounts, recordReviewOpen } from '../services/reviewEngagement';
 
 interface AppContextType {
   products: Product[];
@@ -59,6 +60,7 @@ interface AppContextType {
   openProductDetail: (product: Product) => void;
   closeProductDetail: () => void;
   openVideoModal: (video: VideoReview) => void;
+  reviewOpenCounts: Record<string,number> | null;
   closeVideoModal: () => void;
   openPriceAlertModal: (product: Product) => void;
   closePriceAlertModal: () => void;
@@ -211,6 +213,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const deletedIds = new Set<string>(deletedIdsRaw ? JSON.parse(deletedIdsRaw) : []);
     return INITIAL_PRODUCTS.filter(p => !deletedIds.has(p.id)).map(normalizeProduct);
   });
+
+  const [reviewOpenCounts, setReviewOpenCounts] = useState<Record<string,number> | null>(null);
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try { const counts = await loadReviewCounts(); if (active) setReviewOpenCounts(counts); }
+      catch { if (active) setReviewOpenCounts(null); }
+    };
+    const update = (event: Event) => {
+      const {videoId,opens} = (event as CustomEvent).detail;
+      if (typeof videoId==='string' && Number.isSafeInteger(opens) && opens>=0)
+        setReviewOpenCounts(previous => previous ? {...previous,[videoId]:opens} : previous);
+    };
+    void load();
+    const timer = window.setInterval(() => { if (!document.hidden) void load(); },30000);
+    window.addEventListener('review-count-updated',update);
+    return () => {active=false; window.clearInterval(timer); window.removeEventListener('review-count-updated',update);};
+  },[]);
 
   const [videos, setVideos] = useState<VideoReview[]>(() => {
     try {
@@ -748,7 +768,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const closeProductDetail = () => setSelectedProduct(null);
 
-  const openVideoModal = (video: VideoReview) => setSelectedVideo(video);
+  const openVideoModal = (video: VideoReview) => {
+    setSelectedVideo(video);
+    if (activePage !== 'admin') void recordReviewOpen(video.id);
+  };
   const closeVideoModal = () => setSelectedVideo(null);
 
   const openPriceAlertModal = (product: Product) => setAlertModalProduct(product);
@@ -814,18 +837,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteVideo = async (videoId: string) => {
-    const existing = videos.find(video => video.id === videoId);
+    // Confirm the database transaction before updating the UI. Shared storage
+    // files remain intact; the review is archived for owner recovery.
+    const result = await catalogDatabase.deleteVideo(videoId);
     setVideos(prev => prev.filter(v => v.id !== videoId));
-    try {
-      await catalogDatabase.deleteVideo(videoId);
-      await catalogDatabase.deleteStoredFile(existing?.storagePath || existing?.videoUrl);
-      if (existing?.thumbnailUrl && existing.thumbnailUrl !== existing.productImage) {
-        await catalogDatabase.deleteStoredFile(existing.thumbnailUrl);
-      }
-    } catch (error) {
-      if (existing) setVideos(prev => prev.some(video => video.id === videoId) ? prev : [existing, ...prev]);
-      throw error;
-    }
+    setSelectedVideo(prev => prev?.id === videoId ? null : prev);
+    if (result.product) setProducts(prev => prev.map(p => p.id===result.product!.id ? normalizeProduct(result.product!) : p));
   };
 
   const isSubscribedToAlert = (productId: string) => {
@@ -995,6 +1012,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         openProductDetail,
         closeProductDetail,
         openVideoModal,
+        reviewOpenCounts,
         closeVideoModal,
         openPriceAlertModal,
         closePriceAlertModal,

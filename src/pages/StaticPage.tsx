@@ -291,6 +291,10 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             </div>
 
             <div className="space-y-4">
+              <section className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">قياس فتح المراجعات — 7 سبتمبر 2026</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">نسجل فتح صفحة المراجعة مرة لكل جلسة متصفح، وليس مشاهدة الفيديو كاملة أو عدد أشخاص فريدين. نستخدم معرّف جلسة عشوائيًا وبصمات مشفّرة للحد من التكرار والإساءة؛ لا نخزن في هذا القياس الاسم أو البريد أو عنوان الشبكة بصيغته الأصلية. يبقى الإجمالي، وتُحذف سجلات القياس المؤقتة الأقدم من ثمانية أيام عند استقبال أحداث جديدة. نحترم خيار عدم التتبع في المتصفح. عدّاد الاتصال في الزاوية يعرض التبويبات المتصلة فقط.</p>
+              </section>
               {STATIC_CONTENT.privacy.sections.map((sec, i) => (
                 <div key={i} className="space-y-1">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">{sec.heading}</h3>

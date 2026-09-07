@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Product } from '../types';
 import { useApp } from '../context/AppContext';
 import { PriceHistoryChart } from './PriceHistoryChart';
-import { deleteProductVideo as deleteStoredVideoFile } from '../services/videoAssets';
 import { 
   X, 
   Star, 
@@ -1009,12 +1008,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
                 const matchingReview = linkedVideoReviews.find(v => v.videoUrl === active.url);
                 if (matchingReview) {
-                  if (matchingReview.storagePath) {
-                    try { await deleteStoredVideoFile(matchingReview.storagePath); } catch (e) { console.error(e); }
-                  }
-                  deleteVideo(matchingReview.id);
+                  try { await deleteVideo(matchingReview.id); }
+                  catch { window.alert('تعذر حذف المراجعة. لم يتم حذف ملف الفيديو.'); return; }
                 }
-                if (product.videoUrl === active.url || (!matchingReview && coverUrl === active.url)) {
+                if (!matchingReview && (product.videoUrl === active.url || coverUrl === active.url)) {
                   const remaining = gallery.filter(g => g.url !== active.url);
                   patchProduct(product.id, {
                     videoUrl: remaining[0]?.url ?? '',

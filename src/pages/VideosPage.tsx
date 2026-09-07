@@ -4,6 +4,7 @@ import { PlaySquare, Youtube, Video, Sparkles, ExternalLink, ShoppingBag, Share2
 import { VideoReview } from '../types';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 import { adminAccount } from '../services/adminAccount';
+import { ReviewOpenCount } from '../components/ReviewOpenCount';
 
 export const VideosPage: React.FC = () => {
   const { videos, visibleProducts: products, openVideoModal, removeVideoThumbnail, deleteVideo, logAffiliateClick, formatPrice, getAffiliateUrl, openImportVideoModal } = useApp();
@@ -255,7 +256,7 @@ export const VideosPage: React.FC = () => {
                     {video.title}
                   </h3>
                   <div className="flex items-center justify-between text-xs text-slate-400 pt-2">
-                    <span className="font-mono">{video.views} مشاهدة</span>
+                    <ReviewOpenCount videoId={video.id} />
                     <div className="flex items-center gap-2">
                       <button
                         type="button"

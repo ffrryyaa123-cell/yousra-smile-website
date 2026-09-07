@@ -37,6 +37,7 @@ import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
 import { SmartSavingsCalculator } from '../components/SmartSavingsCalculator';
 import { AffiliateDealScanner } from '../components/AffiliateDealScanner';
 import { InstantVideoStudio } from '../components/InstantVideoStudio';
+import { ReviewOpenCount } from '../components/ReviewOpenCount';
 
 export const HomePage: React.FC = () => {
   const { 
@@ -229,16 +230,16 @@ export const HomePage: React.FC = () => {
       {/* Design Variation: High-Contrast Stats Grid */}
       <section className="grid grid-cols-1 md:grid-cols-3 border border-purple-500/20 my-2.5 py-2 bg-[#180D2B]/80 rounded-xl shadow-lg backdrop-blur-md">
         <div className="p-3 border-b md:border-b-0 md:border-l border-purple-500/20 text-center md:text-right space-y-0.5">
-          <span className="font-serif-editorial text-3xl sm:text-4xl text-white block font-extrabold">124k</span>
-          <span className="font-mono-meta text-xs text-amber-300 font-bold">YouTube Community</span>
+          <span className="font-serif-editorial text-3xl sm:text-4xl text-white block font-extrabold">{publicVideos.length}</span>
+          <span className="font-mono-meta text-xs text-amber-300 font-bold">{language==='ar' ? 'مراجعات منشورة في الموقع' : 'Published site reviews'}</span>
         </div>
         <div className="p-3 border-b md:border-b-0 md:border-l border-purple-500/20 text-center md:text-right space-y-0.5">
-          <span className="font-serif-editorial text-3xl sm:text-4xl text-white block font-extrabold">450k</span>
-          <span className="font-mono-meta text-xs text-amber-300 font-bold">TikTok Reach</span>
+          <span className="font-serif-editorial text-3xl sm:text-4xl text-white block font-extrabold">{products.length}</span>
+          <span className="font-mono-meta text-xs text-amber-300 font-bold">{language==='ar' ? 'منتجات ظاهرة في الكتالوج' : 'Visible catalog products'}</span>
         </div>
         <div className="p-3 text-center md:text-right space-y-0.5">
-          <span className="font-serif-editorial text-3xl sm:text-4xl text-amber-300 block font-extrabold">0%</span>
-          <span className="font-mono-meta text-xs text-slate-200 font-semibold">Fake Reviews Guarantee</span>
+          <span className="font-serif-editorial text-xl text-amber-300 block font-extrabold">YouTube & TikTok</span>
+          <span className="font-mono-meta text-xs text-slate-200 font-semibold">{language==='ar' ? 'إحصاءات المنصات غير مربوطة' : 'Platform statistics not connected'}</span>
         </div>
       </section>
 
@@ -423,7 +424,7 @@ export const HomePage: React.FC = () => {
                   {video.title}
                 </h3>
                 <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1.5 border-t border-slate-800">
-                  <span>{video.views}</span>
+                  <ReviewOpenCount videoId={video.id} />
                   <span>{video.date}</span>
                 </div>
               </div>
@@ -581,14 +582,14 @@ export const HomePage: React.FC = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-center">
           <div className="bg-slate-900/90 border border-purple-800/50 p-5 rounded-2xl space-y-1">
-            <span className="text-3xl sm:text-5xl font-black text-amber-400 block font-heading">+100</span>
-            <span className="text-xs font-bold text-slate-200 block">{language === 'ar' ? 'مراجعة موثوقة' : 'Honest Reviews'}</span>
+            <span className="text-3xl sm:text-5xl font-black text-amber-400 block font-heading">{publicVideos.length}</span>
+            <span className="text-xs font-bold text-slate-200 block">{language === 'ar' ? 'مراجعة منشورة' : 'Published reviews'}</span>
             <span className="text-[11px] text-slate-400">{language === 'ar' ? 'تجارب حية وفيديوهات' : 'Hands-on video reviews'}</span>
           </div>
 
           <div className="bg-slate-900/90 border border-purple-800/50 p-5 rounded-2xl space-y-1">
-            <span className="text-3xl sm:text-5xl font-black text-purple-400 block font-heading">+500</span>
-            <span className="text-xs font-bold text-slate-200 block">{language === 'ar' ? 'منتج مفحوص ومصنف' : 'Curated Products'}</span>
+            <span className="text-3xl sm:text-5xl font-black text-purple-400 block font-heading">{products.length}</span>
+            <span className="text-xs font-bold text-slate-200 block">{language === 'ar' ? 'منتج ظاهر في الكتالوج' : 'Visible catalog products'}</span>
             <span className="text-[11px] text-slate-400">{language === 'ar' ? 'أجهزة ذكية ومنزلية' : 'Smart home & kitchen tech'}</span>
           </div>
 

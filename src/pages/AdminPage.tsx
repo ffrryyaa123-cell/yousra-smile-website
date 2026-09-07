@@ -64,6 +64,7 @@ import { ProductVideosManager } from '../components/ProductVideosManager';
 import { generateVideosForProduct, toRenderedAsset, toVideoReview } from '../services/productVideoPipeline';
 import { auth, ownerGoogleSignIn, consumeOwnerRedirectResult, describeAuthError, logoutGoogle } from '../services/googleWorkspace';
 import { adminAccount, AdminProfile, supabase } from '../services/adminAccount';
+import { ReviewOpenCount } from '../components/ReviewOpenCount';
 
 // Accounts allowed to open the dashboard. Kept as a list so a second owner mailbox
 // can be used without locking anyone out of the panel.
@@ -110,6 +111,7 @@ export const AdminPage: React.FC = () => {
   const [isSigningIn, setIsSigningIn] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string>('');
   const [removingThumbnailId, setRemovingThumbnailId] = useState<string | null>(null);
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const [loginEmail, setLoginEmail] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'messages' | 'analytics' | 'settings' | 'ai-assistant' | 'agent-hub' | 'workspace' | 'users'>('overview');
@@ -1362,7 +1364,7 @@ export const AdminPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-left font-mono font-bold text-emerald-400">
-                      {p.viewsCount || 120} مشاهدة
+                      مشاهدات المنتج غير مرتبطة بقياس موثوق
                     </div>
                   </div>
                 ))}
@@ -1733,7 +1735,7 @@ export const AdminPage: React.FC = () => {
                   </h4>
                   
                   <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-300">
-                    <span>👁 {video.views}</span>
+                    <ReviewOpenCount videoId={video.id} />
 
                     <button
                       type="button"
@@ -1761,12 +1763,17 @@ export const AdminPage: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (window.confirm(`حذف المراجعة والفيديو "${video.title}"؟`)) void deleteVideo(video.id);
+                      disabled={Boolean(deletingReviewId)}
+                      onClick={async () => {
+                        if (!window.confirm(`حذف المراجعة كاملة "${video.title}" من الموقع؟ سيبقى المنتج، وستُحفظ نسخة استرجاع للمراجعة.`)) return;
+                        setDeletingReviewId(video.id);
+                        try { await deleteVideo(video.id); }
+                        catch { window.alert('لم يتم حذف المراجعة. تعذر تأكيد الحفظ؛ تأكدي من تسجيل الدخول وصلاحية إدارة المراجعات وأعيدي المحاولة.'); }
+                        finally { setDeletingReviewId(null); }
                       }}
                       className="px-2 py-1.5 rounded-lg bg-red-700 text-white font-bold"
                     >
-                      حذف المراجعة
+                      {deletingReviewId===video.id ? 'جارٍ حذف المراجعة…' : 'حذف المراجعة كاملة'}
                     </button>
                   </div>
                 </div>

@@ -145,8 +145,9 @@ export const catalogDatabase = {
   },
 
   async deleteVideo(videoId: string) {
-    const { error } = await supabase.from('videos').delete().eq('id', videoId);
-    if (error) throw error;
+    const { data, error } = await supabase.rpc('delete_catalog_review', {p_id:videoId});
+    if (error || data?.deleted !== true) throw error || new Error('لم يتم تأكيد حذف المراجعة');
+    return data as {deleted: true; product?: Product};
   },
 
   /** Removes only the video-related fields from a product's saved data,

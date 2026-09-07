@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { X, Trash2, PlaySquare, Film, AlertCircle, Plus, CheckSquare, Square } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Product } from '../types';
-import { deleteProductVideo } from '../services/videoAssets';
 
 interface ProductVideosManagerProps {
   product: Product | null;
@@ -20,7 +19,7 @@ interface ProductVideosManagerProps {
  * other field on the product, is left untouched.
  */
 export const ProductVideosManager: React.FC<ProductVideosManagerProps> = ({ product, onClose }) => {
-  const { videos, deleteVideo, patchProduct, openImportVideoModal } = useApp();
+  const { videos, deleteVideo, openImportVideoModal } = useApp();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -34,20 +33,11 @@ export const ProductVideosManager: React.FC<ProductVideosManagerProps> = ({ prod
     setSelected(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
   };
 
-  /** Removes one video's stored file + row, and — only if the product's
-   * single cover-video field was pointing at exactly this file — hands the
-   * cover slot to whichever video remains via patchProduct, which can only
-   * ever change that one field and nothing else on the product. */
+  /** Remove the review through the atomic, recoverable database operation. */
   const removeOne = async (videoId: string, storagePath?: string, videoUrl?: string) => {
-    if (storagePath) await deleteProductVideo(storagePath);
+    // Database deletion archives the review and detaches only matching media.
+    // Never erase a potentially shared file before authorization succeeds.
     await deleteVideo(videoId);
-    if (videoUrl && product.videoUrl === videoUrl) {
-      const remaining = linked.filter(v => v.id !== videoId);
-      patchProduct(product.id, {
-        videoUrl: remaining[0]?.videoUrl ?? '',
-        videoStoragePath: remaining[0]?.storagePath ?? ''
-      });
-    }
   };
 
   const handleDelete = async (videoId: string, storagePath?: string, videoUrl?: string) => {
