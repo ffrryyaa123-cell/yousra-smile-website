@@ -752,7 +752,9 @@ export const AdminPage: React.FC = () => {
       });
 
       // 2. Register it in the site's video catalog, linked to this product.
-      generatedVideos.forEach(video => addVideo({ id: video.videoId, ...toVideoReview(prod, video) }));
+      for (const video of generatedVideos) {
+        if (!await addVideo({ id: video.videoId, ...toVideoReview(prod, video) })) throw new Error('لم يتم تأكيد حفظ مراجعة الفيديو');
+      }
 
       // 3. Show the preview.
       setVideoSuccessToast(`تم إنشاء ${generatedVideos.length} فيديوهات متحركة بصوت وحفظها للمراجعة 🎉`);

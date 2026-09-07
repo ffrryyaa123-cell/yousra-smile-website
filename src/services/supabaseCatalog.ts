@@ -64,10 +64,12 @@ function subscribeTable<T>(
   onError?: (error: Error) => void
 ) {
   let stopped = false;
+  let loadSequence = 0;
 
   const load = async () => {
+    const sequence = ++loadSequence;
     const { data, error } = await supabase.from(table).select('id, data');
-    if (stopped) return;
+    if (stopped || sequence !== loadSequence) return;
     if (error) {
       onError?.(new Error(error.message));
       return;
@@ -123,10 +125,11 @@ export const catalogDatabase = {
   },
 
   async saveVideo(video: VideoReview) {
-    const { error } = await supabase
+    if (!/^https?:\/\//i.test(video.videoUrl)) throw new Error('الفيديو يحتاج رابطًا دائمًا؛ لم يتم حفظ الرابط المؤقت.');
+    const { data, error } = await supabase
       .from('videos')
-      .upsert({ id: video.id, product_id: video.productId, data: video, updated_at: new Date().toISOString() });
-    if (error) throw error;
+      .upsert({ id: video.id, product_id: video.productId, data: video, updated_at: new Date().toISOString() }).select('id').single();
+    if (error || !data) throw error || new Error('لم تؤكد قاعدة البيانات حفظ الفيديو');
   },
 
   async deleteProduct(productId: string) {

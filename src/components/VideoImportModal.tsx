@@ -293,24 +293,9 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       return { id: replacementReviewId, videoUrl: uploaded.videoUrl, storagePath: uploaded.storagePath, durationSeconds, durationLabel, title };
     }
 
-    // Save one independent row per uploaded file. Nothing here replaces a
-    // previous video's row, so a product can own any number of videos.
-    await saveVideoRecord({
-      id,
-      productId: linkedProduct.id,
-      videoUrl: uploaded.videoUrl,
-      storagePath: uploaded.storagePath,
-      thumbnailUrl: linkedProduct.image,
-      durationSeconds,
-      aspectRatio: 'auto',
-      title,
-      caption: seoDescription,
-      hashtags,
-      affiliateUrl: linkedProduct.amazonUrl || linkedProduct.aliexpressUrl || '',
-      createdAt: new Date().toISOString()
-    });
-
-    addVideo({
+    // One confirmed full-record write, not an intermediate partial row followed
+    // by a second fire-and-forget write that can fail or race catalog refresh.
+    const saved = await addVideo({
       id,
       productId: linkedProduct.id,
       productTitle: linkedProduct.titleAr,
@@ -325,6 +310,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       seoDescription,
       hashtags
     });
+    if (!saved) throw new Error('لم يتم تأكيد حفظ المراجعة. الملف المرفوع لم يُحذف.');
 
     return {
       id,
@@ -438,7 +424,8 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       return;
     }
 
-    addVideo({
+    setIsUploading(true);
+    const saved = await addVideo({
       id,
       productId: currentProduct.id,
       productTitle: currentProduct.titleAr,
@@ -452,6 +439,8 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       seoDescription,
       hashtags
     });
+    setIsUploading(false);
+    if (!saved) { setErrorMessage('لم يتم حفظ رابط الفيديو. أعيدي المحاولة بعد التأكد من الاتصال والصلاحية.'); return; }
 
     if (syncWithProduct && (replaceExistingVideo || !currentProduct.videoUrl)) {
       const patch: Record<string, unknown> = { videoUrl: url };
@@ -750,7 +739,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
             <button
               type="button"
               onClick={handleImportLink}
-              disabled={!videoUrl.trim()}
+              disabled={isUploading || !videoUrl.trim()}
               className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black flex items-center gap-2 disabled:opacity-50"
             >
               <Plus className="w-4 h-4" />

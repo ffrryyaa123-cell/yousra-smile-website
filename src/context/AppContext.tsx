@@ -72,7 +72,7 @@ interface AppContextType {
   updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
   removeVideoThumbnail: (videoId: string) => Promise<void>;
   replaceReviewMedia: (videoId: string, productId: string, media: Pick<VideoReview, 'videoUrl' | 'platform' | 'duration'> & { storagePath?: string }) => Promise<void>;
-  addVideo: (videoData: Omit<VideoReview, 'id' | 'views' | 'date'> & { id?: string; views?: string; date?: string }) => void;
+  addVideo: (videoData: Omit<VideoReview, 'id' | 'views' | 'date'> & { id?: string; views?: string; date?: string }) => Promise<boolean>;
   deleteVideo: (videoId: string) => Promise<void>;
   
   // Video Import & Replacement Modal (from device or link)
@@ -828,7 +828,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSelectedVideo(prev => prev?.id === videoId ? updated : prev);
   };
 
-  const addVideo = (videoData: Omit<VideoReview, 'id' | 'views' | 'date'> & { id?: string }) => {
+  const addVideo = async (videoData: Omit<VideoReview, 'id' | 'views' | 'date'> & { id?: string }) => {
     // Accepts an optional caller-supplied id (e.g. the same id a direct
     // storage/import helper already used to write this same video's row) so
     // that upload flows saving through two helpers converge on ONE row in
@@ -841,8 +841,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       views: '0',
       date: new Date().toISOString()
     };
-    setVideos(prev => [newVideo, ...prev.filter(video => video.id !== newVideo.id)]);
-    void catalogDatabase.saveVideo(newVideo).catch(console.error);
+    try {
+      await catalogDatabase.saveVideo(newVideo);
+      setVideos(prev => [newVideo, ...prev.filter(video => video.id !== newVideo.id)]);
+      return true;
+    } catch (error: any) {
+      window.alert(`لم يتم حفظ المراجعة في قاعدة البيانات، ولم نضف بطاقة مؤقتة. ${error?.message || 'تحققي من الاتصال وصلاحية تسجيل الدخول.'}`);
+      return false;
+    }
   };
 
   const deleteVideo = async (videoId: string) => {

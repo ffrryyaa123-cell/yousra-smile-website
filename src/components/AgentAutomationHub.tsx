@@ -799,13 +799,13 @@ export const AgentAutomationHub: React.FC = () => {
   };
 
   // Publish Reviewed Bulk Products into Store Catalog
-  const handlePublishSelectedBulkProducts = () => {
+  const handlePublishSelectedBulkProducts = async () => {
     if (!bulkResult || !bulkResult.products) return;
 
     setIsPublishingBulk(true);
     const approvedProducts = bulkResult.products.filter((p: any) => selectedBulkItems.includes(p.id));
 
-    approvedProducts.forEach((p: any) => {
+    for (const p of approvedProducts) {
       const discountPercent = p.originalPrice > p.discountPrice 
         ? Math.round(((p.originalPrice - p.discountPrice) / p.originalPrice) * 100)
         : 15;
@@ -856,9 +856,9 @@ export const AgentAutomationHub: React.FC = () => {
           date: 'اليوم',
           duration: '0:45'
         };
-        addVideo(newVid);
+        if (!await addVideo(newVid)) { setIsPublishingBulk(false); return; }
       }
-    });
+    }
 
     setIsPublishingBulk(false);
     setBulkPublishedSuccess(true);
@@ -939,7 +939,7 @@ export const AgentAutomationHub: React.FC = () => {
   };
 
   // Save generated video review to store
-  const handleSaveVideoToCatalog = () => {
+  const handleSaveVideoToCatalog = async () => {
     if (!videoScriptResult) return;
     const selectedProd = products.find(p => p.id === selectedProductIdForVideo);
     if (!selectedProd) return;
@@ -961,7 +961,7 @@ export const AgentAutomationHub: React.FC = () => {
       duration: videoScriptResult.estimatedDuration || '0:45'
     };
 
-    addVideo(newVideoData);
+    if (!await addVideo(newVideoData)) return;
     setVideoSaved(true);
   };
 
@@ -1101,7 +1101,7 @@ export const AgentAutomationHub: React.FC = () => {
   };
 
   // Save Generated Campaign Video to Reviews Page
-  const handleSaveUrlCampaignToVideos = () => {
+  const handleSaveUrlCampaignToVideos = async () => {
     if (!urlCampaignResult || !urlCampaignResult.videoScript) return;
 
     const newVideoData: VideoReview = {
@@ -1118,7 +1118,7 @@ export const AgentAutomationHub: React.FC = () => {
       duration: urlCampaignResult.videoScript.estimatedDuration || '0:35'
     };
 
-    addVideo(newVideoData);
+    if (!await addVideo(newVideoData)) return;
     setUrlCampaignSavedToVideos(true);
   };
 

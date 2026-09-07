@@ -14,6 +14,7 @@ globalThis.__catalogTest = {
       eq(key, value) { filters.push([key, value]); return chain; },
       is(key, value) { filters.push([key, value]); return chain; },
       update(value) { updating = true; written = value; return chain; },
+      upsert(value) { updating = true; written = value; return chain; },
       async single() {
         if (!updating) return { data: { data: original, updated_at: '2026-09-06T00:00:00Z' }, error: null };
         if (mode === 'denied') return { data: null, error: new Error('permission denied') };
@@ -68,4 +69,9 @@ await assert.rejects(catalogDatabase.replaceReviewMedia('v1','wrong-product',rep
 await catalogDatabase.replaceReviewMedia('v1','p1',{...replacement,platform:'youtube',videoUrl:'https://youtu.be/abcdefghijk'});
 assert.equal(written.data.embedId,'abcdefghijk');
 console.log('PASS: replacement updates exact existing identity; preserves cover/title; rejects conflict, denied access and wrong product; extracts YouTube ID');
+await catalogDatabase.saveVideo({...original,id:'v1',...replacement});
+assert.equal(written.id,'v1');
+for (mode of ['denied','conflict']) await assert.rejects(catalogDatabase.saveVideo({...original,id:'v1',...replacement}));
+await assert.rejects(catalogDatabase.saveVideo({...original,id:'v1',videoUrl:'blob:temporary'}));
+console.log('PASS: new review requires database confirmation; temporary blob URLs are rejected');
 delete globalThis.__catalogTest;

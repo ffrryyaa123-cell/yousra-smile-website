@@ -338,7 +338,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
   };
 
   // Publish Directly to Store
-  const handlePublishToStore = () => {
+  const handlePublishToStore = async () => {
     if (!campaignData) return;
     if (campaignData.draftProductId) {
       patchProduct(campaignData.draftProductId, { isHidden: false });
@@ -411,7 +411,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
       date: 'اليوم',
       duration: campaignData.videoScript?.estimatedDuration || '0:35'
     };
-    addVideo(newVideo);
+    if (!await addVideo(newVideo)) { setIsPublishing(false); return; }
     }
 
     if (onProductPublished) {
@@ -437,7 +437,7 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
         onClipReady: async clip => {
           const review = { id: clip.videoId, ...toVideoReview(product, clip) };
           await catalogDatabase.saveVideo(review);
-          addVideo(review);
+          if (!await addVideo(review)) throw new Error('لم يتم تأكيد حفظ المراجعة');
           paths.push(clip.storagePath);
           setCompletedClips(current => [...current, { videoUrl: clip.videoUrl, storagePath: clip.storagePath }]);
           if (!firstVideoUrl) {
@@ -1305,4 +1305,3 @@ export const InstantVideoStudio: React.FC<InstantVideoStudioProps> = ({
     </div>
   );
 };
-
