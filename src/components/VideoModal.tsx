@@ -10,7 +10,8 @@ interface VideoModalProps {
 }
 
 export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
-  const { products, openProductDetail, logAffiliateClick, language, formatPrice, getAffiliateUrl, openImportVideoModal } = useApp();
+  const { activePage, products, openProductDetail, logAffiliateClick, language, formatPrice, getAffiliateUrl, openImportVideoModal } = useApp();
+  const isDashboard = activePage === 'admin';
   const [showExportModal, setShowExportModal] = useState(false);
 
   if (!video) return null;
@@ -34,7 +35,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
             
             <div className="flex items-center gap-2">
               {/* Replace Video from Computer Button */}
-              <button
+              {isDashboard && <button
                 type="button"
                 onClick={() => {
                   onClose();
@@ -45,17 +46,17 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">استبدال من جهازي</span>
-              </button>
+              </button>}
 
               {/* Share / Export Button */}
-              <button
+              {isDashboard && <button
                 type="button"
                 onClick={() => setShowExportModal(true)}
                 className="px-3 py-1.5 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Share2 className="w-3.5 h-3.5" />
                 <span>تصدير</span>
-              </button>
+              </button>}
 
               <button 
                 onClick={onClose}
@@ -125,7 +126,12 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
 
                   <button
                     type="button"
-                    onClick={() => setShowExportModal(true)}
+                    onClick={() => {
+                      if (isDashboard) { setShowExportModal(true); return; }
+                      const url = window.location.origin;
+                      if (navigator.share) void navigator.share({ title: video.title, url }).catch(() => {});
+                      else void navigator.clipboard?.writeText(url).catch(() => {});
+                    }}
                     className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-300 border border-purple-500/50 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Share2 className="w-3.5 h-3.5" />
@@ -180,7 +186,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
       </div>
 
       {/* Export / Social Share Modal */}
-      {showExportModal && (
+      {isDashboard && showExportModal && (
         <SocialVideoExportModal 
           video={video} 
           onClose={() => setShowExportModal(false)} 

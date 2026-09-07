@@ -88,6 +88,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
     getAffiliateUrl,
     videos,
     openImportVideoModal,
+    activePage,
     replaceProductVideo,
     removeProductVideo,
     deleteVideo,
@@ -1035,7 +1036,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    {activePage === 'admin' && <div className="flex flex-wrap items-center gap-2">
                       <button
                         onClick={() => openImportVideoModal(product.id, 'upload', false)}
                         className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md cursor-pointer transition-transform active:scale-95"
@@ -1064,7 +1065,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                           </button>
                         </>
                       )}
-                    </div>
+                    </div>}
                   </div>
 
                   {hasVideo ? (
@@ -1121,7 +1122,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                           <span>الفيديو مربوط ببيانات المنتج الحالية</span>
                         </span>
 
-                        <div className="flex items-center gap-2">
+                        {activePage === 'admin' && <div className="flex items-center gap-2">
                           <button
                             onClick={() => openImportVideoModal(product.id, 'upload', true)}
                             className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 text-[11px] cursor-pointer"
@@ -1145,7 +1146,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                             <Trash2 className="w-3 h-3" />
                             حذف هذا الفيديو
                           </button>
-                        </div>
+                        </div>}
                       </div>
                     </div>
                   ) : (
@@ -1156,10 +1157,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       <div className="max-w-md mx-auto">
                         <h4 className="text-sm font-bold text-white">لم يتم ربط فيديو بهذا المنتج بعد</h4>
                         <p className="text-xs text-slate-400 mt-1">
-                          يمكنك رفع فيديو قمت بتسجيله من جهازك أو استيراد رابط فيديو من يوتيوب / تيك توك لتثبيته في بيانات هذا المنتج.
+                          لا يوجد فيديو منشور لهذا المنتج حاليًا.
                         </p>
                       </div>
-                      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                      {activePage === 'admin' && <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                         <button
                           onClick={() => openImportVideoModal(product.id, 'upload', false)}
                           className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs flex items-center gap-2 shadow-lg cursor-pointer"
@@ -1175,7 +1176,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                           <Globe className="w-4 h-4 text-amber-400" />
                           <span>استيراد برابط (YouTube / TikTok)</span>
                         </button>
-                      </div>
+                      </div>}
                     </div>
                   )}
                 </div>

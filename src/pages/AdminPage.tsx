@@ -88,6 +88,7 @@ export const AdminPage: React.FC = () => {
     deleteProduct, 
     resetCatalog,
     openThumbnailEditor,
+    openVideoModal,
     removeVideoThumbnail,
     deleteVideo,
     language,
@@ -1690,6 +1691,9 @@ export const AdminPage: React.FC = () => {
               <Plus className="w-4 h-4 text-slate-950" />
               <span>استيراد فيديو برابط 🚀</span>
             </button>
+            <button type="button" onClick={() => openImportVideoModal(undefined, 'upload', false)} className="px-4 py-2 bg-purple-600 rounded-xl text-xs font-bold">
+              إضافة فيديو من جهازي
+            </button>
           </div>
 
           <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1733,6 +1737,14 @@ export const AdminPage: React.FC = () => {
                   <h4 className="text-xs font-bold text-white line-clamp-2 leading-snug">
                     {video.title}
                   </h4>
+                  {video.productId && videos.filter(item => item.productId === video.productId).length > 1 && (
+                    <p className="text-xs text-amber-300">
+                      مقطع {videos.filter(item => item.productId === video.productId).findIndex(item => item.id === video.id) + 1} من {videos.filter(item => item.productId === video.productId).length} لهذا المنتج — تشابه الغلاف لا يعني تطابق الفيديو.
+                    </p>
+                  )}
+                  <button type="button" onClick={() => openVideoModal(video)} className="px-3 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold">
+                    معاينة الفيديو وأدواته
+                  </button>
                   
                   <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-300">
                     <ReviewOpenCount videoId={video.id} />

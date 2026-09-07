@@ -144,6 +144,27 @@ export const catalogDatabase = {
     if (saveError || !saved) throw saveError || new Error('تعذر حفظ حذف الصورة. حدّثي الصفحة وأعيدي المحاولة.');
   },
 
+  async replaceReviewMedia(videoId: string, productId: string, media: Pick<VideoReview, 'videoUrl' | 'platform' | 'duration'> & { storagePath?: string }) {
+    if (!/^https:\/\//i.test(media.videoUrl)) throw new Error('رابط الفيديو غير صالح');
+    const { data: row, error } = await supabase.from('videos').select('data, updated_at').eq('id', videoId).single();
+    if (error) throw error;
+    if (row.data.productId !== productId) throw new Error('المراجعة لا تتبع المنتج المحدد');
+    // Update, never upsert: a concurrently deleted review must not come back.
+    // Preserve the existing cover, title, SEO and review identity.
+    let embedId = videoId;
+    if (media.platform === 'youtube') {
+      const url = new URL(media.videoUrl);
+      embedId = url.hostname === 'youtu.be' ? url.pathname.slice(1) : url.searchParams.get('v') || url.pathname.split('/').pop() || '';
+      if (!/^[A-Za-z0-9_-]{11}$/.test(embedId)) throw new Error('رابط يوتيوب لا يحتوي على معرّف فيديو صالح');
+    }
+    const updated = { ...row.data, videoUrl: media.videoUrl, platform: media.platform, duration: media.duration, storagePath: media.storagePath || '', embedId };
+    let request = supabase.from('videos').update({ data: updated, updated_at: new Date().toISOString() }).eq('id', videoId);
+    request = row.updated_at ? request.eq('updated_at', row.updated_at) : request.is('updated_at', null);
+    const { data: saved, error: saveError } = await request.select('id').single();
+    if (saveError || !saved) throw saveError || new Error('تغيّرت المراجعة أو حُذفت. حدّثي الصفحة وأعيدي المحاولة.');
+    return { ...updated, id: videoId } as VideoReview;
+  },
+
   async deleteVideo(videoId: string) {
     const { data, error } = await supabase.rpc('delete_catalog_review', {p_id:videoId});
     if (error || data?.deleted !== true) throw error || new Error('لم يتم تأكيد حذف المراجعة');

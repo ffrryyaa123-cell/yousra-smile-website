@@ -71,6 +71,7 @@ interface AppContextType {
   closeThumbnailEditor: () => void;
   updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
   removeVideoThumbnail: (videoId: string) => Promise<void>;
+  replaceReviewMedia: (videoId: string, productId: string, media: Pick<VideoReview, 'videoUrl' | 'platform' | 'duration'> & { storagePath?: string }) => Promise<void>;
   addVideo: (videoData: Omit<VideoReview, 'id' | 'views' | 'date'> & { id?: string; views?: string; date?: string }) => void;
   deleteVideo: (videoId: string) => Promise<void>;
   
@@ -462,6 +463,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [importVideoIsReplacing, setImportVideoIsReplacing] = useState<boolean>(false);
 
   const openImportVideoModal = (productId?: string, defaultMode: 'upload' | 'link' = 'upload', isReplacing: boolean = false) => {
+    if (activePage !== 'admin') return;
     setImportVideoPreselectedProductId(productId || null);
     setImportVideoDefaultMode(defaultMode);
     setImportVideoIsReplacing(isReplacing);
@@ -819,6 +821,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ? { ...video, thumbnailUrl: '', hideThumbnail: true } : video));
   };
 
+  const replaceReviewMedia = async (videoId: string, productId: string, media: Pick<VideoReview, 'videoUrl' | 'platform' | 'duration'> & { storagePath?: string }) => {
+    if (activePage !== 'admin') throw new Error('التعديل متاح داخل لوحة التحكم فقط');
+    const updated = await catalogDatabase.replaceReviewMedia(videoId, productId, media);
+    setVideos(prev => prev.map(video => video.id === videoId ? updated : video));
+    setSelectedVideo(prev => prev?.id === videoId ? updated : prev);
+  };
+
   const addVideo = (videoData: Omit<VideoReview, 'id' | 'views' | 'date'> & { id?: string }) => {
     // Accepts an optional caller-supplied id (e.g. the same id a direct
     // storage/import helper already used to write this same video's row) so
@@ -1023,6 +1032,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         closeThumbnailEditor,
         updateVideoThumbnail,
         removeVideoThumbnail,
+        replaceReviewMedia,
         addVideo,
         deleteVideo,
         importVideoModalOpen,

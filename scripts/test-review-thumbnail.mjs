@@ -48,4 +48,24 @@ for (mode of ['denied', 'conflict']) {
   await assert.rejects(catalogDatabase.removeVideoThumbnail('v1'));
   console.log(`PASS: ${mode} does not report successful deletion`);
 }
+mode = 'ok';
+filters = [];
+const replacement = {videoUrl:'https://example.com/new.mp4',platform:'local',duration:'00:08'};
+const savedReview = await catalogDatabase.replaceReviewMedia('v1','p1',replacement);
+assert.equal(savedReview.id,'v1');
+assert.equal(written.data.videoUrl,replacement.videoUrl);
+assert.equal(written.data.thumbnailUrl,original.thumbnailUrl);
+assert.equal(written.data.title,original.title);
+assert.equal(written.data.productId,original.productId);
+assert.ok(filters.some(([key,value]) => key==='id' && value==='v1'));
+assert.ok(filters.some(([key,value]) => key==='updated_at' && value==='2026-09-06T00:00:00Z'));
+for (mode of ['denied','conflict']) {
+  filters=[];
+  await assert.rejects(catalogDatabase.replaceReviewMedia('v1','p1',replacement));
+}
+mode='ok';
+await assert.rejects(catalogDatabase.replaceReviewMedia('v1','wrong-product',replacement));
+await catalogDatabase.replaceReviewMedia('v1','p1',{...replacement,platform:'youtube',videoUrl:'https://youtu.be/abcdefghijk'});
+assert.equal(written.data.embedId,'abcdefghijk');
+console.log('PASS: replacement updates exact existing identity; preserves cover/title; rejects conflict, denied access and wrong product; extracts YouTube ID');
 delete globalThis.__catalogTest;

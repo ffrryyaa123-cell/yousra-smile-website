@@ -1,29 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { PlaySquare, Youtube, Video, Sparkles, ExternalLink, ShoppingBag, Share2, Plus, Upload, RefreshCw, Trash2, ImageOff, ShieldCheck } from 'lucide-react';
 import { VideoReview } from '../types';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
-import { adminAccount } from '../services/adminAccount';
 import { ReviewOpenCount } from '../components/ReviewOpenCount';
 
 export const VideosPage: React.FC = () => {
   const { videos, visibleProducts: products, openVideoModal, removeVideoThumbnail, deleteVideo, logAffiliateClick, formatPrice, getAffiliateUrl, openImportVideoModal } = useApp();
   const [platformFilter, setPlatformFilter] = useState<'all' | 'youtube' | 'tiktok' | 'pinterest'>('all');
   const [selectedExportVideo, setSelectedExportVideo] = useState<VideoReview | null>(null);
-  const [canManageReviews, setCanManageReviews] = useState(false);
+  // Public gallery is read-only, including for an owner with a saved session.
+  const canManageReviews = false;
   const [busyVideoId, setBusyVideoId] = useState<string | null>(null);
   const [managementError, setManagementError] = useState('');
 
-  useEffect(() => {
-    let active = true;
-    const refresh = async () => {
-      const profile = await adminAccount.loadProfile().catch(() => null);
-      if (active) setCanManageReviews(Boolean(profile));
-    };
-    void refresh();
-    const stop = adminAccount.onSessionChange(() => { window.setTimeout(() => void refresh(), 0); });
-    return () => { active = false; stop(); };
-  }, []);
 
   const duplicateIds = useMemo(() => {
     const seen = new Set<string>();
@@ -82,18 +72,18 @@ export const VideosPage: React.FC = () => {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 bg-red-600/30 text-red-300 border border-red-500/30 px-3 py-1 rounded-full text-xs font-bold">
               <PlaySquare className="w-4 h-4 text-red-400" />
-              مركز مراجعات الفيديو ورفع الملفات
+              مكتبة فيديوهات المراجعات
             </div>
             <h1 className="text-3xl sm:text-4xl font-black font-['Tajawal']">
               شاهد مراجعات يسرى سمايل قبل الشراء 🎥
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              ارفع فيديوهاتك الخاصة من جهازك أو استورد روابط من YouTube وTikTok مع الحفاظ الكامل على كافة تفاصيل وأسعار المنتجات.
+              شاهد فيديوهات المراجعات وتصفّح تفاصيل المنتجات وروابط المتاجر.
             </p>
           </div>
 
           {/* Import / Upload Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {canManageReviews && <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => openImportVideoModal(undefined, 'upload', false)}
@@ -111,7 +101,7 @@ export const VideosPage: React.FC = () => {
               <Plus className="w-4 h-4 text-amber-400" />
               <span>🔗 استيراد رابط</span>
             </button>
-          </div>
+          </div>}
         </div>
       </div>
 
@@ -225,14 +215,14 @@ export const VideosPage: React.FC = () => {
                 <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase shadow-md">
                   {video.platform}
                 </span>
-                {duplicateIds.has(video.id) && (
+                {canManageReviews && duplicateIds.has(video.id) && (
                   <span className="absolute bottom-3 left-3 bg-amber-500 text-slate-950 text-[10px] font-black px-2 py-1 rounded-md">
                     نسخة مكررة
                   </span>
                 )}
 
                 {/* Social Share / Export Button */}
-                <button
+                {canManageReviews && <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -243,7 +233,7 @@ export const VideosPage: React.FC = () => {
                 >
                   <Share2 className="w-3.5 h-3.5" />
                   <span className="text-[10px] font-black">تصدير 🚀</span>
-                </button>
+                </button>}
               </div>
 
               {/* Information & Product Link CTA */}
@@ -257,7 +247,7 @@ export const VideosPage: React.FC = () => {
                   </h3>
                   <div className="flex items-center justify-between text-xs text-slate-400 pt-2">
                     <ReviewOpenCount videoId={video.id} />
-                    <div className="flex items-center gap-2">
+                    {canManageReviews && <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -279,7 +269,7 @@ export const VideosPage: React.FC = () => {
                         <Share2 className="w-3 h-3" />
                         تصدير
                       </button>
-                    </div>
+                    </div>}
                   </div>
                 </div>
 
@@ -335,7 +325,7 @@ export const VideosPage: React.FC = () => {
       </div>
 
       {/* Export Modal */}
-      {selectedExportVideo && (
+      {canManageReviews && selectedExportVideo && (
         <SocialVideoExportModal 
           video={selectedExportVideo} 
           onClose={() => setSelectedExportVideo(null)} 

@@ -129,6 +129,8 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
 }) => {
   const {
     products,
+    videos,
+    replaceReviewMedia,
     addVideo,
     patchProduct,
     language,
@@ -143,6 +145,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
   const [seoDescription, setSeoDescription] = useState('');
   const [hashtagsText, setHashtagsText] = useState('');
   const [replaceExistingVideo, setReplaceExistingVideo] = useState(isReplacing);
+  const [replacementReviewId, setReplacementReviewId] = useState('');
   const [syncWithProduct, setSyncWithProduct] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -191,6 +194,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
     setSelectedProductId(targetId);
     setImportMode(defaultMode);
     setReplaceExistingVideo(isReplacing);
+    setReplacementReviewId('');
     setFiles([]);
     setVideoUrl('');
     setFileError('');
@@ -282,6 +286,13 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
     const baseTitle = customTitle.trim() || `فيديو استعراض لـ ${linkedProduct.titleAr}`;
     const title = files.length > 1 ? `${baseTitle} (${index + 1}/${files.length})` : baseTitle;
 
+    if (replaceExistingVideo) {
+      await replaceReviewMedia(replacementReviewId, linkedProduct.id, {
+        videoUrl: uploaded.videoUrl, storagePath: uploaded.storagePath, platform: 'local', duration: durationLabel
+      });
+      return { id: replacementReviewId, videoUrl: uploaded.videoUrl, storagePath: uploaded.storagePath, durationSeconds, durationLabel, title };
+    }
+
     // Save one independent row per uploaded file. Nothing here replaces a
     // previous video's row, so a product can own any number of videos.
     await saveVideoRecord({
@@ -334,6 +345,10 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       setErrorMessage('اختاري فيديو واحداً أو عدة فيديوهات من جهازك.');
       return;
     }
+    if (replaceExistingVideo && (files.length !== 1 || !videos.some(video => video.id === replacementReviewId && video.productId === currentProduct.id))) {
+      setErrorMessage('للاستبدال اختاري المراجعة المطلوبة وملف فيديو واحدًا فقط. لإضافة عدة مقاطع ألغِي خيار الاستبدال.');
+      return;
+    }
 
     setIsUploading(true);
     setErrorMessage('');
@@ -354,7 +369,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
       }
     }
 
-    if (uploadedResults.length > 0 && syncWithProduct) {
+    if (uploadedResults.length > 0 && syncWithProduct && !replaceExistingVideo) {
       const first = uploadedResults[0];
       if (replaceExistingVideo || !currentProduct.videoUrl) {
         patchProduct(currentProduct.id, {
@@ -380,7 +395,7 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
     if (failures.length > 0) setErrorMessage(failures.join(' — '));
   };
 
-  const handleImportLink = () => {
+  const handleImportLink = async () => {
     if (!currentProduct) {
       setErrorMessage('اختاري المنتج أولاً.');
       return;
@@ -401,6 +416,27 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
     else if (/pinterest\.com|pin\.it/i.test(url)) platform = 'pinterest';
     else if (/instagram\.com/i.test(url)) platform = 'instagram';
     else if (/snapchat\.com/i.test(url)) platform = 'snapchat';
+
+    if (replaceExistingVideo) {
+      if (!videos.some(video => video.id === replacementReviewId && video.productId === currentProduct.id)) {
+        setErrorMessage('اختاري المراجعة التي تريدين استبدال فيديوها.');
+        return;
+      }
+      setIsUploading(true);
+      setErrorMessage('');
+      setSuccessMessage('');
+      try {
+        await replaceReviewMedia(replacementReviewId, currentProduct.id, { videoUrl: url, platform, duration: '00:00' });
+        setSuccessMessage('تم استبدال فيديو المراجعة المحددة دون إضافة بطاقة جديدة.');
+        setVideoUrl('');
+      } catch (error: any) { setErrorMessage(error?.message || 'لم يتم حفظ الاستبدال.'); }
+      finally { setIsUploading(false); }
+      return;
+    }
+    if (videos.some(video => video.productId === currentProduct.id && video.videoUrl === url)) {
+      setErrorMessage('هذا الرابط موجود بالفعل ضمن مراجعات المنتج. لم نضف نسخة أخرى.');
+      return;
+    }
 
     addVideo({
       id,
@@ -663,8 +699,16 @@ export const VideoImportModal: React.FC<VideoImportModalProps> = ({
           </label>
           <label className="flex items-center gap-2 rounded-xl border border-amber-800/50 bg-amber-950/20 p-3 text-xs font-bold text-amber-300 cursor-pointer">
             <input type="checkbox" checked={replaceExistingVideo} onChange={event => setReplaceExistingVideo(event.target.checked)} />
-            استبدال الفيديو الرئيسي فقط بالفيديو الأول من المجموعة (اختياري)
+            استبدال فيديو مراجعة موجودة، دون إضافة بطاقة جديدة
           </label>
+          {replaceExistingVideo && <div className="space-y-2">
+            <label htmlFor="replacement-review" className="text-xs text-amber-300">المراجعة المطلوب استبدال فيديوها</label>
+            <select id="replacement-review" value={replacementReviewId} onChange={event => setReplacementReviewId(event.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-white">
+              <option value="">اختاري المراجعة — لن نحذف أو نختار مقطعًا تلقائيًا</option>
+              {videos.filter(video => video.productId === currentProduct?.id).map((video, index) => <option key={video.id} value={video.id}>{index + 1}. {video.title} — {video.id.slice(-10)}</option>)}
+            </select>
+            <p className="text-xs text-slate-400">يُحفظ الغلاف والعنوان. هذا التعديل للمراجعة المحددة، ولا يغيّر رابط الفيديو الرئيسي للمنتج. الملف القديم لا يُحذف من التخزين.</p>
+          </div>}
         </div>
 
         {fileError && (
