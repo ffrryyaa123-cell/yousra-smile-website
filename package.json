@@ -4,12 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "dev": "node scripts/patch-seo-text-hub.mjs && tsx server.ts",
+    "build": "node scripts/patch-seo-text-hub.mjs && vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit",
+    "lint": "node scripts/patch-seo-text-hub.mjs && tsc --noEmit",
     "validate:persistence": "node scripts/validate-persistence-config.mjs",
     "agent:pilot": "tsx agents/pilot.ts",
     "agent:validate": "tsx agents/validatePilot.ts"
@@ -43,4 +43,3 @@
     "vite": "^6.2.3"
   }
 }
-
