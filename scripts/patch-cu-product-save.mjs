@@ -21,17 +21,26 @@ if (!source.includes("import { catalogDatabase } from '../services/supabaseCatal
 }
 
 if (!source.includes('const inferProductCategory =')) {
-  replaceOnce(
-    `const copyText = async (value: string) => {`,
-    `const inferProductCategory = (value: string) => {\n  const text = value.toLowerCase();\n  if (/kitchen|air fryer|pressure cooker|rice cooker|blender|mixer|coffee|cookware|toaster|oven|microwave|food processor/.test(text)) return 'smart-kitchen';\n  if (/vacuum|floor|clean|mop|robot|smart home|security|camera|thermostat|doorbell|home automation/.test(text)) return 'smart-home';\n  if (/furniture|decor|sofa|chair|table|bed|lamp|lighting|rug|shelf|storage/.test(text)) return 'furniture-decor';\n  if (/fitness|health|exercise|massage|scale|wellness|workout/.test(text)) return 'health-fitness';\n  if (/beauty|makeup|cosmetic|perfume|fragrance|fashion|women|hair|skin care|skincare/.test(text)) return 'women-corner';\n  return 'smart-gadgets';\n};\n\nconst copyText = async (value: string) => {`,
-    'category helper insertion point'
-  );
+  const helper = [
+    "const inferProductCategory = (value: string) => {",
+    "  const text = value.toLowerCase();",
+    "  if (/kitchen|air fryer|pressure cooker|rice cooker|blender|mixer|coffee|cookware|toaster|oven|microwave|food processor/.test(text)) return 'smart-kitchen';",
+    "  if (/vacuum|floor|clean|mop|robot|smart home|security|camera|thermostat|doorbell|home automation/.test(text)) return 'smart-home';",
+    "  if (/furniture|decor|sofa|chair|table|bed|lamp|lighting|rug|shelf|storage/.test(text)) return 'furniture-decor';",
+    "  if (/fitness|health|exercise|massage|scale|wellness|workout/.test(text)) return 'health-fitness';",
+    "  if (/beauty|makeup|cosmetic|perfume|fragrance|fashion|women|hair|skin care|skincare/.test(text)) return 'women-corner';",
+    "  return 'smart-gadgets';",
+    "};",
+    "",
+    "const copyText = async (value: string) => {"
+  ].join('\n');
+  replaceOnce('const copyText = async (value: string) => {', helper, 'category helper insertion point');
 }
 
 if (!source.includes('onOpenProducts?: () => void')) {
   replaceOnce(
-    `export const SeoTextHub: React.FC = () => {`,
-    `export const SeoTextHub: React.FC<{ onOpenProducts?: () => void }> = ({ onOpenProducts }) => {`,
+    'export const SeoTextHub: React.FC = () => {',
+    'export const SeoTextHub: React.FC<{ onOpenProducts?: () => void }> = ({ onOpenProducts }) => {',
     'component signature'
   );
 }
@@ -46,34 +55,159 @@ if (source.includes('  const { siteSettings } = useApp();')) {
 
 if (!source.includes('const [savingProduct, setSavingProduct]')) {
   replaceOnce(
-    `  const [copiedAll, setCopiedAll] = useState(false);`,
-    `  const [copiedAll, setCopiedAll] = useState(false);\n  const [savingProduct, setSavingProduct] = useState(false);\n  const [saveMessage, setSaveMessage] = useState('');`,
+    '  const [copiedAll, setCopiedAll] = useState(false);',
+    [
+      '  const [copiedAll, setCopiedAll] = useState(false);',
+      '  const [savingProduct, setSavingProduct] = useState(false);',
+      "  const [saveMessage, setSaveMessage] = useState('');"
+    ].join('\n'),
     'save states'
   );
 }
 
 if (!source.includes('const existingProduct = useMemo')) {
-  replaceOnce(
-    `  const discountPercent = useMemo(() => {`,
-    `  const existingProduct = useMemo(() => {\n    const identifier = verification?.identifier || '';\n    if (!identifier) return null;\n    return products.find(product => {\n      if (verification?.platform === 'amazon') {\n        return [product.amazonUrl, product.sourceProductUrl]\n          .filter(Boolean)\n          .some(url => amazonAsinFromLongUrl(String(url)) === identifier);\n      }\n      if (verification?.platform === 'aliexpress') {\n        return [product.aliexpressUrl, product.sourceProductUrl]\n          .filter(Boolean)\n          .some(url => aliItemIdFromLongUrl(String(url)) === identifier);\n      }\n      return false;\n    }) || null;\n  }, [products, verification]);\n\n  const discountPercent = useMemo(() => {`,
-    'existing product matcher'
-  );
+  const existingBlock = [
+    '  const existingProduct = useMemo(() => {',
+    "    const identifier = verification?.identifier || '';",
+    '    if (!identifier) return null;',
+    '    return products.find(product => {',
+    "      if (verification?.platform === 'amazon') {",
+    '        return [product.amazonUrl, product.sourceProductUrl]',
+    '          .filter(Boolean)',
+    '          .some(url => amazonAsinFromLongUrl(String(url)) === identifier);',
+    '      }',
+    "      if (verification?.platform === 'aliexpress') {",
+    '        return [product.aliexpressUrl, product.sourceProductUrl]',
+    '          .filter(Boolean)',
+    '          .some(url => aliItemIdFromLongUrl(String(url)) === identifier);',
+    '      }',
+    '      return false;',
+    '    }) || null;',
+    '  }, [products, verification]);',
+    '',
+    '  const discountPercent = useMemo(() => {'
+  ].join('\n');
+  replaceOnce('  const discountPercent = useMemo(() => {', existingBlock, 'existing product matcher');
 }
 
 if (!source.includes('const handleSaveToProducts = async')) {
-  replaceOnce(
-    `  const downloadJson = () => {`,
-    `  const handleSaveToProducts = async () => {\n    if (!source || !verification?.identityVerified) {\n      setSaveMessage('لا يمكن الحفظ قبل تأكيد هوية المنتج.');\n      return;\n    }\n    if (!bilingual?.titleAr || !bilingual?.descriptionAr || !bilingual?.titleEn) {\n      setSaveMessage('النص العربي والإنجليزي لم يكتمل بعد. أعيدي جلب البيانات قبل الحفظ حتى لا ينزل المنتج بنص ناقص.');\n      return;\n    }\n\n    setSavingProduct(true);\n    setSaveMessage('');\n    try {\n      const categorySeed = [source.title, source.brand, ...(source.breadcrumbs || [])].join(' ');\n      const category = inferProductCategory(categorySeed) as any;\n      const subcategory = source.breadcrumbs?.[source.breadcrumbs.length - 1] || source.brand || '';\n      const currentPrice = typeof source.price === 'number' ? source.price : 0;\n      const regularPrice = typeof source.listPrice === 'number' && source.listPrice >= currentPrice\n        ? source.listPrice\n        : currentPrice;\n      const sourceImages = (source.images || []).filter(Boolean);\n      const coupon = source.coupon ? {\n        label: source.coupon.label || '',\n        code: source.coupon.code || '',\n        terms: source.coupon.terms || '',\n        expiresOn: '',\n        isPublic: true\n      } : undefined;\n\n      const textPatch = {\n        titleAr: bilingual.titleAr,\n        titleEn: bilingual.titleEn || source.title,\n        description: bilingual.descriptionAr || '',\n        descriptionEn: bilingual.descriptionEn || source.description || '',\n        longDescription: bilingual.longDescriptionAr || bilingual.descriptionAr || '',\n        longDescriptionEn: bilingual.longDescriptionEn || bilingual.descriptionEn || source.description || '',\n        category,\n        subcategory,\n        subcategoryEn: subcategory,\n        brand: source.brand || '',\n        amazonUrl: verification.platform === 'amazon' ? (affiliateUrl || source.finalUrl || source.sourceUrl) : '',\n        aliexpressUrl: verification.platform === 'aliexpress' ? (affiliateUrl || source.finalUrl || source.sourceUrl) : undefined,\n        sourceProductUrl: source.sourceUrl,\n        originalPrice: regularPrice,\n        discountPrice: currentPrice,\n        discountPercent,\n        currency: source.currency || 'USD',\n        rating: typeof source.rating === 'number' ? source.rating : 0,\n        reviewCount: typeof source.reviewCount === 'number' ? source.reviewCount : 0,\n        features: bilingual.featuresAr?.length ? bilingual.featuresAr : [],\n        featuresEn: bilingual.featuresEn?.length ? bilingual.featuresEn : source.features || [],\n        specs: bilingual.specsAr && Object.keys(bilingual.specsAr).length ? bilingual.specsAr : {},\n        specsEn: bilingual.specsEn && Object.keys(bilingual.specsEn).length ? bilingual.specsEn : source.specs || {},\n        keywords: Array.from(new Set([...(bilingual.keywordsAr || []), ...(bilingual.keywordsEn || [])])),\n        coupon,\n        isActive: true\n      };\n\n      if (existingProduct) {\n        const patch = {\n          ...textPatch,\n          ...((existingProduct.images?.length || existingProduct.image) ? {} : {\n            image: sourceImages[0] || '',\n            images: sourceImages\n          })\n        };\n        patchProduct(existingProduct.id, patch as any);\n        await catalogDatabase.patchProduct(existingProduct.id, patch as Record<string, unknown>);\n        setSaveMessage('✓ تم تحديث المنتج وحفظ البيانات في Supabase بدون حذف صوره أو فيديوهاته الحالية.');\n      } else {\n        const created = addProduct({\n          ...textPatch,\n          image: sourceImages[0] || '',\n          images: sourceImages,\n          youtubeUrl: '',\n          tiktokUrl: '',\n          pinterestUrl: '',\n          isFeatured: false,\n          isTopSelling: false,\n          isHidden: false\n        } as any);\n        await catalogDatabase.saveProduct(created);\n        setSaveMessage('✓ تم إنشاء المنتج وحفظه في Supabase وإضافته إلى منتجات الموقع.');\n      }\n\n      window.setTimeout(() => onOpenProducts?.(), 700);\n    } catch (err) {\n      setSaveMessage(`تعذر تأكيد حفظ المنتج في Supabase: ${err instanceof Error ? err.message : String(err)}`);\n    } finally {\n      setSavingProduct(false);\n    }\n  };\n\n  const downloadJson = () => {`,
-    'save handler insertion point'
-  );
+  const handler = [
+    '  const handleSaveToProducts = async () => {',
+    '    if (!source || !verification?.identityVerified) {',
+    "      setSaveMessage('لا يمكن الحفظ قبل تأكيد هوية المنتج.');",
+    '      return;',
+    '    }',
+    '    if (!bilingual?.titleAr || !bilingual?.descriptionAr || !bilingual?.titleEn || !bilingual?.seoTitleEn || !bilingual?.seoTitleAr) {',
+    "      setSaveMessage('النص العربي والإنجليزي وSEO لم يكتمل بعد. أعيدي جلب البيانات حتى لا ينزل المنتج بنص ناقص.');",
+    '      return;',
+    '    }',
+    '',
+    '    setSavingProduct(true);',
+    "    setSaveMessage('');",
+    '    try {',
+    "      const categorySeed = [source.title, source.brand, ...(source.breadcrumbs || [])].join(' ');",
+    '      const category = inferProductCategory(categorySeed) as any;',
+    "      const subcategory = source.breadcrumbs?.[source.breadcrumbs.length - 1] || source.brand || '';",
+    "      const currentPrice = typeof source.price === 'number' ? source.price : 0;",
+    "      const regularPrice = typeof source.listPrice === 'number' && source.listPrice >= currentPrice ? source.listPrice : currentPrice;",
+    '      const sourceImages = (source.images || []).filter(Boolean);',
+    '      const coupon = source.coupon ? {',
+    "        label: source.coupon.label || '',",
+    "        code: source.coupon.code || '',",
+    "        terms: source.coupon.terms || '',",
+    "        expiresOn: '',",
+    '        isPublic: true',
+    '      } : undefined;',
+    '',
+    '      const textPatch = {',
+    '        titleAr: bilingual.titleAr,',
+    '        titleEn: bilingual.titleEn || source.title,',
+    "        description: bilingual.descriptionAr || '',",
+    "        descriptionEn: bilingual.descriptionEn || source.description || '',",
+    "        longDescription: bilingual.longDescriptionAr || bilingual.descriptionAr || '',",
+    "        longDescriptionEn: bilingual.longDescriptionEn || bilingual.descriptionEn || source.description || '',",
+    '        category,',
+    '        subcategory,',
+    '        subcategoryEn: subcategory,',
+    "        brand: source.brand || '',",
+    "        amazonUrl: verification.platform === 'amazon' ? (affiliateUrl || source.finalUrl || source.sourceUrl) : '',",
+    "        aliexpressUrl: verification.platform === 'aliexpress' ? (affiliateUrl || source.finalUrl || source.sourceUrl) : undefined,",
+    '        sourceProductUrl: source.sourceUrl,',
+    '        originalPrice: regularPrice,',
+    '        discountPrice: currentPrice,',
+    '        discountPercent,',
+    "        currency: source.currency || 'USD',",
+    "        rating: typeof source.rating === 'number' ? source.rating : 0,",
+    "        reviewCount: typeof source.reviewCount === 'number' ? source.reviewCount : 0,",
+    '        features: bilingual.featuresAr?.length ? bilingual.featuresAr : [],',
+    '        featuresEn: bilingual.featuresEn?.length ? bilingual.featuresEn : source.features || [],',
+    '        specs: bilingual.specsAr && Object.keys(bilingual.specsAr).length ? bilingual.specsAr : {},',
+    '        specsEn: bilingual.specsEn && Object.keys(bilingual.specsEn).length ? bilingual.specsEn : source.specs || {},',
+    '        keywords: Array.from(new Set([...(bilingual.keywordsAr || []), ...(bilingual.keywordsEn || [])])),',
+    '        coupon,',
+    '        isActive: true',
+    '      };',
+    '',
+    '      if (existingProduct) {',
+    '        const patch = {',
+    '          ...textPatch,',
+    '          ...((existingProduct.images?.length || existingProduct.image) ? {} : {',
+    "            image: sourceImages[0] || '',",
+    '            images: sourceImages',
+    '          })',
+    '        };',
+    '        patchProduct(existingProduct.id, patch as any);',
+    '        await catalogDatabase.patchProduct(existingProduct.id, patch as Record<string, unknown>);',
+    "        setSaveMessage('✓ تم تحديث المنتج وحفظ البيانات في Supabase بدون حذف صوره أو فيديوهاته الحالية.');",
+    '      } else {',
+    '        const created = addProduct({',
+    '          ...textPatch,',
+    "          image: sourceImages[0] || '',",
+    '          images: sourceImages,',
+    "          youtubeUrl: '',",
+    "          tiktokUrl: '',",
+    "          pinterestUrl: '',",
+    '          isFeatured: false,',
+    '          isTopSelling: false,',
+    '          isHidden: false',
+    '        } as any);',
+    '        await catalogDatabase.saveProduct(created);',
+    "        setSaveMessage('✓ تم إنشاء المنتج وحفظه في Supabase وإضافته إلى منتجات الموقع.');",
+    '      }',
+    '',
+    '      window.setTimeout(() => onOpenProducts?.(), 700);',
+    '    } catch (err) {',
+    "      setSaveMessage('تعذر تأكيد حفظ المنتج في Supabase: ' + (err instanceof Error ? err.message : String(err)));",
+    '    } finally {',
+    '      setSavingProduct(false);',
+    '    }',
+    '  };',
+    '',
+    '  const downloadJson = () => {'
+  ].join('\n');
+  replaceOnce('  const downloadJson = () => {', handler, 'save handler insertion point');
 }
 
-if (!source.includes('حفظ إلى المنتجات') && !source.includes('تحديث في المنتجات')) {
-  replaceOnce(
-    `          <div className="flex flex-wrap gap-2">`,
-    `          {saveMessage && (\n            <div className={\`rounded-2xl border p-4 text-sm font-bold \${saveMessage.startsWith('✓') ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-100' : 'border-amber-500/40 bg-amber-950/30 text-amber-100'}\`}>\n              {saveMessage}\n            </div>\n          )}\n\n          <div className="flex flex-wrap gap-2">\n            <button\n              type="button"\n              onClick={() => void handleSaveToProducts()}\n              disabled={savingProduct || !verification?.identityVerified}\n              className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/50 bg-emerald-600 px-4 py-2.5 text-xs font-black text-white shadow-lg hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"\n            >\n              {savingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}\n              {savingProduct ? 'جاري الحفظ في Supabase...' : existingProduct ? 'تحديث في المنتجات' : 'حفظ إلى المنتجات'}\n            </button>`,
-    'save button area'
-  );
+if (!source.includes("existingProduct ? 'تحديث في المنتجات' : 'حفظ إلى المنتجات'")) {
+  const uiBlock = [
+    '          {saveMessage && (',
+    "            <div className={saveMessage.startsWith('✓') ? 'rounded-2xl border border-emerald-500/40 bg-emerald-950/30 p-4 text-sm font-bold text-emerald-100' : 'rounded-2xl border border-amber-500/40 bg-amber-950/30 p-4 text-sm font-bold text-amber-100'}>",
+    '              {saveMessage}',
+    '            </div>',
+    '          )}',
+    '',
+    '          <div className="flex flex-wrap gap-2">',
+    '            <button',
+    '              type="button"',
+    '              onClick={() => void handleSaveToProducts()}',
+    '              disabled={savingProduct || !verification?.identityVerified}',
+    '              className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/50 bg-emerald-600 px-4 py-2.5 text-xs font-black text-white shadow-lg hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"',
+    '            >',
+    '              {savingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}',
+    "              {savingProduct ? 'جاري الحفظ في Supabase...' : existingProduct ? 'تحديث في المنتجات' : 'حفظ إلى المنتجات'}",
+    '            </button>'
+  ].join('\n');
+  replaceOnce('          <div className="flex flex-wrap gap-2">', uiBlock, 'save button area');
 }
 
 if (changed) {
