@@ -34,9 +34,6 @@ if (!source.includes("setActiveTab('seo-text')")) {
   replaceOnce(workspaceButton, `${cuButton}${workspaceButton}`, 'workspace tab button');
 }
 
-// The navigation button and the content renderer are separate. Check the actual
-// component, not merely the tab expression, so a visible button can never open
-// an empty area again.
 if (!source.includes('<SeoTextHub />')) {
   const agentRender = `      {activeTab === 'agent-hub' && (\n        <AgentAutomationHub />\n      )}`;
   const cuRender = `${agentRender}\n\n      {activeTab === 'seo-text' && (\n        <SeoTextHub />\n      )}`;
@@ -49,10 +46,6 @@ if (changed) {
 } else {
   console.log('[patch-seo-text-hub] AdminPage already patched.');
 }
-
-// ---------------------------------------------------------------------------
-// CU + text accuracy guardrails
-// ---------------------------------------------------------------------------
 
 const cuFile = new URL('../src/components/SeoTextHub.tsx', import.meta.url);
 let cu = fs.readFileSync(cuFile, 'utf8');
@@ -95,7 +88,7 @@ if (cu.includes('  const buildAffiliateUrl = (raw: string, extracted: ExtractedP
   const endMarker = '\n\n  const handleExtract = async () => {';
   const end = cu.indexOf(endMarker, start);
   if (start < 0 || end < 0) throw new Error('[patch-seo-text-hub] Could not isolate old affiliate builder.');
-  cu = cu.slice(0, start) + '  // Affiliate links are now returned only after server-side product verification.\n' + cu.slice(end);
+  cu = cu.slice(0, start) + '  // Affiliate links are returned only after server-side product verification.\n' + cu.slice(end);
   cuChanged = true;
 }
 
@@ -110,13 +103,13 @@ if (!cu.includes('setVerification(null);')) {
 if (!cu.includes("supabase.functions.invoke('product-verify'")) {
   replaceCuOnce(
     `    setLoading(true);\n    try {\n      const { data: extractResult, error: extractError } = await supabase.functions.invoke('product-extract', {`,
-    `    setLoading(true);\n    try {\n      // The new CU tool intentionally accepts the full direct product URL from\n      // the browser address bar. Short/ambiguous links are rejected before any\n      // price or affiliate URL is shown.\n      validateLongProductUrl(raw);\n\n      const { data: extractResult, error: extractError } = await supabase.functions.invoke('product-extract', {`,
+    `    setLoading(true);\n    try {\n      validateLongProductUrl(raw);\n\n      const { data: extractResult, error: extractError } = await supabase.functions.invoke('product-extract', {`,
     'pre-extraction URL validation'
   );
 
   replaceCuOnce(
     `      const extracted = extractResult.data as ExtractedProduct;\n      setSource(extracted);\n      setAffiliateUrl(buildAffiliateUrl(raw, extracted));\n\n      // Text-only request. This intentionally does NOT call any image/video generator.\n      const { data: textResult, error: textError } = await supabase.functions.invoke('product-text-copy', {\n        body: { product: extracted }\n      });`,
-    `      const extracted = extractResult.data as ExtractedProduct;\n\n      // Second independent pass: prove that the ASIN / Item ID in the pasted\n      // browser URL is the exact same identifier returned by the extractor.\n      // When affiliate APIs are configured, they also verify the official offer\n      // and return the official promotion/detail URL. A mismatch stops here.\n      const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('product-verify', {\n        body: {\n          url: raw,\n          extracted,\n          amazonTag: siteSettings.amazonTag || '',\n          aliexpressTag: siteSettings.aliexpressTag || ''\n        }\n      });\n\n      if (verifyError) {\n        throw new Error(await invokeErrorMessage(verifyError, 'تعذر التحقق من هوية المنتج. لم يتم اعتماد السعر أو رابط الأفلييت.'));\n      }\n      if (!verifyResult?.ok || !verifyResult?.data) {\n        throw new Error(verifyResult?.error || 'تعذر التحقق من هوية المنتج.');\n      }\n\n      const verified = verifyResult.data as ProductVerification;\n      if (!verified.identityVerified) {\n        throw new Error('لم يتم تأكيد تطابق المنتج مع الرابط. لم يتم عرض البيانات.');\n      }\n\n      const verifiedSource: ExtractedProduct = {\n        ...extracted,\n        price: typeof verified.price === 'number' ? verified.price : extracted.price,\n        currency: verified.currency || extracted.currency,\n        warnings: [...(extracted.warnings || []), ...(verified.warnings || [])]\n      };\n\n      setVerification(verified);\n      setSource(verifiedSource);\n      setAffiliateUrl(verified.affiliateUrl || '');\n\n      // Text-only request. This intentionally does NOT call any image/video generator.\n      const { data: textResult, error: textError } = await supabase.functions.invoke('product-text-copy', {\n        body: { product: verifiedSource }\n      });`,
+    `      const extracted = extractResult.data as ExtractedProduct;\n\n      const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('product-verify', {\n        body: {\n          url: raw,\n          extracted,\n          amazonTag: siteSettings.amazonTag || '',\n          aliexpressTag: siteSettings.aliexpressTag || ''\n        }\n      });\n\n      if (verifyError) {\n        throw new Error(await invokeErrorMessage(verifyError, 'تعذر التحقق من هوية المنتج. لم يتم اعتماد السعر أو رابط الأفلييت.'));\n      }\n      if (!verifyResult?.ok || !verifyResult?.data) {\n        throw new Error(verifyResult?.error || 'تعذر التحقق من هوية المنتج.');\n      }\n\n      const verified = verifyResult.data as ProductVerification;\n      if (!verified.identityVerified) {\n        throw new Error('لم يتم تأكيد تطابق المنتج مع الرابط. لم يتم عرض البيانات.');\n      }\n\n      const verifiedSource: ExtractedProduct = {\n        ...extracted,\n        price: typeof verified.price === 'number' ? verified.price : extracted.price,\n        currency: verified.currency || extracted.currency,\n        warnings: [...(extracted.warnings || []), ...(verified.warnings || [])]\n      };\n\n      setVerification(verified);\n      setSource(verifiedSource);\n      setAffiliateUrl(verified.affiliateUrl || '');\n\n      // Text-only request. This intentionally does NOT call any image/video generator.\n      const { data: textResult, error: textError } = await supabase.functions.invoke('product-text-copy', {\n        body: { product: verifiedSource }\n      });`,
     'server-side verification step'
   );
 }
@@ -134,12 +127,19 @@ if (!cu.includes('verificationSource: verification?.verificationSource')) {
   );
 }
 
-cu = cu
-  .replace('<h2 className="text-2xl font-black text-white">SEO والنصوص</h2>', '<h2 className="text-2xl font-black text-white">CU والنصوص</h2>')
-  .replace('الصقي رابط المنتج لجلب البيانات الحقيقية والسعر والكوبون ورابط الأفلييت والنص العربي والإنجليزي وبيانات SEO.', 'الصقي رابط المنتج الطويل من شريط المتصفح لجلب CU وبيانات المنتج الحقيقية والسعر والكوبون ورابط الأفلييت والنص العربي والإنجليزي وبيانات SEO.')
-  .replace('placeholder="الصقي رابط Amazon أو AliExpress هنا..."', 'placeholder="الصقي رابط المنتج الطويل من شريط المتصفح هنا..."')
-  .replace("{loading ? 'جاري الجلب...' : 'جلب البيانات والنصوص'}", "{loading ? 'جاري التحقق والجلب...' : 'جلب CU والبيانات والنصوص'}")
-  .replace("anchor.download = `${source?.asin || source?.itemId || 'product'}-seo-text.json`;", "anchor.download = `${source?.asin || source?.itemId || 'product'}-cu-text.json`;");
+const displayReplacements = [
+  ['<h2 className="text-2xl font-black text-white">SEO والنصوص</h2>', '<h2 className="text-2xl font-black text-white">CU والنصوص</h2>'],
+  ['الصقي رابط المنتج لجلب البيانات الحقيقية والسعر والكوبون ورابط الأفلييت والنص العربي والإنجليزي وبيانات SEO.', 'الصقي رابط المنتج الطويل من شريط المتصفح لجلب CU وبيانات المنتج الحقيقية والسعر والكوبون ورابط الأفلييت والنص العربي والإنجليزي وبيانات SEO.'],
+  ['placeholder="الصقي رابط Amazon أو AliExpress هنا..."', 'placeholder="الصقي رابط المنتج الطويل من شريط المتصفح هنا..."'],
+  ["{loading ? 'جاري الجلب...' : 'جلب البيانات والنصوص'}", "{loading ? 'جاري التحقق والجلب...' : 'جلب CU والبيانات والنصوص'}"],
+  ["anchor.download = `${source?.asin || source?.itemId || 'product'}-seo-text.json`;", "anchor.download = `${source?.asin || source?.itemId || 'product'}-cu-text.json`;"]
+];
+for (const [needle, replacement] of displayReplacements) {
+  if (cu.includes(needle)) {
+    cu = cu.replace(needle, replacement);
+    cuChanged = true;
+  }
+}
 
 if (!cu.includes('هوية المنتج مؤكدة')) {
   replaceCuOnce(
@@ -157,9 +157,18 @@ if (!cu.includes('Official/API Price:')) {
   );
 }
 
-cu = cu.replace('فتح رابط الأفلييت', "{verification?.affiliateVerified ? 'فتح رابط الأفلييت المؤكد' : 'فتح رابط المنتج'}");
+const verifiedAffiliateLabel = `{verification?.affiliateVerified ? 'فتح رابط الأفلييت المؤكد' : 'فتح رابط المنتج'}`;
+if (!cu.includes(verifiedAffiliateLabel)) {
+  replaceCuOnce(
+    `                فتح رابط الأفلييت`,
+    `                ${verifiedAffiliateLabel}`,
+    'affiliate button label'
+  );
+}
 
-if (cuChanged || cu.includes('CU والنصوص')) {
+if (cuChanged) {
   fs.writeFileSync(cuFile, cu, 'utf8');
   console.log('[patch-seo-text-hub] CU/text accuracy checks applied.');
+} else {
+  console.log('[patch-seo-text-hub] CU/text accuracy checks already applied.');
 }
