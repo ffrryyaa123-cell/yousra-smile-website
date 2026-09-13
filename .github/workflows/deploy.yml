@@ -40,10 +40,12 @@ jobs:
         run: |
           git show origin/gh-pages:CNAME > dist/CNAME
           git show origin/gh-pages:robots.txt > dist/robots.txt
-          git show origin/gh-pages:sitemap.xml > dist/sitemap.xml
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
           rm -f dist/server.cjs dist/server.cjs.map
+
+      - name: Generate product SEO pages and sitemap
+        run: npm run seo:build
 
       - name: Publish to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
