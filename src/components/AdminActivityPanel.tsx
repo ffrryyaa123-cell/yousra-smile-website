@@ -2,6 +2,8 @@ import React, {useEffect,useState} from 'react';
 import {ActivityReport,loadActivityReport} from '../services/siteActivity';
 import {useApp} from '../context/AppContext';
 
+const percent = (numerator:number, denominator:number) => denominator > 0 ? `${((numerator / denominator) * 100).toFixed(1)}%` : '0.0%';
+
 export function AdminActivityPanel() {
   const {products}=useApp();
   const [days,setDays]=useState(7);
@@ -21,12 +23,12 @@ export function AdminActivityPanel() {
     {error && <p role="alert" className="text-amber-300">{error}</p>}
     {!report && !error && <p>جارٍ تحميل القياس…</p>}
     {report && <>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        {Object.entries({'زوّار تقديريون':report.totals.visitors,'جلسات تبويب':report.totals.sessions,'فتح صفحات':report.totals.page_views,'فتح منتجات':report.totals.product_views,'نقرات روابط الشراء':report.totals.clicks}).map(([label,value])=><div key={label} className="bg-slate-950 border border-slate-700 rounded-xl p-4"><p className="text-xs text-slate-300">{label}</p><strong className="text-xl">{Number(value).toLocaleString('ar')}</strong></div>)}
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+        {Object.entries({'زوّار تقديريون':report.totals.visitors,'جلسات تبويب':report.totals.sessions,'فتح صفحات':report.totals.page_views,'فتح منتجات':report.totals.product_views,'نقرات روابط الشراء':report.totals.clicks,'CTR المنتج ← الشراء':percent(report.totals.clicks, report.totals.product_views)}).map(([label,value])=><div key={label} className="bg-slate-950 border border-slate-700 rounded-xl p-4"><p className="text-xs text-slate-300">{label}</p><strong className="text-xl">{typeof value==='number'?Number(value).toLocaleString('ar'):value}</strong></div>)}
       </div>
       <p className="text-xs text-slate-300">السجلات الحالية من قاعدة البيانات: {report.catalog.products} منتجًا إجمالًا، منها {report.catalog.public_products} ظاهرًا؛ {report.catalog.reviews} مراجعة إجمالًا. عدد المراجعات ليس عدد المشاهدات.</p>
       <p className="text-xs text-slate-400">{report.first_event?`أول حدث محفوظ: ${new Date(report.first_event).toLocaleString('ar')}`:'لا توجد أحداث مقاسة محفوظة بعد.'} لا يوجد سجل زيارات قديم مستورد.</p>
-      <div className="overflow-x-auto"><table className="w-full text-xs text-right"><thead><tr><th className="p-2">المنتج — حسب مرات فتحه</th><th>فتح المنتج</th><th>نقرات أمازون</th><th>نقرات علي إكسبريس</th></tr></thead><tbody>{report.products.map(row=><tr key={row.product_id} className="border-t border-slate-700"><td className="p-3">{products.find(product=>product.id===row.product_id)?.titleAr || row.product_id}</td><td>{row.views}</td><td>{row.amazon_clicks}</td><td>{row.aliexpress_clicks}</td></tr>)}</tbody></table></div>
+      <div className="overflow-x-auto"><table className="w-full text-xs text-right"><thead><tr><th className="p-2">المنتج — حسب مرات فتحه</th><th>فتح المنتج</th><th>نقرات أمازون</th><th>نقرات علي إكسبريس</th><th>CTR</th></tr></thead><tbody>{report.products.map(row=>{const clicks=row.amazon_clicks+row.aliexpress_clicks;return <tr key={row.product_id} className="border-t border-slate-700"><td className="p-3">{products.find(product=>product.id===row.product_id)?.titleAr || row.product_id}</td><td>{row.views}</td><td>{row.amazon_clicks}</td><td>{row.aliexpress_clicks}</td><td className="font-bold text-emerald-300">{percent(clicks,row.views)}</td></tr>;})}</tbody></table></div>
       {!report.products.length && <p className="text-sm text-slate-400">لا توجد مشاهدات منتجات أو نقرات مسجّلة في هذه الفترة.</p>}
     </>}
     <p className="rounded-xl border border-amber-700 p-3 text-sm text-amber-300">المبيعات والعمولات: غير مربوط بتقارير الأفلييت. الضغط على رابط الشراء ليس بيعًا، ولن نضيف أرباحًا تقديرية.</p>
