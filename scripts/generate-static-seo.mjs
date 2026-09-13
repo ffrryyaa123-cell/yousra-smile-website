@@ -46,9 +46,11 @@ const compact = (value, max) => {
 
 const replaceMeta = (html, selector, content) => {
   const escaped = escapeHtml(content);
-  const [kind, key] = selector.split(':');
+  const separator = selector.indexOf(':');
+  const kind = separator >= 0 ? selector.slice(0, separator) : 'name';
+  const key = separator >= 0 ? selector.slice(separator + 1) : selector;
   const attr = kind === 'property' ? 'property' : 'name';
-  const regex = new RegExp(`<meta\\s+${attr}=["']${key}["'][^>]*>`, 'i');
+  const regex = new RegExp(`<meta\\s+${attr}=["']${key.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}["'][^>]*>`, 'i');
   const tag = `<meta ${attr}="${key}" content="${escaped}" />`;
   if (regex.test(html)) return html.replace(regex, tag);
   return html.replace('</head>', `  ${tag}\n</head>`);
