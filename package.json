@@ -4,13 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/patch-seo-text-hub.mjs && node scripts/patch-cu-product-save.mjs && node scripts/patch-cu-copy-quality.mjs && node scripts/patch-cu-no-source-images.mjs && node scripts/patch-seo-routing.mjs && tsx server.ts",
-    "build": "node scripts/patch-seo-text-hub.mjs && node scripts/patch-cu-product-save.mjs && node scripts/patch-cu-copy-quality.mjs && node scripts/patch-cu-no-source-images.mjs && node scripts/patch-seo-routing.mjs && vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "dev": "node scripts/patch-seo-text-hub.mjs && node scripts/patch-cu-product-save.mjs && node scripts/patch-cu-copy-quality.mjs && node scripts/patch-cu-no-source-images.mjs && node scripts/patch-seo-routing.mjs && node scripts/patch-runtime-seo.mjs && tsx server.ts",
+    "build": "node scripts/patch-seo-text-hub.mjs && node scripts/patch-cu-product-save.mjs && node scripts/patch-cu-copy-quality.mjs && node scripts/patch-cu-no-source-images.mjs && node scripts/patch-seo-routing.mjs && node scripts/patch-runtime-seo.mjs && vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "seo:build": "node scripts/generate-static-seo.mjs",
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "node scripts/patch-seo-text-hub.mjs && node scripts/patch-cu-product-save.mjs && node scripts/patch-cu-copy-quality.mjs && node scripts/patch-cu-no-source-images.mjs && node scripts/patch-seo-routing.mjs && tsc --noEmit",
+    "lint": "node scripts/patch-seo-text-hub.mjs && node scripts/patch-cu-product-save.mjs && node scripts/patch-cu-copy-quality.mjs && node scripts/patch-cu-no-source-images.mjs && node scripts/patch-seo-routing.mjs && node scripts/patch-runtime-seo.mjs && tsc --noEmit",
     "validate:persistence": "node scripts/validate-persistence-config.mjs",
     "agent:pilot": "tsx agents/pilot.ts",
     "agent:validate": "tsx agents/validatePilot.ts"
