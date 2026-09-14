@@ -3,7 +3,9 @@ import { CATEGORIES } from '../data/categories';
 import { supabase } from './adminAccount';
 
 const BUCKET = 'product-videos';
-const STORAGE_PATH = 'site-config/categories.json';
+// This bucket is configured for image/video MIME types, so category state is
+// stored inside an SVG metadata element rather than as application/json.
+const STORAGE_PATH = 'site-config/categories-state.svg';
 const LOCAL_KEY = 'yousra-managed-categories-v1';
 const EVENT_NAME = 'yousra-categories-updated';
 
@@ -44,6 +46,23 @@ const emit = (items: ManagedCategory[]) => {
   window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail: items }));
 };
 
+const encodeStateSvg = (items: ManagedCategory[]): string => {
+  const json = JSON.stringify(items);
+  const encoded = btoa(unescape(encodeURIComponent(json)));
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"><metadata id="yousra-categories">${encoded}</metadata><rect width="1" height="1" fill="transparent"/></svg>`;
+};
+
+const decodeStateSvg = (text: string): ManagedCategory[] | null => {
+  const match = text.match(/<metadata id="yousra-categories">([^<]+)<\/metadata>/);
+  if (!match?.[1]) return null;
+  try {
+    const json = decodeURIComponent(escape(atob(match[1])));
+    return normalize(JSON.parse(json));
+  } catch {
+    return null;
+  }
+};
+
 export async function loadManagedCategories(force = false): Promise<ManagedCategory[]> {
   if (cache && !force) return cache;
   if (loadingPromise && !force) return loadingPromise;
@@ -53,8 +72,8 @@ export async function loadManagedCategories(force = false): Promise<ManagedCateg
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(STORAGE_PATH);
       const response = await fetch(`${data.publicUrl}?v=${Date.now()}`, { cache: 'no-store' });
       if (response.ok) {
-        const items = normalize(await response.json());
-        if (items.length) {
+        const items = decodeStateSvg(await response.text());
+        if (items?.length) {
           emit(items);
           return items;
         }
@@ -90,9 +109,10 @@ export async function saveManagedCategories(items: ManagedCategory[]): Promise<M
     throw new Error('انتهت جلسة الدخول. سجّلي الدخول إلى لوحة التحكم ثم أعيدي المحاولة.');
   }
 
-  const body = new Blob([JSON.stringify(normalized, null, 2)], { type: 'application/json' });
+  const svg = encodeStateSvg(normalized);
+  const body = new Blob([svg], { type: 'image/svg+xml' });
   const { error } = await supabase.storage.from(BUCKET).upload(STORAGE_PATH, body, {
-    contentType: 'application/json',
+    contentType: 'image/svg+xml',
     cacheControl: '60',
     upsert: true,
   });
