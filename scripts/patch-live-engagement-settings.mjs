@@ -19,12 +19,9 @@ fs.writeFileSync(activityFile, activity, 'utf8');
 const contextFile = new URL('../src/context/AppContext.tsx', import.meta.url);
 let context = fs.readFileSync(contextFile, 'utf8');
 if (!context.includes("recordSiteActivity('cart_add'")) {
-  context = patchOnce(
-    context,
-    '  const addToCart = (productId: string, quantity: number = 1) => {\n    setCart(prev => {',
-    "  const addToCart = (productId: string, quantity: number = 1) => {\n    if (activePage !== 'admin') void recordSiteActivity('cart_add', activePage, productId);\n    setCart(prev => {",
-    'cart activity hook'
-  );
+  const cartPattern = /(  const addToCart = \(productId: string, quantity: number = 1\) => \{\r?\n)(\s*setCart\(prev => \{)/;
+  if (!cartPattern.test(context)) throw new Error('[patch-live-engagement-settings] Missing cart activity hook');
+  context = context.replace(cartPattern, "$1    if (activePage !== 'admin') void recordSiteActivity('cart_add', activePage, productId);\n$2");
 }
 fs.writeFileSync(contextFile, context, 'utf8');
 
@@ -93,33 +90,32 @@ fs.writeFileSync(toastFile, toastSource, 'utf8');
 // 3) Overview: remove the two hard-coded/demo blocks and show the real activity panel instead.
 const adminFile = new URL('../src/pages/AdminPage.tsx', import.meta.url);
 let admin = fs.readFileSync(adminFile, 'utf8');
-const demoStart = '          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">\n            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-700 shadow-md space-y-4 text-white">\n              <h3 className="text-base font-bold text-white flex items-center gap-2">\n                <TrendingUp className="w-5 h-5 text-purple-400" />\n                <span>المنتجات الأكثر مشاهدة وقرص أداء الأفلييت</span>';
-if (admin.includes(demoStart)) {
-  const blockStart = admin.indexOf('          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">', admin.indexOf(demoStart));
-  const blockEndMarker = '          </div>\n        </div>\n      )}\n\n      {/* TAB 2: PRODUCTS MANAGER */}';
+if (admin.includes('المنتجات الأكثر مشاهدة وقرص أداء الأفلييت')) {
+  const blockStart = admin.indexOf('          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">', admin.indexOf('المنتجات الأكثر مشاهدة وقرص أداء الأفلييت') - 500);
+  const blockEndMarker = '        </div>\n      )}\n\n      {/* TAB 2: PRODUCTS MANAGER */}';
   const blockEnd = admin.indexOf(blockEndMarker, blockStart);
-  if (blockStart < 0 || blockEnd < 0) throw new Error('[patch-live-engagement-settings] Could not locate demo overview block end');
+  if (blockStart < 0 || blockEnd < 0) throw new Error('[patch-live-engagement-settings] Could not locate demo overview block');
   const replacement = '          <div className="rounded-3xl border border-emerald-500/30 bg-slate-900 p-5 text-white shadow-md">\n            <div className="mb-4">\n              <h3 className="text-base font-black text-white">النشاط الحقيقي للزوار والمنتجات</h3>\n              <p className="mt-1 text-xs text-slate-400">لا توجد أسماء أو مشاهدات تجريبية هنا؛ البيانات التالية تُقرأ من قياس الموقع الفعلي.</p>\n            </div>\n            <AdminActivityPanel />\n          </div>\n';
   admin = admin.slice(0, blockStart) + replacement + admin.slice(blockEnd);
 }
 
 // Remove sample inbox records so demo names cannot be mistaken for real visitors.
 if (admin.includes("{ id: '1', name: 'أحمد العتيبي'")) {
-  const start = admin.indexOf('  // Messages State\n  const [messagesList, setMessagesList] = useState([');
-  const end = admin.indexOf('  const [selectedMessage, setSelectedMessage]', start);
+  const start = admin.indexOf('  // Messages State');
+  const end = admin.indexOf('  // General Settings State', start);
   if (start >= 0 && end >= 0) {
-    const typed = `  // Messages State — no seeded/demo customer identities.\n  type AdminMessage = { id:string; name:string; email:string; subject:string; message:string; date:string; isRead:boolean; isStarred:boolean };\n  const [messagesList, setMessagesList] = useState<AdminMessage[]>([]);\n`;
-    admin = admin.slice(0, start) + typed + admin.slice(end).replace('useState<typeof messagesList[0] | null>(null)', 'useState<AdminMessage | null>(null)');
+    const typed = `  // Messages State — no seeded/demo customer identities.\n  type AdminMessage = { id:string; name:string; email:string; subject:string; message:string; date:string; isRead:boolean; isStarred:boolean };\n  const [messagesList, setMessagesList] = useState<AdminMessage[]>([]);\n  const [selectedMessage, setSelectedMessage] = useState<AdminMessage | null>(null);\n  const [replyText, setReplyText] = useState<string>('');\n\n`;
+    admin = admin.slice(0, start) + typed + admin.slice(end);
   }
 }
 
 // 4) Complete general social settings with X/Twitter in addition to existing channels.
-admin = admin.replace('    snapchatUrl: siteSettings.snapchatUrl,\n    amazonTag:', '    snapchatUrl: siteSettings.snapchatUrl,\n    twitterUrl: siteSettings.twitterUrl,\n    amazonTag:');
-admin = admin.replace('      snapchatUrl: siteSettings.snapchatUrl,\n      amazonTag:', '      snapchatUrl: siteSettings.snapchatUrl,\n      twitterUrl: siteSettings.twitterUrl,\n      amazonTag:');
+admin = admin.replace(/(\s+snapchatUrl: siteSettings\.snapchatUrl,\r?\n)(\s+amazonTag:)/g, '$1    twitterUrl: siteSettings.twitterUrl,\n$2');
 if (!admin.includes('رابط X / Twitter')) {
-  const marker = `            <div>\n              <label className="font-bold text-amber-300 block mb-1">معرف Amazon US (Amazon Tag):</label>`;
+  const marker = '            <div>\n              <label className="font-bold text-amber-300 block mb-1">معرف Amazon US (Amazon Tag):</label>';
+  if (!admin.includes(marker)) throw new Error('[patch-live-engagement-settings] Missing Twitter settings insertion point');
   const twitterField = `            <div>\n              <label className="font-bold text-sky-300 block mb-1">رابط X / Twitter:</label>\n              <input\n                type="url"\n                value={settingsForm.twitterUrl || ''}\n                onChange={(e) => setSettingsForm({ ...settingsForm, twitterUrl: e.target.value })}\n                placeholder="https://x.com/yousrasmile"\n                className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-sky-400 focus:outline-none"\n              />\n            </div>\n\n`;
-  admin = patchOnce(admin, marker, twitterField + marker, 'Twitter settings field');
+  admin = admin.replace(marker, twitterField + marker);
 }
 fs.writeFileSync(adminFile, admin, 'utf8');
 
@@ -127,7 +123,7 @@ fs.writeFileSync(adminFile, admin, 'utf8');
 const typesFile = new URL('../src/types.ts', import.meta.url);
 let types = fs.readFileSync(typesFile, 'utf8');
 if (!types.includes('twitterUrl?: string;')) {
-  types = types.replace('  snapchatUrl?: string;\r\n', '  snapchatUrl?: string;\r\n  twitterUrl?: string;\r\n').replace('  snapchatUrl?: string;\n', '  snapchatUrl?: string;\n  twitterUrl?: string;\n');
+  types = types.replace(/(\s+snapchatUrl\?: string;\r?\n)/, '$1  twitterUrl?: string;\n');
 }
 fs.writeFileSync(typesFile, types, 'utf8');
 
