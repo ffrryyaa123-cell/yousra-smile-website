@@ -78,7 +78,8 @@ if (!admin.includes('ADMIN_AFFILIATE_DUAL_LINKS')) {
   let amazonAnchor = admin.slice(anchorStart, anchorEnd);
   amazonAnchor = amazonAnchor
     .replace('href={prod.amazonUrl}', 'href={prod.amazonUrl || undefined}')
-    .replace('rel="noreferrer"', 'rel="noreferrer"\n                            aria-disabled={!prod.amazonUrl}\n                            onClick={(event) => { if (!prod.amazonUrl) { event.preventDefault(); event.stopPropagation(); } }}\n                            title={prod.amazonUrl ? \'فتح رابط Amazon المحفوظ والتحقق منه\' : \'لا يوجد رابط Amazon لهذا المنتج\'}')
+    .replace('rel="noreferrer"', 'rel="noreferrer"\n                            aria-disabled={!prod.amazonUrl}\n                            onClick={(event) => { if (!prod.amazonUrl) { event.preventDefault(); event.stopPropagation(); } }}')
+    .replace('title="رابط أمازون مع كود الأفلييت"', "title={prod.amazonUrl ? 'فتح رابط Amazon المحفوظ والتحقق منه' : 'لا يوجد رابط Amazon لهذا المنتج'}")
     .replace('className="p-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg hover:bg-amber-500/30 transition-colors"', "className={\`px-2 py-1.5 rounded-lg border text-[10px] font-black inline-flex items-center gap-1 transition-colors \${prod.amazonUrl ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30' : 'bg-slate-800/60 text-slate-600 border-slate-700 cursor-not-allowed opacity-60'}\`}")
     .replace('</a>', '<span>Amazon</span></a>');
 
