@@ -78,7 +78,7 @@ const AppContent: React.FC = () => {
         <CartModal />
         {editingThumbnailVideo && <ThumbnailEditorModal video={editingThumbnailVideo} onClose={closeThumbnailEditor} />}
         {importVideoModalOpen && <VideoImportModal isOpen={importVideoModalOpen} onClose={closeImportVideoModal} preselectedProductId={importVideoPreselectedProductId} isReplacing={importVideoIsReplacing} defaultMode={importVideoDefaultMode} />}
-        <RecentPurchaseToast />
+        {activePage === 'admin' && <RecentPurchaseToast />}
       </Suspense>
 
       <WhatsAppButton />
