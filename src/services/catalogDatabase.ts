@@ -29,6 +29,47 @@ const storage = getStorage(firebaseApp);
 const cleanForFirestore = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 const archiveId = (kind: string, id: string) => `${kind}-${id}-${Date.now()}`;
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === 'object' && !Array.isArray(value);
+
+const isMissingValue = (value: unknown) =>
+  value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
+
+function mergePreservingExisting<T>(existing: T, incoming: Partial<T>): T {
+  if (!isPlainObject(existing) || !isPlainObject(incoming)) {
+    return (isMissingValue(incoming) ? existing : incoming) as T;
+  }
+
+  const result: Record<string, unknown> = { ...existing as Record<string, unknown> };
+  for (const [key, incomingValue] of Object.entries(incoming)) {
+    if (isMissingValue(incomingValue)) continue;
+
+    const existingValue = result[key];
+    if (isPlainObject(existingValue) && isPlainObject(incomingValue)) {
+      result[key] = mergePreservingExisting(existingValue, incomingValue);
+      continue;
+    }
+
+    // Empty arrays coming from incomplete forms/imports must not erase existing media/features.
+    if (Array.isArray(incomingValue) && incomingValue.length === 0 && Array.isArray(existingValue) && existingValue.length > 0) {
+      continue;
+    }
+
+    result[key] = incomingValue;
+  }
+
+  return result as T;
+}
+
+async function buildSafeProduct(product: Product): Promise<Product> {
+  const ref = doc(db, 'products', product.id);
+  const snapshot = await getDoc(ref);
+  if (!snapshot.exists()) return cleanForFirestore(product);
+
+  const existing = snapshot.data() as Product;
+  return cleanForFirestore(mergePreservingExisting(existing, product));
+}
+
 async function archiveDocument(collectionName: 'products' | 'videos', id: string) {
   const sourceRef = doc(db, collectionName, id);
   const snapshot = await getDoc(sourceRef);
@@ -55,25 +96,34 @@ export const catalogDatabase = {
     }, error => onError?.(error));
   },
 
-  saveProduct(product: Product) {
-    return setDoc(doc(db, 'products', product.id), cleanForFirestore(product), { merge: true });
+  async saveProduct(product: Product) {
+    const safeProduct = await buildSafeProduct(product);
+    return setDoc(doc(db, 'products', product.id), safeProduct, { merge: true });
   },
 
   saveVideo(video: VideoReview) {
     return setDoc(doc(db, 'videos', video.id), cleanForFirestore(video), { merge: true });
   },
 
-  saveProductAndVideo(product: Product, video: VideoReview) {
+  async saveProductAndVideo(product: Product, video: VideoReview) {
+    const safeProduct = await buildSafeProduct(product);
     const batch = writeBatch(db);
-    batch.set(doc(db, 'products', product.id), cleanForFirestore(product), { merge: true });
+    batch.set(doc(db, 'products', product.id), safeProduct, { merge: true });
     batch.set(doc(db, 'videos', video.id), cleanForFirestore(video), { merge: true });
     return batch.commit();
   },
 
   async saveProducts(products: Product[]) {
-    for (let index = 0; index < products.length; index += 400) {
+    // Read/merge each existing product first. This intentionally favors data integrity over bulk speed.
+    // A partial CSV/import row can update supplied fields, but cannot blank unrelated product data.
+    const safeProducts: Product[] = [];
+    for (const product of products) {
+      safeProducts.push(await buildSafeProduct(product));
+    }
+
+    for (let index = 0; index < safeProducts.length; index += 400) {
       const batch = writeBatch(db);
-      products.slice(index, index + 400).forEach(product => {
+      safeProducts.slice(index, index + 400).forEach(product => {
         batch.set(doc(db, 'products', product.id), cleanForFirestore(product), { merge: true });
       });
       await batch.commit();
