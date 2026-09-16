@@ -29,10 +29,13 @@ export interface BlogPost {
   contentAr: string;
   contentEn: string;
   category: string;
+  categoryEn?: string;
   image: string;
   readTime: string;
+  readTimeEn?: string;
   publishedDate: string;
   authorName: string;
+  authorNameEn?: string;
   relatedProductIds: string[];
 }
 
