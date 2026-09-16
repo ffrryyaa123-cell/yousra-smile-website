@@ -100,7 +100,9 @@ export interface Category {
   nameEn: string;
   icon: string;
   description: string;
+  descriptionEn?: string;
   subcategories: string[];
+  subcategoriesEn?: string[];
   image: string;
 }
 
@@ -268,4 +270,3 @@ export type PageView =
   | 'terms' 
   | 'cookies' 
   | 'disclosure';
-
