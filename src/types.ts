@@ -74,6 +74,15 @@ export interface Product {
   specs: Record<string, string>;
   specsEn?: Record<string, string>;
   keywords: string[];
+  seoTitleAr?: string;
+  seoTitleEn?: string;
+  seoDescriptionAr?: string;
+  seoDescriptionEn?: string;
+  keywordsAr?: string[];
+  keywordsEn?: string[];
+  hashtagsAr?: string[];
+  hashtagsEn?: string[];
+  socialCaption?: string;
   isFeatured?: boolean;
   isTopSelling?: boolean;
   isLatest?: boolean;
