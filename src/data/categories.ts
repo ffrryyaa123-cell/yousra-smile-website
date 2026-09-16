@@ -104,7 +104,7 @@ export const CATEGORIES: Category[] = [
   {
     id: 'women-corner',
     nameAr: 'العناية الشخصية والأناقة',
-    nameEn: "Personal Care & Style",
+    nameEn: 'Personal Care & Style',
     icon: 'Sparkles',
     description: 'أدوات العناية بالبشرة والشعر، أدوات تصفيف، حقائب، عطور ومستحضرات العناية الفاخرة للجميع',
     image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
@@ -138,6 +138,24 @@ export const CATEGORIES: Category[] = [
       'أدوات الرياضة المنزلية',
       'أجهزة قياس الوزن',
       'أجهزة تتبع النشاط'
+    ]
+  },
+  {
+    id: 'garden-outdoor',
+    nameAr: 'الحديقة والهواء الطلق',
+    nameEn: 'Garden & Outdoor',
+    icon: 'TreePine',
+    description: 'أدوات الحديقة، الأثاث الخارجي، الشواء، الإضاءة الخارجية ومنتجات الراحة للحديقة والرحلات',
+    image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=800&q=80',
+    subcategories: [
+      'أدوات الحديقة',
+      'الأثاث الخارجي',
+      'الشواء والطبخ الخارجي',
+      'الإضاءة الخارجية',
+      'الري والعناية بالنباتات',
+      'التخييم والرحلات',
+      'التخزين الخارجي',
+      'إكسسوارات الحدائق'
     ]
   }
 ];
