@@ -84,8 +84,7 @@ header = header.replace("{language === 'en' ? (product.titleEn || product.titleA
 fs.writeFileSync(headerFile, header, 'utf8');
 
 // 4) Reviews page follows the active language. In English mode, old Arabic
-// review titles are replaced by the linked product's English title instead of
-// leaking Arabic text into the public page or publishing workflow.
+// review titles are replaced inline by the linked product's English title.
 const videosFile = new URL('../src/pages/VideosPage.tsx', import.meta.url);
 let videos = fs.readFileSync(videosFile, 'utf8');
 videos = videos.replace(
@@ -100,9 +99,8 @@ videos = videos
   .replace('يوتيوب (YouTube)', "{language === 'en' ? 'YouTube' : 'يوتيوب (YouTube)'}")
   .replace('تيك توك (TikTok)', "{language === 'en' ? 'TikTok' : 'تيك توك (TikTok)'}")
   .replace('بنترست (Pinterest)', "{language === 'en' ? 'Pinterest' : 'بنترست (Pinterest)'}")
-  .replace("          const linkedProd = products.find(p => p.id === video.productId);\n          return (", "          const linkedProd = products.find(p => p.id === video.productId);\n          const reviewProductTitle = language === 'en'\n            ? (linkedProd?.titleEn || linkedProd?.brand || 'Product')\n            : (linkedProd?.titleAr || video.productTitle || linkedProd?.titleEn || 'منتج');\n          const reviewTitle = language === 'en'\n            ? (linkedProd?.titleEn ? `Yousra Smile Review: ${linkedProd.titleEn}` : (!/[\\u0600-\\u06FF]/.test(String(video.title || '')) ? (video.title || 'Product Review') : 'Product Review'))\n            : video.title;\n          return (")
-  .replace('                    {video.productTitle}', '                    {reviewProductTitle}')
-  .replace('                    {video.title}', '                    {reviewTitle}')
+  .replace('                    {video.productTitle}', "                    {language === 'en' ? (linkedProd?.titleEn || linkedProd?.brand || 'Product') : (linkedProd?.titleAr || video.productTitle || linkedProd?.titleEn || 'منتج')}")
+  .replace('                    {video.title}', "                    {language === 'en' ? (linkedProd?.titleEn ? `Yousra Smile Review: ${linkedProd.titleEn}` : (!/[\\u0600-\\u06FF]/.test(String(video.title || '')) ? (video.title || 'Product Review') : 'Product Review')) : video.title}")
   .replace('سعر الشراء المباشر:', "{language === 'en' ? 'Current buying price:' : 'سعر الشراء المباشر:'}")
   .replace('شراء من أمازون', "{language === 'en' ? 'Buy on Amazon' : 'شراء من أمازون'}");
 fs.writeFileSync(videosFile, videos, 'utf8');
