@@ -4,6 +4,7 @@ import {
   deleteDoc,
   deleteField,
   doc,
+  getDoc,
   getFirestore,
   onSnapshot,
   setDoc,
@@ -26,6 +27,20 @@ const db = getFirestore(firebaseApp, FIRESTORE_DATABASE_ID);
 const storage = getStorage(firebaseApp);
 
 const cleanForFirestore = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
+const archiveId = (kind: string, id: string) => `${kind}-${id}-${Date.now()}`;
+
+async function archiveDocument(collectionName: 'products' | 'videos', id: string) {
+  const sourceRef = doc(db, collectionName, id);
+  const snapshot = await getDoc(sourceRef);
+  if (!snapshot.exists()) return;
+
+  await setDoc(doc(db, 'catalog_delete_archive', archiveId(collectionName, id)), {
+    kind: collectionName,
+    originalId: id,
+    archivedAt: new Date().toISOString(),
+    data: cleanForFirestore(snapshot.data())
+  });
+}
 
 export const catalogDatabase = {
   subscribeProducts(onData: (products: Product[]) => void, onError?: (error: Error) => void) {
@@ -65,14 +80,23 @@ export const catalogDatabase = {
     }
   },
 
-  deleteProductAndVideos(productId: string, videoIds: string[]) {
+  async deleteProductAndVideos(productId: string, videoIds: string[]) {
+    // Safety invariant: every destructive catalog action is archived first.
+    // If archiving fails, deletion does not proceed.
+    await archiveDocument('products', productId);
+    for (const videoId of videoIds) await archiveDocument('videos', videoId);
+
     const batch = writeBatch(db);
     batch.delete(doc(db, 'products', productId));
     videoIds.forEach(videoId => batch.delete(doc(db, 'videos', videoId)));
     return batch.commit();
   },
 
-  removeProductVideoMetadata(productId: string, videoIds: string[]) {
+  async removeProductVideoMetadata(productId: string, videoIds: string[]) {
+    // Preserve the complete product/video records before removing media links.
+    await archiveDocument('products', productId);
+    for (const videoId of videoIds) await archiveDocument('videos', videoId);
+
     const batch = writeBatch(db);
     batch.update(doc(db, 'products', productId), {
       videoUrl: deleteField(),
@@ -84,11 +108,13 @@ export const catalogDatabase = {
     return batch.commit();
   },
 
-  deleteProduct(productId: string) {
+  async deleteProduct(productId: string) {
+    await archiveDocument('products', productId);
     return deleteDoc(doc(db, 'products', productId));
   },
 
-  deleteVideo(videoId: string) {
+  async deleteVideo(videoId: string) {
+    await archiveDocument('videos', videoId);
     return deleteDoc(doc(db, 'videos', videoId));
   },
 
