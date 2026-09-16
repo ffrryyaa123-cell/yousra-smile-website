@@ -39,5 +39,18 @@ service cloud.firestore {
       allow create, update: if canManageCatalog() && documentIdMatches(videoId);
       allow delete: if canManageCatalog();
     }
+
+    // Recovery safety net for the live catalog. The client may only append
+    // snapshots before destructive actions; archived records cannot be edited
+    // or deleted from the website client.
+    match /catalog_delete_archive/{archiveId} {
+      allow read: if canManageCatalog();
+      allow create: if canManageCatalog()
+        && request.resource.data.kind in ['products', 'videos']
+        && request.resource.data.originalId is string
+        && request.resource.data.archivedAt is string
+        && request.resource.data.data is map;
+      allow update, delete: if false;
+    }
   }
 }
