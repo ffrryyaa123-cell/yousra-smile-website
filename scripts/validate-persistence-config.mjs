@@ -25,6 +25,23 @@ if (/allow\s+write\s*:\s*if\s+true/.test(firestoreRules)) {
 if (!firestoreRules.includes('email_verified')) {
   fail('Owner writes must require a verified Google email.');
 }
+if (!firestoreRules.includes('catalog_delete_archive')) {
+  fail('Catalog deletion archive rules are missing.');
+}
+if (!firestoreRules.includes('allow update, delete: if false')) {
+  fail('Catalog deletion archive must be append-only from the website client.');
+}
+
+const catalogDatabase = await readFile('src/services/catalogDatabase.ts', 'utf8');
+if (!catalogDatabase.includes("await archiveDocument('products', productId)")) {
+  fail('Product deletion must archive the product before deletion.');
+}
+if (!catalogDatabase.includes("await archiveDocument('videos', videoId)")) {
+  fail('Video deletion must archive the video before deletion.');
+}
+if (!catalogDatabase.includes('If archiving fails, deletion does not proceed')) {
+  fail('Destructive catalog actions are missing the archive-first safety invariant.');
+}
 
 const storageRules = await readFile('storage.rules', 'utf8');
 if (!storageRules.includes("contentType.matches('video/.*')")) {
@@ -37,6 +54,7 @@ if (!storageRules.includes("contentType.matches('image/.*')")) {
 console.log(JSON.stringify({
   firestoreDatabase: EXPECTED_DATABASE,
   firestoreRules: 'OWNER_OR_STAFF_WRITES_ONLY',
+  catalogDeletion: 'ARCHIVE_FIRST_AND_APPEND_ONLY',
   storageUploads: 'OWNER_OR_STAFF_WITH_SIZE_AND_MIME_LIMITS',
   productPublishing: 'NOT_PERFORMED_BY_THIS_CHECK'
 }, null, 2));
