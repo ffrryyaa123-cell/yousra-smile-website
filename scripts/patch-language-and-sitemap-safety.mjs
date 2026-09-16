@@ -101,8 +101,8 @@ videos = videos
   .replace('تيك توك (TikTok)', "{language === 'en' ? 'TikTok' : 'تيك توك (TikTok)'}")
   .replace('بنترست (Pinterest)', "{language === 'en' ? 'Pinterest' : 'بنترست (Pinterest)'}")
   .replace("          const linkedProd = products.find(p => p.id === video.productId);\n          return (", "          const linkedProd = products.find(p => p.id === video.productId);\n          const reviewProductTitle = language === 'en'\n            ? (linkedProd?.titleEn || linkedProd?.brand || 'Product')\n            : (linkedProd?.titleAr || video.productTitle || linkedProd?.titleEn || 'منتج');\n          const reviewTitle = language === 'en'\n            ? (linkedProd?.titleEn ? `Yousra Smile Review: ${linkedProd.titleEn}` : (!/[\\u0600-\\u06FF]/.test(String(video.title || '')) ? (video.title || 'Product Review') : 'Product Review'))\n            : video.title;\n          return (")
-  .replace('{video.productTitle}', '{reviewProductTitle}')
-  .replace('{video.title}', '{reviewTitle}')
+  .replace('                    {video.productTitle}', '                    {reviewProductTitle}')
+  .replace('                    {video.title}', '                    {reviewTitle}')
   .replace('سعر الشراء المباشر:', "{language === 'en' ? 'Current buying price:' : 'سعر الشراء المباشر:'}")
   .replace('شراء من أمازون', "{language === 'en' ? 'Buy on Amazon' : 'شراء من أمازون'}");
 fs.writeFileSync(videosFile, videos, 'utf8');
