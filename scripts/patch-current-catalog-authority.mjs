@@ -60,11 +60,9 @@ const newReset = `  const resetCatalog = () => {
   };`;
 if (app.includes(oldReset)) app = app.replace(oldReset, newReset);
 
-// Remove the seed import when no runtime code references it anymore.
-if (!app.includes('INITIAL_PRODUCTS', app.indexOf('export const AppProvider'))) {
-  app = app.replace("import { INITIAL_PRODUCTS } from '../data/initialProducts';\n", '');
-}
-
+// Keep the INITIAL_PRODUCTS import for compile safety because older runtime
+// branches may still reference it. The current-catalog guards above prevent
+// those branches from restoring deleted historical products.
 write(appFile, app);
 
 // The SEO build must also use current Supabase rows only. An older patch used
