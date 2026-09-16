@@ -37,8 +37,31 @@ const oldFallback = `    const deletedIdsRaw = localStorage.getItem(LOCAL_STORAG
     return INITIAL_PRODUCTS.filter(p => !deletedIds.has(p.id)).map(normalizeProduct);`;
 if (app.includes(oldFallback)) app = app.replace(oldFallback, `    // CURRENT_CATALOG_AUTHORITY: Supabase will populate the current catalog.\n    return [];`);
 
-// Remove the seed import when it is no longer used by runtime catalog loading.
-if (!app.includes('INITIAL_PRODUCTS.', app.indexOf('export const AppProvider')) && !app.includes('INITIAL_PRODUCTS[', app.indexOf('export const AppProvider'))) {
+// Reset means "reload the current live catalog", never "restore old seeds".
+const oldReset = `  const resetCatalog = () => {
+    const confirmMsg = language === 'ar' 
+      ? 'هل أنت تأكيد من إعادة ضبط قائمة المنتجات إلى الوضع الافتراضي الأصلي؟'
+      : 'Are you sure you want to reset product catalog to original defaults?';
+    if (window.confirm(confirmMsg)) {
+      setProducts(INITIAL_PRODUCTS);
+      localStorage.removeItem(LOCAL_STORAGE_PRODUCTS_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_DELETED_PRODUCTS_KEY);
+    }
+  };`;
+const newReset = `  const resetCatalog = () => {
+    const confirmMsg = language === 'ar'
+      ? 'إعادة تحميل قائمة المنتجات الحالية المحفوظة في قاعدة البيانات؟ لن تتم استعادة أي منتجات قديمة.'
+      : 'Reload the current saved catalog from the database? No historical products will be restored.';
+    if (window.confirm(confirmMsg)) {
+      localStorage.removeItem(LOCAL_STORAGE_PRODUCTS_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_DELETED_PRODUCTS_KEY);
+      window.location.reload();
+    }
+  };`;
+if (app.includes(oldReset)) app = app.replace(oldReset, newReset);
+
+// Remove the seed import when no runtime code references it anymore.
+if (!app.includes('INITIAL_PRODUCTS', app.indexOf('export const AppProvider'))) {
   app = app.replace("import { INITIAL_PRODUCTS } from '../data/initialProducts';\n", '');
 }
 
