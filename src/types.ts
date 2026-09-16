@@ -8,7 +8,8 @@ export type CategoryId =
   | 'furniture-decor'
   | 'smart-gadgets'
   | 'women-corner'
-  | 'health-fitness';
+  | 'health-fitness'
+  | 'garden-outdoor';
 
 export interface UserReview {
   id: string;
@@ -218,33 +219,6 @@ export interface ProductVideoCampaignResult {
   };
   suggestedVideoUrl?: string;
   heroImage?: string;
-  beforeImage?: string;
-  afterImage?: string;
-  verificationStatus: 'source_match_confirmed' | 'needs_owner_review';
-  needsVerification: string[];
 }
 
-export interface ProductVideoServiceInput {
-  productUrl: string;
-  affiliateLink?: string;
-  affiliateTag?: string;
-  platform?: 'tiktok' | 'youtube' | 'instagram' | 'pinterest';
-  targetAudience?: string;
-  customNotes?: string;
-}
-
-export type PageView = 
-  | 'home' 
-  | 'products' 
-  | 'videos' 
-  | 'deals' 
-  | 'favorites' 
-  | 'cart'
-  | 'compare' 
-  | 'admin' 
-  | 'about' 
-  | 'contact' 
-  | 'privacy' 
-  | 'terms' 
-  | 'cookies' 
-  | 'disclosure';
+export type PageView = 'home' | 'products' | 'deals' | 'favorites' | 'videos' | 'compare' | 'static' | 'admin' | 'blog';
