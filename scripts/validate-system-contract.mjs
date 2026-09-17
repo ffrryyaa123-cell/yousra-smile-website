@@ -11,17 +11,24 @@ const app = read('src/App.tsx');
 const productCard = read('src/components/ProductCard.tsx');
 const socialExportPatch = read('scripts/patch-social-export-language-mode.mjs');
 const types = read('src/types.ts');
+const categoryMigration = read('supabase/migrations/20260917091500_categories_and_product_reference.sql');
 
 // Data authority contract: Supabase is the live catalog/category source.
 assert(context.includes("from '../services/supabaseCatalog'"), 'AppContext must use Supabase catalog service.');
 assert(!context.includes("from '../services/catalogDatabase'"), 'Legacy Firebase catalog service must not be reintroduced into AppContext.');
 assert(categories.includes(".from('categories')"), 'Categories must persist in the Supabase categories table.');
 assert(categories.includes("saveManagedCategories"), 'Managed categories must have a real persistent save path.');
+assert(!categories.includes(".from('categories').delete()"), 'Saving a category list must never implicitly delete existing categories.');
+assert(categories.includes('ADD/UPDATE only'), 'Non-destructive category-save invariant is missing.');
+
+// Database relationship contract: products may only be assigned to real categories.
+assert(categoryMigration.includes('products_category_reference_guard'), 'Product/category database guard migration is missing.');
+assert(categoryMigration.includes('validate_product_category_reference'), 'Product/category validation function is missing.');
 
 // Dynamic category contract: adding a category must not require a code release.
 assert(types.includes('export type CategoryId = string'), 'CategoryId must remain dynamic, not a hard-coded union.');
 
-// UI mode contract: Arabic/English and Light/Dark choices persist.
+// UI mode contract: Arabic/English and Light/Dark choices persist independently.
 assert(context.includes('LOCAL_STORAGE_LANG_KEY'), 'Language mode persistence key is missing.');
 assert(context.includes('LOCAL_STORAGE_DARK_KEY'), 'Dark/light mode persistence key is missing.');
 assert(context.includes('localStorage.setItem(LOCAL_STORAGE_LANG_KEY'), 'Language selection is not persisted.');
@@ -34,4 +41,4 @@ assert(socialExportPatch.includes('Social export follows the selected Arabic/Eng
 // Crash containment must stay installed globally.
 assert(app.includes('AppErrorBoundary') || read('src/main.tsx').includes('AppErrorBoundary'), 'Global error boundary is missing.');
 
-console.log('[system-contract] Supabase authority, dynamic categories, language/theme persistence, and crash containment are locked.');
+console.log('[system-contract] Supabase authority, additive categories, category references, language/theme persistence, and crash containment are locked.');
