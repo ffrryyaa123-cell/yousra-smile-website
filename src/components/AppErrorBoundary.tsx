@@ -1,11 +1,15 @@
 import React from 'react';
 
+interface Props {
+  children?: React.ReactNode;
+}
+
 interface State {
   hasError: boolean;
   message?: string;
 }
 
-export class AppErrorBoundary extends React.Component<React.PropsWithChildren, State> {
+export class AppErrorBoundary extends React.Component<Props, State> {
   state: State = { hasError: false };
 
   static getDerivedStateFromError(error: unknown): State {
