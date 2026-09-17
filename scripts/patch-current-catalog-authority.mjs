@@ -37,13 +37,20 @@ const oldFallback = `    const deletedIdsRaw = localStorage.getItem(LOCAL_STORAG
     return INITIAL_PRODUCTS.filter(p => !deletedIds.has(p.id)).map(normalizeProduct);`;
 if (app.includes(oldFallback)) app = app.replace(oldFallback, `    // CURRENT_CATALOG_AUTHORITY: Supabase will populate the current catalog.\n    return [];`);
 
+// Also neutralize equivalent fallback formatting left by older patches.
+app = app.replace(/return\s+INITIAL_PRODUCTS\.filter\([\s\S]*?\)\.map\(normalizeProduct\);/g,
+  `// CURRENT_CATALOG_AUTHORITY: never restore historical seed products.\n    return [];`);
+
 // Reset means "reload the current live catalog", never "restore old seeds".
+app = app.replace(/setProducts\(INITIAL_PRODUCTS\);/g,
+  `// CURRENT_CATALOG_AUTHORITY: do not restore historical seeds.`);
+
 const oldReset = `  const resetCatalog = () => {
     const confirmMsg = language === 'ar' 
       ? 'هل أنت تأكيد من إعادة ضبط قائمة المنتجات إلى الوضع الافتراضي الأصلي؟'
       : 'Are you sure you want to reset product catalog to original defaults?';
     if (window.confirm(confirmMsg)) {
-      setProducts(INITIAL_PRODUCTS);
+      // CURRENT_CATALOG_AUTHORITY: do not restore historical seeds.
       localStorage.removeItem(LOCAL_STORAGE_PRODUCTS_KEY);
       localStorage.removeItem(LOCAL_STORAGE_DELETED_PRODUCTS_KEY);
     }
@@ -60,9 +67,15 @@ const newReset = `  const resetCatalog = () => {
   };`;
 if (app.includes(oldReset)) app = app.replace(oldReset, newReset);
 
-// Keep the INITIAL_PRODUCTS import for compile safety because older runtime
-// branches may still reference it. The current-catalog guards above prevent
-// those branches from restoring deleted historical products.
+// Some older patch scripts remove this import before this final authority patch
+// runs. If any compile-only legacy references remain, restore the import; all
+// actual restore/merge paths above are neutralized and cannot resurrect seeds.
+if (app.includes('INITIAL_PRODUCTS') && !app.includes("import { INITIAL_PRODUCTS } from '../data/initialProducts';")) {
+  app = app.replace(
+    "import { Product, PageView, VideoReview, PriceAlert, CartItem, SiteSettings, BlogPost } from '../types';",
+    "import { Product, PageView, VideoReview, PriceAlert, CartItem, SiteSettings, BlogPost } from '../types';\nimport { INITIAL_PRODUCTS } from '../data/initialProducts';"
+  );
+}
 write(appFile, app);
 
 // The SEO build must also use current Supabase rows only. An older patch used
