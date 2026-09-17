@@ -21,7 +21,7 @@ export const PriceAlertModal: React.FC = () => {
 
   if (!alertModalProduct) return null;
 
-  const title = language === 'en' ? (alertModalProduct.titleEn || alertModalProduct.titleAr) : alertModalProduct.titleAr;
+  const title = language === 'en' ? (alertModalProduct.titleEn || 'Featured product') : alertModalProduct.titleAr;
   const isAlreadyAlerted = isSubscribedToAlert(alertModalProduct.id);
 
   const handleSubmit = (e: React.FormEvent) => {

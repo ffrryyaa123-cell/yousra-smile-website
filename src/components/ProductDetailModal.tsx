@@ -97,7 +97,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
   if (!product) return null;
 
-  const displayTitle = language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr;
+  const displayTitle = language === 'en' ? (product.titleEn || 'Featured product') : product.titleAr;
   const displayDescription = language === 'en' ? (product.descriptionEn || '') : product.description;
   const displayLongDescription = language === 'en' ? (product.longDescriptionEn || product.descriptionEn || '') : (product.longDescription || product.description);
   const displayFeatures = language === 'en' ? (product.featuresEn || []) : (product.features || []);
@@ -170,7 +170,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
       items.push({
         url: primaryProductVideoUrl,
         thumbnail: product.videoThumbnailUrl || product.image,
-        title: product.titleAr,
+        title: displayTitle,
         isLocal: primaryProductVideoUrl.startsWith('blob:') || /\.(mp4|webm|mov|m4v)(?:$|\?)/i.test(primaryProductVideoUrl)
       });
       seen.add(primaryProductVideoUrl);
@@ -181,7 +181,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
       items.push({
         url,
         thumbnail: videoItem.hideThumbnail ? '' : videoItem.thumbnailUrl || videoItem.productImage || product.videoThumbnailUrl || product.image,
-        title: videoItem.title || product.titleAr,
+        title: videoItem.title || displayTitle,
         isLocal: videoItem.platform === 'local' || videoItem.platform === 'direct' || /\.(mp4|webm|mov|m4v)(?:$|\?)/i.test(url)
       });
       seen.add(url);
@@ -207,8 +207,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   };
 
   const productUrl = window.location.href;
-  const shareTitle = product.titleAr || product.titleEn;
-  const shareText = `مراجعة وتفاصيل ${shareTitle} عبر يسرى سمايل Yousra Smile:`;
+  const shareTitle = displayTitle;
+  const shareText = language === 'en'
+    ? `Review and details for ${shareTitle} on Yousra Smile:`
+    : `مراجعة وتفاصيل ${shareTitle} عبر يسرى سمايل Yousra Smile:`;
 
   const shareToWhatsApp = () => {
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + '\n' + productUrl)}`;
@@ -285,7 +287,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
             <span className="text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/80 px-3 py-1 rounded-lg">
               {product.brand}
             </span>
-            <span className="text-xs text-slate-400">كود المنتج: {product.id}</span>
+            <span className="text-xs text-slate-400">{language === 'en' ? 'Product code:' : 'كود المنتج:'} {product.id}</span>
           </div>
 
           <div className="flex items-center gap-2 relative">
@@ -296,7 +298,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   ? 'bg-red-50 text-red-500 dark:bg-red-950/40' 
                   : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
               }`}
-              title="إضافة للمفضلة"
+              title={language === 'en' ? 'Add to favorites' : 'إضافة للمفضلة'}
             >
               <Heart className={`w-5 h-5 ${isFav ? 'fill-red-500' : ''}`} />
             </button>
@@ -308,7 +310,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   ? 'bg-purple-50 text-purple-600 dark:bg-purple-950/40' 
                   : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
               }`}
-              title="مقارنة المنتجات"
+              title={language === 'en' ? 'Compare products' : 'مقارنة المنتجات'}
             >
               <Scale className="w-5 h-5" />
             </button>
@@ -321,7 +323,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     ? 'bg-purple-600 text-white'
                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
                 }`}
-                title="مشاركة عبر التواصل الاجتماعي"
+                title={language === 'en' ? 'Share on social media' : 'مشاركة عبر التواصل الاجتماعي'}
               >
                 <Share2 className="w-5 h-5" />
               </button>
@@ -334,7 +336,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 >
                   <div className="text-[11px] font-mono-meta text-[#D4AF37] px-2 pb-1 border-b border-[#FDFCFB]/10 flex items-center gap-1.5">
                     <Share2 className="w-3.5 h-3.5" />
-                    مشاركة المنتج عبر:
+                    {language === 'en' ? 'Share product via:' : 'مشاركة المنتج عبر:'}
                   </div>
 
                   <button
@@ -342,7 +344,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-emerald-950/40 text-emerald-400 font-bold text-xs transition-colors"
                   >
                     <WhatsAppIcon className="w-4 h-4 text-emerald-400" />
-                    <span>واتساب (WhatsApp)</span>
+                    <span>{language === 'en' ? 'WhatsApp' : 'واتساب (WhatsApp)'}</span>
                   </button>
 
                   <button
@@ -350,7 +352,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-950/40 text-blue-400 font-bold text-xs transition-colors"
                   >
                     <FacebookIcon className="w-4 h-4 text-blue-400" />
-                    <span>فيسبوك (Facebook)</span>
+                    <span>{language === 'en' ? 'Facebook' : 'فيسبوك (Facebook)'}</span>
                   </button>
 
                   <button
@@ -358,7 +360,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-red-950/40 text-red-400 font-bold text-xs transition-colors"
                   >
                     <PinterestIcon className="w-4 h-4 text-red-400" />
-                    <span>بنترست (Pinterest)</span>
+                    <span>{language === 'en' ? 'Pinterest' : 'بنترست (Pinterest)'}</span>
                   </button>
 
                   <button
@@ -366,7 +368,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-sky-950/40 text-sky-400 font-bold text-xs transition-colors"
                   >
                     <TwitterIcon className="w-4 h-4 text-sky-400" />
-                    <span>تويتر / X (Twitter)</span>
+                    <span>{language === 'en' ? 'X / Twitter' : 'تويتر / X (Twitter)'}</span>
                   </button>
 
                   <button
@@ -375,7 +377,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   >
                     <div className="flex items-center gap-2.5">
                       <Copy className="w-4 h-4 text-amber-400" />
-                      <span>نسخ رابط الصفحة</span>
+                      <span>{language === 'en' ? 'Copy page link' : 'نسخ رابط الصفحة'}</span>
                     </div>
                     {copiedLink && <Check className="w-3.5 h-3.5 text-emerald-400" />}
                   </button>
@@ -396,7 +398,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
         <div className="overflow-y-auto p-4 sm:p-6 space-y-6 flex-1">
           {copiedLink && (
             <div className="bg-emerald-500 text-white text-xs font-bold py-2 px-4 rounded-xl text-center shadow animate-fadeIn">
-              ✓ تم نسخ رابط المنتج بنجاح!
+              {language === 'en' ? '✓ Product link copied.' : '✓ تم نسخ رابط المنتج بنجاح!'}
             </div>
           )}
 
@@ -423,7 +425,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               {language === 'ar' ? `علامة ${product.brand}` : `Brand ${product.brand}`}
             </button>
             <span>/</span>
-            <span className="text-slate-200 truncate max-w-xs">{product.titleAr}</span>
+            <span className="text-slate-200 truncate max-w-xs">{displayTitle}</span>
           </nav>
 
           {/* Interactive Brand Models Pill / Chip */}
@@ -606,18 +608,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
             <div className="flex flex-col justify-between space-y-4">
               <div>
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-['Tajawal'] leading-tight mb-2">
-                  {product.titleAr}
+                  {displayTitle}
                 </h1>
-                <p className="text-xs text-slate-400 mb-3">{product.titleEn}</p>
+                {language === 'ar' && product.titleEn && <p className="text-xs text-slate-400 mb-3">{product.titleEn}</p>}
 
                 {/* Rating & Views */}
                 <div className="flex items-center gap-4 text-xs mb-3">
                   <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/40 text-amber-600 px-2.5 py-1 rounded-lg font-bold">
                     <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                     <span>{product.rating}</span>
-                    <span className="text-slate-400 font-normal">({product.reviewCount + (currentUserRating > 0 ? 1 : 0)} تقييم)</span>
+                    <span className="text-slate-400 font-normal">({product.reviewCount + (currentUserRating > 0 ? 1 : 0)} {language === 'en' ? 'reviews' : 'تقييم'})</span>
                   </div>
-                  <span className="text-slate-400">👁 {product.viewsCount} مشاهدة</span>
+                  <span className="text-slate-400">👁 {product.viewsCount} {language === 'en' ? 'views' : 'مشاهدة'}</span>
                 </div>
 
                 {/* Interactive User Star Rating Picker */}
@@ -645,7 +647,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                           onMouseEnter={() => setHoverStar(star)}
                           onMouseLeave={() => setHoverStar(0)}
                           className="p-1 rounded-lg hover:bg-slate-800 transition-all transform hover:scale-115 cursor-pointer"
-                          title={`تقييم ${star} نجوم`}
+                          title={language === 'en' ? `Rate ${star} stars` : `تقييم ${star} نجوم`}
                         >
                           <Star 
                             className={`w-6 h-6 transition-colors ${
@@ -739,10 +741,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 <div className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <ShoppingBag className="w-4 h-4 text-purple-600" />
-                    <span>مقارنة أسعار الشراء المباشرة:</span>
+                    <span>{language === 'en' ? 'Direct retailer prices:' : 'مقارنة أسعار الشراء المباشرة:'}</span>
                   </div>
                   <span className="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">
-                    أفضل سعر الآن 🔥
+                    {language === 'en' ? 'Best current price 🔥' : 'أفضل سعر الآن 🔥'}
                   </span>
                 </div>
 
@@ -754,7 +756,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   >
                     <div className="flex items-center gap-1.5">
                       <ShoppingBag className="w-4 h-4" />
-                      <span>متجر أمازون (Amazon)</span>
+                      <span>{language === 'en' ? 'Amazon Store' : 'متجر أمازون (Amazon)'}</span>
                     </div>
                     <div className="bg-slate-950/20 px-2.5 py-1 rounded-xl text-xs font-black flex items-center gap-1">
                       <span>{formatPrice(product.discountPrice)}</span>
@@ -769,7 +771,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   >
                     <div className="flex items-center gap-1.5">
                       <ShoppingBag className="w-4 h-4" />
-                      <span>علي إكسبريس (AliExpress)</span>
+                      <span>{language === 'en' ? 'AliExpress' : 'علي إكسبريس (AliExpress)'}</span>
                     </div>
                     <div className="bg-black/30 px-2.5 py-1 rounded-xl text-xs font-black flex items-center gap-1">
                       <span>{formatPrice(Math.round(product.discountPrice * 0.92))}</span>
@@ -791,40 +793,40 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       type="button"
                       onClick={shareToWhatsApp}
                       className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all cursor-pointer shadow-xs"
-                      title="مشاركة عبر واتساب"
+                      title={language === 'en' ? 'Share via WhatsApp' : 'مشاركة عبر واتساب'}
                     >
                       <WhatsAppIcon className="w-4 h-4 text-emerald-500" />
-                      <span className="hidden sm:inline">واتساب</span>
+                      <span className="hidden sm:inline">{language === 'en' ? 'WhatsApp' : 'واتساب'}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={shareToFacebook}
                       className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-xs font-bold transition-all cursor-pointer shadow-xs"
-                      title="مشاركة عبر فيسبوك"
+                      title={language === 'en' ? 'Share via Facebook' : 'مشاركة عبر فيسبوك'}
                     >
                       <FacebookIcon className="w-4 h-4 text-blue-500" />
-                      <span className="hidden sm:inline">فيسبوك</span>
+                      <span className="hidden sm:inline">{language === 'en' ? 'Facebook' : 'فيسبوك'}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={shareToTwitter}
                       className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 border border-sky-500/30 text-xs font-bold transition-all cursor-pointer shadow-xs"
-                      title="مشاركة عبر تويتر / X"
+                      title={language === 'en' ? 'Share via X' : 'مشاركة عبر تويتر / X'}
                     >
                       <TwitterIcon className="w-4 h-4 text-sky-500" />
-                      <span className="hidden sm:inline">تويتر / X</span>
+                      <span className="hidden sm:inline">{language === 'en' ? 'X / Twitter' : 'تويتر / X'}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={copyToClipboard}
                       className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 text-xs font-bold transition-all cursor-pointer shadow-xs"
-                      title="نسخ رابط المنتج"
+                      title={language === 'en' ? 'Copy product link' : 'نسخ رابط المنتج'}
                     >
                       {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-purple-500" />}
-                      <span className="hidden sm:inline">{copiedLink ? 'تم النسخ' : 'نسخ الرابط'}</span>
+                      <span className="hidden sm:inline">{copiedLink ? (language === 'en' ? 'Copied' : 'تم النسخ') : (language === 'en' ? 'Copy link' : 'نسخ الرابط')}</span>
                     </button>
                   </div>
                 </div>
@@ -848,10 +850,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
                   <div className="flex items-center gap-1">
                     <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                    <span>الشراء يتم بأمان مباشر عبر منصة المتجر الرسمي المعني.</span>
+                    <span>{language === 'en' ? 'Checkout is completed securely on the retailer’s official website.' : 'الشراء يتم بأمان مباشر عبر منصة المتجر الرسمي المعني.'}</span>
                   </div>
                   <span className="text-[10px] text-purple-600 dark:text-purple-400 font-bold">
-                    محدث لليوم ⚡
+                    {language === 'en' ? 'Updated today ⚡' : 'محدث لليوم ⚡'}
                   </span>
                 </div>
               </div>
@@ -978,7 +980,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 gallery.push({
                   url: coverUrl,
                   thumbnail: product.videoThumbnailUrl || product.image,
-                  title: product.titleAr,
+                  title: displayTitle,
                   isLocal: coverUrl.startsWith('blob:') || coverUrl.endsWith('.mp4') || coverUrl.endsWith('.webm')
                 });
                 seenUrls.add(coverUrl);
@@ -988,7 +990,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 gallery.push({
                   url: v.videoUrl,
                   thumbnail: v.hideThumbnail ? '' : v.thumbnailUrl || product.image,
-                  title: v.title || product.titleAr,
+                  title: v.title || displayTitle,
                   isLocal: v.platform === 'local' || v.platform === 'direct'
                 });
                 seenUrls.add(v.videoUrl);
@@ -1031,8 +1033,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                         <PlaySquare className="w-5 h-5 text-purple-400" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-white">فيديوهات ومراجعات المنتج</h4>
-                        <p className="text-xs text-slate-400">كل فيديوهات المنتج تظهر هنا ويمكن تشغيل أي واحد منها بشكل مستقل.</p>
+                        <h4 className="text-sm font-bold text-white">{language === 'en' ? 'Product Videos & Reviews' : 'فيديوهات ومراجعات المنتج'}</h4>
+                        <p className="text-xs text-slate-400">{language === 'en' ? 'All published product videos appear here and can be played separately.' : 'كل فيديوهات المنتج تظهر هنا ويمكن تشغيل أي واحد منها بشكل مستقل.'}</p>
                       </div>
                     </div>
 
@@ -1085,7 +1087,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                             key={primaryVideoUrl}
                             className="w-full h-full"
                             src={primaryVideoUrl}
-                            title={product.titleAr}
+                            title={displayTitle}
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
                           />
@@ -1119,7 +1121,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
                         <span className="text-slate-300 font-bold flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                          <span>الفيديو مربوط ببيانات المنتج الحالية</span>
+                          <span>{language === 'en' ? 'This video is linked to the current product' : 'الفيديو مربوط ببيانات المنتج الحالية'}</span>
                         </span>
 
                         {activePage === 'admin' && <div className="flex items-center gap-2">
@@ -1155,9 +1157,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                         <Upload className="w-7 h-7 text-purple-300" />
                       </div>
                       <div className="max-w-md mx-auto">
-                        <h4 className="text-sm font-bold text-white">لم يتم ربط فيديو بهذا المنتج بعد</h4>
+                        <h4 className="text-sm font-bold text-white">{language === 'en' ? 'No video is linked to this product yet' : 'لم يتم ربط فيديو بهذا المنتج بعد'}</h4>
                         <p className="text-xs text-slate-400 mt-1">
-                          لا يوجد فيديو منشور لهذا المنتج حاليًا.
+                          {language === 'en' ? 'There is no published video for this product right now.' : 'لا يوجد فيديو منشور لهذا المنتج حاليًا.'}
                         </p>
                       </div>
                       {activePage === 'admin' && <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -1216,26 +1218,26 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                         <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-400" />
                       ))}
                     </div>
-                    <p className="text-xs text-slate-400">بناءً على {product.reviewCount} تقييم حقيقي</p>
+                    <p className="text-xs text-slate-400">{language === 'en' ? `Based on ${product.reviewCount} reviews` : `بناءً على ${product.reviewCount} تقييم حقيقي`}</p>
                   </div>
 
                   <div className="flex-1 w-full max-w-md space-y-1.5 text-xs text-slate-300">
                     <div className="flex items-center gap-2">
-                      <span>5 نجوم</span>
+                      <span>{language === 'en' ? '5 stars' : '5 نجوم'}</span>
                       <div className="flex-1 bg-slate-800 rounded-full h-2 overflow-hidden">
                         <div className="bg-amber-400 h-full w-[85%]"></div>
                       </div>
                       <span className="w-8 text-left">85%</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span>4 نجوم</span>
+                      <span>{language === 'en' ? '4 stars' : '4 نجوم'}</span>
                       <div className="flex-1 bg-slate-800 rounded-full h-2 overflow-hidden">
                         <div className="bg-amber-400 h-full w-[12%]"></div>
                       </div>
                       <span className="w-8 text-left">12%</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span>3 نجوم</span>
+                      <span>{language === 'en' ? '3 stars' : '3 نجوم'}</span>
                       <div className="flex-1 bg-slate-800 rounded-full h-2 overflow-hidden">
                         <div className="bg-amber-400 h-full w-[3%]"></div>
                       </div>
@@ -1247,23 +1249,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 <form onSubmit={handleReviewSubmit} className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-md">
                   <h4 className="text-sm font-bold text-amber-300 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>شاركي تجربتك ورأيك عن هذا المنتج:</span>
+                    <span>{language === 'en' ? 'Share your experience with this product:' : 'شاركي تجربتك ورأيك عن هذا المنتج:'}</span>
                   </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">اسمك الكريمة (اختياري):</label>
+                      <label className="text-xs text-slate-400 block mb-1">{language === 'en' ? 'Your name (optional):' : 'اسمك الكريمة (اختياري):'}</label>
                       <input
                         type="text"
                         value={reviewerName}
                         onChange={(e) => setReviewerName(e.target.value)}
-                        placeholder="مثال: أم عبد الله"
+                        placeholder={language === 'en' ? 'Example: Sarah' : 'مثال: أم عبد الله'}
                         className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-500"
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs text-slate-400 block mb-1">تقييمك بالنجوم:</label>
+                      <label className="text-xs text-slate-400 block mb-1">{language === 'en' ? 'Your star rating:' : 'تقييمك بالنجوم:'}</label>
                       <div className="flex items-center gap-2 pt-1">
                         {[1, 2, 3, 4, 5].map((s) => (
                           <button
@@ -1280,11 +1282,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   </div>
 
                   <div>
-                    <label className="text-xs text-slate-400 block mb-1">تفاصيل تجربتك وتوصيتك للمشترين:</label>
+                    <label className="text-xs text-slate-400 block mb-1">{language === 'en' ? 'Your experience and recommendation:' : 'تفاصيل تجربتك وتوصيتك للمشترين:'}</label>
                     <textarea
                       value={reviewerComment}
                       onChange={(e) => setReviewerComment(e.target.value)}
-                      placeholder="اكتبي ملخص تجربتك عن سرعة الشحن، جودة التصنيع، سهولة الاستخدام..."
+                      placeholder={language === 'en' ? 'Share details about delivery, build quality, and ease of use…' : 'اكتبي ملخص تجربتك عن سرعة الشحن، جودة التصنيع، سهولة الاستخدام...'}
                       rows={3}
                       required
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-amber-500 resize-none"
@@ -1295,7 +1297,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     {reviewAddedSuccess ? (
                       <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>تمت إضافة تقييمك ورأيك بنجاح!</span>
+                        <span>{language === 'en' ? 'Your review was added successfully.' : 'تمت إضافة تقييمك ورأيك بنجاح!'}</span>
                       </span>
                     ) : <span />}
 
@@ -1303,23 +1305,23 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       type="submit"
                       className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs px-5 py-2 rounded-xl transition-all cursor-pointer"
                     >
-                      إضافة التقييم
+                      {language === 'en' ? 'Add Review' : 'إضافة التقييم'}
                     </button>
                   </div>
                 </form>
 
                 <div className="space-y-3">
-                  <h4 className="text-sm font-bold text-slate-200">أحدث آراء المشترين:</h4>
+                  <h4 className="text-sm font-bold text-slate-200">{language === 'en' ? 'Latest Customer Reviews:' : 'أحدث آراء المشترين:'}</h4>
 
                   <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-xs">
-                          س
+                          {language === 'en' ? 'S' : 'س'}
                         </div>
                         <div>
-                          <span className="text-xs font-bold text-white">سارة الشمري</span>
-                          <span className="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 mr-2">مشتري مؤكد ✓</span>
+                          <span className="text-xs font-bold text-white">{language === 'en' ? 'Sarah' : 'سارة الشمري'}</span>
+                          <span className="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 mr-2">{language === 'en' ? 'Verified buyer ✓' : 'مشتري مؤكد ✓'}</span>
                         </div>
                       </div>
                       <div className="flex items-center text-amber-400 text-xs">
@@ -1327,7 +1329,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       </div>
                     </div>
                     <p className="text-xs text-slate-300 leading-relaxed">
-                      المنتج رائع جداً واستفدت كثيراً من فيديو مراجعة يسرى سمايل قبل الشراء. الشحن كان سريع عبر أمازون والأداء يفوق التوقعات!
+                      {language === 'en' ? 'The product matched the listing, arrived quickly, and the review helped me understand it before ordering.' : 'المنتج رائع جداً واستفدت كثيراً من فيديو مراجعة يسرى سمايل قبل الشراء. الشحن كان سريع عبر أمازون والأداء يفوق التوقعات!'}
                     </p>
                   </div>
 
@@ -1335,11 +1337,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center font-bold text-xs">
-                          م
+                          {language === 'en' ? 'M' : 'م'}
                         </div>
                         <div>
-                          <span className="text-xs font-bold text-white">م. محمد علي</span>
-                          <span className="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 mr-2">مشتري مؤكد ✓</span>
+                          <span className="text-xs font-bold text-white">{language === 'en' ? 'Michael' : 'م. محمد علي'}</span>
+                          <span className="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30 mr-2">{language === 'en' ? 'Verified buyer ✓' : 'مشتري مؤكد ✓'}</span>
                         </div>
                       </div>
                       <div className="flex items-center text-amber-400 text-xs">
@@ -1347,11 +1349,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       </div>
                     </div>
                     <p className="text-xs text-slate-300 leading-relaxed">
-                      جودة تصنيع عالية جداً وتطبيق التحكم سلس للغاية، وفر علي الكثير من الجهد والوقت في المنزل.
+                      {language === 'en' ? 'Solid build quality and straightforward controls. It has been useful in my daily routine.' : 'جودة تصنيع عالية جداً وتطبيق التحكم سلس للغاية، وفر علي الكثير من الجهد والوقت في المنزل.'}
                     </p>
                   </div>
 
-                  {product.reviews && product.reviews.map((rev) => (
+                  {product.reviews && product.reviews
+                    .filter(rev => language === 'ar' || !/[\u0600-\u06FF]/.test(`${rev.userName} ${rev.comment}`))
+                    .map((rev) => (
                     <div key={rev.id} className="bg-slate-900 border border-amber-500/20 rounded-xl p-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -1379,7 +1383,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 <div className="bg-[#1A1A1C] border border-[#FDFCFB]/10 rounded-2xl p-5 space-y-3 font-sans">
                   <div className="flex items-center gap-2 text-xs text-[#D4AF37] font-mono-meta">
                     <Search className="w-4 h-4 text-[#D4AF37]" />
-                    معاينة النتيجة المباشرة في جوجل (Google Rich Snippets):
+                    {language === 'en' ? 'Google search result preview (Rich Snippets):' : 'معاينة النتيجة المباشرة في جوجل (Google Rich Snippets):'}
                   </div>
                   
                   <div className="bg-[#111113] p-4 rounded-xl border border-[#FDFCFB]/5 space-y-1.5 ltr text-left" dir="ltr">
@@ -1392,7 +1396,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       <span className="text-gray-400">{product.brand}</span>
                     </div>
                     <h4 className="text-lg text-blue-400 font-normal hover:underline cursor-pointer line-clamp-1">
-                      {product.titleAr} | سعر ومراجعة Yousra Smile
+                      {displayTitle} | {language === 'en' ? 'Price & Review' : 'سعر ومراجعة'} Yousra Smile
                     </h4>
                     <div className="flex items-center gap-2 text-xs text-amber-400 font-semibold my-1">
                       <span>Rating: {product.rating}/5</span>
@@ -1404,7 +1408,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       <span className="text-gray-400 font-normal">In stock</span>
                     </div>
                     <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">
-                      {product.description} اشترِ الآن بسعر {product.discountPrice} {product.currency} مع خصم {product.discountPercent}% عبر روابط أمازون وعلي إكسبريس.
+                      {displayDescription} {language === 'en' ? `Check the current price of ${product.discountPrice} ${product.currency} and ${product.discountPercent}% listed discount through Amazon or AliExpress.` : `اشترِ الآن بسعر ${product.discountPrice} ${product.currency} مع خصم ${product.discountPercent}% عبر روابط أمازون وعلي إكسبريس.`}
                     </p>
                   </div>
                 </div>
@@ -1419,9 +1423,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                         const jsonStr = JSON.stringify({
                           "@context": "https://schema.org/",
                           "@type": "Product",
-                          "name": product.titleAr,
+                          "name": displayTitle,
                           "image": product.image,
-                          "description": product.description,
+                          "description": displayDescription,
                           "brand": { "@type": "Brand", "name": product.brand },
                           "aggregateRating": {
                             "@type": "AggregateRating",
@@ -1442,7 +1446,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       className="text-xs font-mono-meta px-3 py-1 rounded-lg bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/40 hover:bg-[#D4AF37]/30 transition-colors flex items-center gap-1"
                     >
                       {copiedJsonLd ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Code className="w-3.5 h-3.5" />}
-                      {copiedJsonLd ? 'تم نسخ الـ Schema' : 'نسخ كود JSON-LD'}
+                      {copiedJsonLd ? (language === 'en' ? 'Schema copied' : 'تم نسخ الـ Schema') : (language === 'en' ? 'Copy JSON-LD' : 'نسخ كود JSON-LD')}
                     </button>
                   </div>
 
@@ -1450,9 +1454,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 {JSON.stringify({
   "@context": "https://schema.org/",
   "@type": "Product",
-  "name": product.titleAr,
+  "name": displayTitle,
   "image": [product.image, ...(product.images || [])],
-  "description": product.description,
+  "description": displayDescription,
   "sku": product.id,
   "brand": {
     "@type": "Brand",
@@ -1467,7 +1471,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
     },
     "author": {
       "@type": "Person",
-      "name": "Yousra Smile (يسرى سمايل)"
+      "name": "Yousra Smile"
     }
   },
   "aggregateRating": {
@@ -1536,7 +1540,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
                       <div className="space-y-1">
                         <h4 className="text-xs font-bold text-slate-100 line-clamp-2 leading-snug group-hover:text-amber-300 transition-colors">
-                          {language === 'en' ? (relProd.titleEn || relProd.titleAr) : relProd.titleAr}
+                          {language === 'en' ? (relProd.titleEn || 'Featured product') : relProd.titleAr}
                         </h4>
                         <div className="flex items-center justify-between text-xs font-bold pt-1">
                           <span className="text-amber-400">{formatPrice(relProd.discountPrice)}</span>

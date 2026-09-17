@@ -14,15 +14,16 @@ import {
   Sparkles,
   Instagram
 } from 'lucide-react';
-import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
+import logoImg from '../assets/images/yousra_smile_avatar.webp';
 
 interface StaticPageProps {
   type: 'about' | 'contact' | 'privacy' | 'terms' | 'cookies' | 'disclosure';
 }
 
 export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
-  const { activeStaticTab, setPage } = useApp();
+  const { activeStaticTab, setPage, language } = useApp();
   const currentTab = type || activeStaticTab;
+  const en = language === 'en';
 
   // Contact form state
   const [contactName, setContactName] = useState('');
@@ -52,7 +53,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             currentTab === 'about' ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          من نحن
+          {en ? 'About Us' : 'من نحن'}
         </button>
         <button
           onClick={() => setPage('contact', 'contact')}
@@ -60,7 +61,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             currentTab === 'contact' ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          اتصل بنا
+          {en ? 'Contact' : 'اتصل بنا'}
         </button>
         <button
           onClick={() => setPage('disclosure', 'disclosure')}
@@ -68,7 +69,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             currentTab === 'disclosure' ? 'bg-amber-500 text-slate-950 font-black' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          إفصاح الأفلييت
+          {en ? 'Affiliate Disclosure' : 'إفصاح الأفلييت'}
         </button>
         <button
           onClick={() => setPage('privacy', 'privacy')}
@@ -76,7 +77,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             currentTab === 'privacy' ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          سياسة الخصوصية
+          {en ? 'Privacy Policy' : 'سياسة الخصوصية'}
         </button>
         <button
           onClick={() => setPage('terms', 'terms')}
@@ -84,7 +85,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             currentTab === 'terms' ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          شروط الاستخدام
+          {en ? 'Terms of Use' : 'شروط الاستخدام'}
         </button>
         <button
           onClick={() => setPage('cookies', 'cookies')}
@@ -92,7 +93,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
             currentTab === 'cookies' ? 'bg-purple-600 text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
-          سياسة ملفات الكوكيز
+          {en ? 'Cookies Policy' : 'سياسة ملفات الكوكيز'}
         </button>
       </div>
 
@@ -106,29 +107,29 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
               <img src={logoImg} alt="Yousra Smile" className="w-16 h-16 rounded-2xl object-cover border-2 border-purple-500/40" />
               <div>
                 <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-                  {STATIC_CONTENT.about.title}
+                  {en ? STATIC_CONTENT.about.titleEn : STATIC_CONTENT.about.title}
                 </h1>
                 <p className="text-xs text-purple-600 dark:text-purple-400 font-bold mt-1">
-                  {STATIC_CONTENT.about.subtitle}
+                  {en ? STATIC_CONTENT.about.subtitleEn : STATIC_CONTENT.about.subtitle}
                 </p>
               </div>
             </div>
 
             <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-              {STATIC_CONTENT.about.bio}
+              {en ? STATIC_CONTENT.about.bioEn : STATIC_CONTENT.about.bio}
             </p>
 
             <div className="bg-purple-50 dark:bg-purple-950/40 p-5 rounded-2xl border border-purple-100 dark:border-purple-900">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">رسالتنا وهدفنا الرئيسي:</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">{en ? 'Our Mission:' : 'رسالتنا وهدفنا الرئيسي:'}</h3>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                {STATIC_CONTENT.about.mission}
+                {en ? STATIC_CONTENT.about.missionEn : STATIC_CONTENT.about.mission}
               </p>
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">ما الذي يميّز يسرى سمايل؟</h3>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">{en ? 'Why Yousra Smile?' : 'ما الذي يميّز يسرى سمايل؟'}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {STATIC_CONTENT.about.features.map((item, i) => (
+                {(en ? STATIC_CONTENT.about.featuresEn : STATIC_CONTENT.about.features).map((item, i) => (
                   <div key={i} className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200">
                     <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>{item}</span>
@@ -144,10 +145,10 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
           <div className="space-y-6">
             <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
               <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-                {STATIC_CONTENT.contact.title}
+                {en ? STATIC_CONTENT.contact.titleEn : STATIC_CONTENT.contact.title}
               </h1>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {STATIC_CONTENT.contact.subtitle}
+                {en ? STATIC_CONTENT.contact.subtitleEn : STATIC_CONTENT.contact.subtitle}
               </p>
             </div>
 
@@ -157,24 +158,24 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
               <form onSubmit={handleContactSubmit} className="space-y-4 text-xs">
                 {formSent && (
                   <div className="bg-emerald-500 text-white font-bold p-3 rounded-xl text-center">
-                    ✓ تم إرسال رسالتك بنجاح! وسوف تقوم يسرى بالرد عليكِ في أقرب وقت.
+                    {en ? '✓ Your message was sent successfully.' : '✓ تم إرسال رسالتك بنجاح! وسوف تقوم يسرى بالرد عليكِ في أقرب وقت.'}
                   </div>
                 )}
 
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">الاسم الكامل *</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">{en ? 'Full Name *' : 'الاسم الكامل *'}</label>
                   <input 
                     type="text" 
                     required
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
-                    placeholder="ادخلي اسمك..."
+                    placeholder={en ? 'Enter your name…' : 'ادخلي اسمك...'}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">البريد الإلكتروني *</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">{en ? 'Email Address *' : 'البريد الإلكتروني *'}</label>
                   <input 
                     type="email" 
                     required
@@ -186,25 +187,25 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">موضوع الرسالة *</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">{en ? 'Subject *' : 'موضوع الرسالة *'}</label>
                   <input 
                     type="text" 
                     required
                     value={contactSubject}
                     onChange={(e) => setContactSubject(e.target.value)}
-                    placeholder="مثال: استفسار عن منتج، طلب مراجعة، تعاون..."
+                    placeholder={en ? 'Product question, review request, or collaboration…' : 'مثال: استفسار عن منتج، طلب مراجعة، تعاون...'}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3"
                   />
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">تفاصيل الرسالة *</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">{en ? 'Message *' : 'تفاصيل الرسالة *'}</label>
                   <textarea 
                     rows={4}
                     required
                     value={contactMessage}
                     onChange={(e) => setContactMessage(e.target.value)}
-                    placeholder="اكتبي نص الرسالة هنا..."
+                    placeholder={en ? 'Write your message here…' : 'اكتبي نص الرسالة هنا...'}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3"
                   />
                 </div>
@@ -214,13 +215,13 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
                   className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
                 >
                   <Send className="w-4 h-4" />
-                  إرسال الرسالة الآن
+                  {en ? 'Send Message' : 'إرسال الرسالة الآن'}
                 </button>
               </form>
 
               {/* Social Channels List */}
               <div className="space-y-4 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">قنوات التواصل الاجتماعية الرسمية:</h3>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{en ? 'Official Social Channels:' : 'قنوات التواصل الاجتماعية الرسمية:'}</h3>
                 
                 <div className="space-y-3 text-xs">
                   <a href="https://youtube.com" target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white dark:bg-slate-900 rounded-xl hover:border-red-500 border border-transparent transition-all">
@@ -268,14 +269,14 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
               <ShieldCheck className="w-8 h-8 text-amber-500" />
               <div>
                 <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-                  {STATIC_CONTENT.disclosure.title}
+                  {en ? STATIC_CONTENT.disclosure.titleEn : STATIC_CONTENT.disclosure.title}
                 </h1>
-                <span className="text-xs text-slate-400">آخر تحديث: {STATIC_CONTENT.disclosure.updatedAt}</span>
+                <span className="text-xs text-slate-400">{en ? 'Last updated:' : 'آخر تحديث:'} {en ? STATIC_CONTENT.disclosure.updatedAtEn : STATIC_CONTENT.disclosure.updatedAt}</span>
               </div>
             </div>
 
             <div className="whitespace-pre-line text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed bg-amber-50/60 dark:bg-amber-950/30 p-6 rounded-2xl border border-amber-200 dark:border-amber-900">
-              {STATIC_CONTENT.disclosure.text}
+              {en ? STATIC_CONTENT.disclosure.textEn : STATIC_CONTENT.disclosure.text}
             </div>
           </div>
         )}
@@ -285,21 +286,21 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
           <div className="space-y-6">
             <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
               <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-                {STATIC_CONTENT.privacy.title}
+                {en ? STATIC_CONTENT.privacy.titleEn : STATIC_CONTENT.privacy.title}
               </h1>
-              <span className="text-xs text-slate-400">آخر تحديث: {STATIC_CONTENT.privacy.updatedAt}</span>
+              <span className="text-xs text-slate-400">{en ? 'Last updated:' : 'آخر تحديث:'} {en ? STATIC_CONTENT.privacy.updatedAtEn : STATIC_CONTENT.privacy.updatedAt}</span>
             </div>
 
             <div className="space-y-4">
               <section className="space-y-1">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">قياس فتح المراجعات — 7 سبتمبر 2026</h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">نسجل فتح صفحة المراجعة مرة لكل جلسة متصفح، وليس مشاهدة الفيديو كاملة أو عدد أشخاص فريدين. نستخدم معرّف جلسة عشوائيًا وبصمات مشفّرة للحد من التكرار والإساءة؛ لا نخزن في هذا القياس الاسم أو البريد أو عنوان الشبكة بصيغته الأصلية. يبقى الإجمالي، وتُحذف سجلات القياس المؤقتة الأقدم من ثمانية أيام عند استقبال أحداث جديدة. نحترم خيار عدم التتبع في المتصفح. عدّاد الاتصال في الزاوية يعرض التبويبات المتصلة فقط.</p>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{en ? 'Review-open measurement — September 7, 2026' : 'قياس فتح المراجعات — 7 سبتمبر 2026'}</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{en ? 'We count a review page opening once per browser session. This is not a completed video view or a unique-person count. Random session identifiers and hashed signals reduce duplicates and abuse; this measurement does not store your name, email, or raw network address. Temporary measurement records older than eight days are removed as new events arrive, and browser Do Not Track is respected.' : 'نسجل فتح صفحة المراجعة مرة لكل جلسة متصفح، وليس مشاهدة الفيديو كاملة أو عدد أشخاص فريدين. نستخدم معرّف جلسة عشوائيًا وبصمات مشفّرة للحد من التكرار والإساءة؛ لا نخزن في هذا القياس الاسم أو البريد أو عنوان الشبكة بصيغته الأصلية. يبقى الإجمالي، وتُحذف سجلات القياس المؤقتة الأقدم من ثمانية أيام عند استقبال أحداث جديدة. نحترم خيار عدم التتبع في المتصفح. عدّاد الاتصال في الزاوية يعرض التبويبات المتصلة فقط.'}</p>
               </section>
               <section className="space-y-1">
-                <h3 className="text-sm font-bold">قياس الزيارات ونقرات المتاجر</h3>
-                <p className="text-xs leading-relaxed">نسجل فتح صفحات الموقع والمنتجات ونقرات روابط المتاجر. نستخدم معرّف متصفح عشوائيًا ينتهي بعد 30 يومًا ومعرّف جلسة تبويب، ونحفظ بصماتهما على الخادم دون الاسم أو البريد أو عنوان الشبكة بصيغته الأصلية. تُحذف الأحداث الأقدم من 90 يومًا عند استقبال أحداث جديدة. النتائج متاحة للإدارة فقط، وتستبعد نشاط الإدارة المعروف قدر الإمكان وتحترم خيار عدم التتبع في المتصفح. النقرات ليست إثباتًا للشراء أو العمولة، ولا نعرف ماذا اشتريتِ لدى المتجر من هذا القياس.</p>
+                <h3 className="text-sm font-bold">{en ? 'Site visits and retailer clicks' : 'قياس الزيارات ونقرات المتاجر'}</h3>
+                <p className="text-xs leading-relaxed">{en ? 'We record site and product page visits, add-to-cart actions, and retailer-link clicks. Random browser and tab-session identifiers are stored as hashes without a name, email, or raw network address. Events older than 90 days are removed as new events arrive. Reports are available only to administrators, known admin activity is excluded where possible, and browser Do Not Track is respected. A click is not proof of a purchase or commission.' : 'نسجل فتح صفحات الموقع والمنتجات والإضافة إلى السلة ونقرات روابط المتاجر. نستخدم معرّف متصفح عشوائيًا ينتهي بعد 30 يومًا ومعرّف جلسة تبويب، ونحفظ بصماتهما على الخادم دون الاسم أو البريد أو عنوان الشبكة بصيغته الأصلية. تُحذف الأحداث الأقدم من 90 يومًا عند استقبال أحداث جديدة. النتائج متاحة للإدارة فقط، وتستبعد نشاط الإدارة المعروف قدر الإمكان وتحترم خيار عدم التتبع في المتصفح. النقرات ليست إثباتًا للشراء أو العمولة.'}</p>
               </section>
-              {STATIC_CONTENT.privacy.sections.map((sec, i) => (
+              {(en ? STATIC_CONTENT.privacy.sectionsEn : STATIC_CONTENT.privacy.sections).map((sec, i) => (
                 <div key={i} className="space-y-1">
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">{sec.heading}</h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{sec.body}</p>
@@ -314,13 +315,13 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
           <div className="space-y-6">
             <div className="border-b border-slate-100 dark:border-slate-800 pb-4">
               <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-                {STATIC_CONTENT.terms.title}
+                {en ? STATIC_CONTENT.terms.titleEn : STATIC_CONTENT.terms.title}
               </h1>
-              <span className="text-xs text-slate-400">آخر تحديث: {STATIC_CONTENT.terms.updatedAt}</span>
+              <span className="text-xs text-slate-400">{en ? 'Last updated:' : 'آخر تحديث:'} {en ? STATIC_CONTENT.terms.updatedAtEn : STATIC_CONTENT.terms.updatedAt}</span>
             </div>
 
             <div className="whitespace-pre-line text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-              {STATIC_CONTENT.terms.text}
+              {en ? STATIC_CONTENT.terms.textEn : STATIC_CONTENT.terms.text}
             </div>
           </div>
         )}
@@ -332,14 +333,14 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
               <Cookie className="w-7 h-7 text-amber-500" />
               <div>
                 <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
-                  {STATIC_CONTENT.cookies.title}
+                  {en ? STATIC_CONTENT.cookies.titleEn : STATIC_CONTENT.cookies.title}
                 </h1>
-                <span className="text-xs text-slate-400">آخر تحديث: {STATIC_CONTENT.cookies.updatedAt}</span>
+                <span className="text-xs text-slate-400">{en ? 'Last updated:' : 'آخر تحديث:'} {en ? STATIC_CONTENT.cookies.updatedAtEn : STATIC_CONTENT.cookies.updatedAt}</span>
               </div>
             </div>
 
             <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-              {STATIC_CONTENT.cookies.text}
+              {en ? STATIC_CONTENT.cookies.textEn : STATIC_CONTENT.cookies.text}
             </p>
           </div>
         )}

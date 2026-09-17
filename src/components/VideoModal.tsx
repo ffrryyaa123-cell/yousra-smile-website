@@ -17,6 +17,10 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
   if (!video) return null;
 
   const linkedProduct = products.find(p => p.id === video.productId);
+  const hasArabic = (value?: string) => /[\u0600-\u06FF]/.test(value || '');
+  const displayVideoTitle = language === 'en' && hasArabic(video.title)
+    ? (linkedProduct?.titleEn ? `Video review: ${linkedProduct.titleEn}` : 'Product video review')
+    : video.title;
   const isDirectOrLocal = video.platform === 'local' || video.platform === 'direct' || video.videoUrl.startsWith('blob:') || video.videoUrl.endsWith('.mp4') || video.videoUrl.endsWith('.webm');
 
   return (
@@ -30,7 +34,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
           <div className="flex items-center justify-between p-4 px-6 border-b border-slate-800 bg-slate-950/60">
             <div className="flex items-center gap-2">
               <PlaySquare className="w-5 h-5 text-red-500" />
-              <span className="text-sm font-bold truncate max-w-md">{video.title}</span>
+              <span className="text-sm font-bold truncate max-w-md">{displayVideoTitle}</span>
             </div>
             
             <div className="flex items-center gap-2">
@@ -82,7 +86,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
               <iframe 
                 className="w-full h-full"
                 src={video.platform === 'youtube' ? `https://www.youtube.com/embed/${video.embedId}?autoplay=1` : video.videoUrl}
-                title={video.title}
+                title={displayVideoTitle}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
@@ -96,16 +100,16 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
                 <div className="flex items-center gap-3">
                   <img 
                     src={linkedProduct.image} 
-                    alt={linkedProduct.titleAr} 
+                    alt={language === 'en' ? linkedProduct.titleEn : linkedProduct.titleAr}
                     referrerPolicy="no-referrer"
                     className="w-16 h-16 rounded-xl object-cover border border-slate-800 shrink-0"
                   />
                   <div>
                     <span className="text-xs text-purple-400 font-semibold">{linkedProduct.brand}</span>
-                    <h4 className="text-sm font-bold text-white line-clamp-1">{linkedProduct.titleAr}</h4>
+                    <h4 className="text-sm font-bold text-white line-clamp-1">{language === 'en' ? linkedProduct.titleEn : linkedProduct.titleAr}</h4>
                     <div className="flex items-baseline gap-2 mt-0.5">
                       <span className="text-base font-black text-emerald-400 font-['Tajawal']">
-                        أفضل سعر: {formatPrice(linkedProduct.discountPrice)}
+                        {language === 'en' ? 'Best price:' : 'أفضل سعر:'} {formatPrice(linkedProduct.discountPrice)}
                       </span>
                       {linkedProduct.originalPrice > linkedProduct.discountPrice && (
                         <span className="text-xs text-slate-500 line-through">
@@ -121,7 +125,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
                     onClick={() => { onClose(); openProductDetail(linkedProduct); }}
                     className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold transition-colors cursor-pointer"
                   >
-                    تفاصيل المنتج
+                    {language === 'en' ? 'Product Details' : 'تفاصيل المنتج'}
                   </button>
 
                   <button
@@ -129,13 +133,13 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
                     onClick={() => {
                       if (isDashboard) { setShowExportModal(true); return; }
                       const url = window.location.origin;
-                      if (navigator.share) void navigator.share({ title: video.title, url }).catch(() => {});
+                      if (navigator.share) void navigator.share({ title: displayVideoTitle, url }).catch(() => {});
                       else void navigator.clipboard?.writeText(url).catch(() => {});
                     }}
                     className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-300 border border-purple-500/50 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Share2 className="w-3.5 h-3.5" />
-                    مشاركة الفيديو
+                    {language === 'en' ? 'Share Video' : 'مشاركة الفيديو'}
                   </button>
                 </div>
               </div>
@@ -153,7 +157,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
                 >
                   <div className="flex items-center gap-1.5">
                     <ShoppingBag className="w-4 h-4" />
-                    <span>شراء من أمازون (Amazon)</span>
+                    <span>{language === 'en' ? 'Buy on Amazon' : 'شراء من أمازون (Amazon)'}</span>
                   </div>
                   <div className="flex items-center gap-1 bg-slate-950/20 px-2 py-0.5 rounded text-[11px]">
                     <span>{formatPrice(linkedProduct.discountPrice)}</span>
@@ -172,7 +176,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ video, onClose }) => {
                 >
                   <div className="flex items-center gap-1.5">
                     <ShoppingBag className="w-4 h-4" />
-                    <span>شراء من علي إكسبريس (AliExpress)</span>
+                    <span>{language === 'en' ? 'Buy on AliExpress' : 'شراء من علي إكسبريس (AliExpress)'}</span>
                   </div>
                   <div className="flex items-center gap-1 bg-black/30 px-2 py-0.5 rounded text-[11px]">
                     <span>{formatPrice(Math.round(linkedProduct.discountPrice * 0.92))}</span>

@@ -1,10 +1,10 @@
 import React from 'react';
-import smartHomeBanner from '../assets/images/smart_home_banner_1785693287624.jpg';
+import smartHomeBanner from '../assets/images/smart_home_banner.webp';
 import { useApp } from '../context/AppContext';
 import { HeroBanner } from '../components/HeroBanner';
 import { ProductCard } from '../components/ProductCard';
-import { CATEGORIES } from '../data/categories';
-import { 
+import { useManagedCategories } from '../services/categoryManager';
+import {
   Flame, 
   Sparkles, 
   PlaySquare, 
@@ -28,18 +28,17 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
-import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.jpg';
-
-import { BlogSection } from '../components/BlogSection';
+import logoImg from '../assets/images/yousra_smile_avatar.webp';
 import { FlashDealsTicker } from '../components/FlashDealsTicker';
 import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
-import { SmartSavingsCalculator } from '../components/SmartSavingsCalculator';
-import { AffiliateDealScanner } from '../components/AffiliateDealScanner';
-import { InstantVideoStudio } from '../components/InstantVideoStudio';
 import { ReviewOpenCount } from '../components/ReviewOpenCount';
 
+const AffiliateDealScanner = React.lazy(() => import('../components/AffiliateDealScanner').then(module => ({ default: module.AffiliateDealScanner })));
+const SmartSavingsCalculator = React.lazy(() => import('../components/SmartSavingsCalculator').then(module => ({ default: module.SmartSavingsCalculator })));
+const BlogSection = React.lazy(() => import('../components/BlogSection').then(module => ({ default: module.BlogSection })));
+
 export const HomePage: React.FC = () => {
+  const { categories } = useManagedCategories();
   const { 
     visibleProducts: products,
     videos,
@@ -99,9 +98,12 @@ export const HomePage: React.FC = () => {
 
         {/* Top Smart Home Visual Banner Image */}
         <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-xl overflow-hidden mb-3 border border-[#D4AF37]/60 shadow-xl group">
-          <img 
-            src={smartHomeBanner} 
-            alt="Smart Home & Modern Appliances" 
+          <img
+            src={smartHomeBanner}
+            alt="Smart Home & Modern Appliances"
+            width="1600"
+            height="900"
+            fetchPriority="high"
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-125 contrast-105"
           />
@@ -126,9 +128,11 @@ export const HomePage: React.FC = () => {
             <div className="relative group shrink-0">
               <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 via-purple-500 to-amber-500 blur-md opacity-85 group-hover:opacity-100 transition duration-500"></div>
               <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-3 border-[#D4AF37] shadow-[0_0_25px_rgba(212,175,55,0.6)] bg-slate-950 transition-transform duration-500 hover:scale-105">
-                <img 
-                  src={logoImg} 
-                  alt={language === 'ar' ? 'ابتسامة يسرى Logo' : 'Yousra Smile Logo'} 
+                <img
+                  src={logoImg}
+                  alt={language === 'ar' ? 'ابتسامة يسرى Logo' : 'Yousra Smile Logo'}
+                  width="512"
+                  height="512"
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"
                 />
@@ -194,7 +198,7 @@ export const HomePage: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-purple-900/30 border border-purple-500/20 rounded-2xl overflow-hidden shadow-lg">
           {editorialStripProducts.map((prod, idx) => {
-            const title = language === 'en' ? (prod.titleEn || prod.titleAr) : prod.titleAr;
+            const title = language === 'en' ? (prod.titleEn || 'Featured product') : prod.titleAr;
             return (
               <div 
                 key={prod.id}
@@ -210,6 +214,8 @@ export const HomePage: React.FC = () => {
                       src={prod.image} 
                       alt={title}
                       referrerPolicy="no-referrer"
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                     />
                   </div>
@@ -244,7 +250,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ⚡ Instant Affiliate Deal & Link Scanner */}
-      <AffiliateDealScanner />
+      <React.Suspense fallback={null}><AffiliateDealScanner /></React.Suspense>
 
       {/* Category Grid Section */}
       <section className="space-y-2.5">
@@ -261,13 +267,13 @@ export const HomePage: React.FC = () => {
             onClick={() => { setSelectedCategory('all'); setPage('products'); }}
             className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
           >
-            {t.allCategories} ({CATEGORIES.length})
+            {t.allCategories} ({categories.length})
             <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-0 ltr:rotate-180" />
           </button>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-          {CATEGORIES.map(cat => {
+          {categories.map(cat => {
             const count = products.filter(p => p.category === cat.id).length;
             const catName = language === 'en' ? cat.nameEn : cat.nameAr;
             return (
@@ -293,7 +299,7 @@ export const HomePage: React.FC = () => {
                   {catName}
                 </h3>
                 <p className="text-[10px] text-slate-300 line-clamp-1">
-                  {cat.subcategories.slice(0, 2).join(' • ')}
+                  {(language === 'en' && cat.subcategoriesEn?.length ? cat.subcategoriesEn : cat.subcategories).slice(0, 2).join(' • ')}
                 </p>
               </div>
             );
@@ -390,7 +396,13 @@ export const HomePage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-          {publicVideos.slice(0, 3).map(video => (
+          {publicVideos.slice(0, 3).map(video => {
+            const linkedProduct = products.find(product => product.id === video.productId);
+            const videoProductTitle = language === 'en' ? (linkedProduct?.titleEn || 'Featured product') : video.productTitle;
+            const videoTitle = language === 'en' && /[\u0600-\u06ff]/.test(video.title || '')
+              ? `Video review: ${videoProductTitle}`
+              : video.title;
+            return (
             <div
               key={video.id}
               onClick={() => openVideoModal(video)}
@@ -399,7 +411,7 @@ export const HomePage: React.FC = () => {
               <div className="relative h-40 bg-slate-950 overflow-hidden">
                 {!video.hideThumbnail && <img
                   src={video.thumbnailUrl || video.productImage}
-                  alt={video.title}
+                  alt={videoTitle}
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
                 />}
@@ -418,18 +430,18 @@ export const HomePage: React.FC = () => {
 
               <div className="p-3 space-y-1.5">
                 <span className="text-[11px] font-bold text-amber-300">
-                  {video.productTitle}
+                  {videoProductTitle}
                 </span>
                 <h3 className="text-xs font-bold text-white line-clamp-2 group-hover:text-amber-400 transition-colors font-['Tajawal']">
-                  {video.title}
+                  {videoTitle}
                 </h3>
                 <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1.5 border-t border-slate-800">
                   <ReviewOpenCount videoId={video.id} />
-                  <span>{video.date}</span>
+                  <span>{language === 'en' && /[\u0600-\u06ff]/.test(video.date || '') ? 'Latest review' : video.date}</span>
                 </div>
               </div>
             </div>
-          ))}
+          );})}
         </div>
       </section>
 
@@ -608,10 +620,10 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 💡 Interactive Smart Home Savings & ROI Calculator */}
-      <SmartSavingsCalculator />
+      <React.Suspense fallback={null}><SmartSavingsCalculator /></React.Suspense>
 
       {/* Buying Guides & Blog Articles Section */}
-      <BlogSection />
+      <React.Suspense fallback={null}><BlogSection /></React.Suspense>
 
       {/* Why Trust Yousra Smile Affiliate Section */}
       <section className="bg-slate-900/80 rounded-3xl p-6 sm:p-10 border border-slate-800 space-y-8">

@@ -7,6 +7,7 @@ import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../u
 import { catalogDatabase } from '../services/supabaseCatalog';
 import { loadReviewCounts, recordReviewOpen } from '../services/reviewEngagement';
 import { recordSiteActivity } from '../services/siteActivity';
+import { pageFromPath, pagePath, productIdFromPath, productPath } from '../utils/productSeo';
 
 interface AppContextType {
   products: Product[];
@@ -147,6 +148,12 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   contactEmail: 'contact@yousrasmile.com'
 };
 
+const containsArabic = (value: unknown) => /[\u0600-\u06ff]/.test(String(value || ''));
+const cleanEnglish = (value: unknown, fallback: string) => {
+  const text = String(value || '').trim();
+  return text && !containsArabic(text) ? text : fallback;
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isProductVideoDeleted = (productId: string): boolean => {
     try {
@@ -159,20 +166,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const normalizeProduct = (p: any): Product => {
-    const englishTitle = p.titleEn || p.titleAr || 'Featured product';
+    const englishTitle = cleanEnglish(p.titleEn, 'Featured product');
     const englishCategory = String(p.category || 'products')
       .split('-')
       .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(' ');
 
+    const englishFeatures = Array.isArray(p.featuresEn)
+      ? p.featuresEn.map((item: unknown) => String(item).trim()).filter((item: string) => item && !containsArabic(item))
+      : [];
+    const candidateSpecs = p.specsEn && typeof p.specsEn === 'object' ? p.specsEn : {};
+    const englishSpecs = Object.fromEntries(Object.entries(candidateSpecs).filter(([key, value]) => !containsArabic(key) && !containsArabic(value)));
+
     return ({
     ...p,
+    id: String(p.id || `product-${Date.now()}`),
+    titleAr: String(p.titleAr || ''),
     titleEn: englishTitle,
-    descriptionEn: p.descriptionEn || `Discover ${englishTitle}, selected by Yousra Smile for its quality, useful features, and value.`,
-    longDescriptionEn: p.longDescriptionEn || `${englishTitle} is a carefully selected product for modern living. Review the current specifications, price, availability, and retailer details before purchasing.`,
-    subcategoryEn: p.subcategoryEn || englishCategory,
+    description: String(p.description || ''),
+    descriptionEn: cleanEnglish(p.descriptionEn, `Discover ${englishTitle}, selected by Yousra Smile for its quality, useful features, and value.`),
+    longDescriptionEn: cleanEnglish(p.longDescriptionEn, `${englishTitle} is a carefully selected product for modern living. Review the current specifications, price, availability, and retailer details before purchasing.`),
+    subcategoryEn: cleanEnglish(p.subcategoryEn, englishCategory),
     features: Array.isArray(p.features) ? p.features : (typeof p.features === 'string' ? p.features.split(',').map((s: string) => s.trim()).filter(Boolean) : []),
-    featuresEn: Array.isArray(p.featuresEn) && p.featuresEn.length > 0 ? p.featuresEn : [
+    featuresEn: englishFeatures.length ? englishFeatures : [
       'Carefully selected for quality and everyday usefulness',
       'Competitive price with current retailer offers',
       'Full product details available before purchase'
@@ -184,12 +200,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     keywords: Array.isArray(p.keywords) ? p.keywords : [],
     tags: Array.isArray(p.tags) ? p.tags : [],
     specs: p.specs && typeof p.specs === 'object' ? p.specs : {},
-    specsEn: p.specsEn && typeof p.specsEn === 'object' ? p.specsEn : {
+    specsEn: Object.keys(englishSpecs).length ? englishSpecs : {
       Brand: p.brand || 'See retailer',
       Category: englishCategory,
       Availability: 'See retailer for current details'
     },
-    amazonUrl: p.amazonUrl ? p.amazonUrl.replace('amazon.sa', 'amazon.com') : (p.amazonUrl || '')
+    image: String(p.image || (Array.isArray(p.images) ? p.images.find(Boolean) : '') || ''),
+    originalPrice: Number(p.originalPrice) || 0,
+    discountPrice: Number(p.discountPrice) || Number(p.originalPrice) || 0,
+    discountPercent: Number(p.discountPercent) || 0,
+    rating: Number(p.rating) || 0,
+    reviewCount: Number(p.reviewCount) || 0,
+    viewsCount: Number(p.viewsCount) || 0,
+    amazonUrl: String(p.amazonUrl || '')
   })};
 
   const [products, setProducts] = useState<Product[]>(() => {
@@ -458,18 +481,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return formatPriceValue(priceInSar, currency, language).fullText;
   }, [currency, language]);
 
-  const [activePage, setActivePage] = useState<PageView>('home');
+  const initialRoute = pageFromPath(window.location.pathname);
+  const [activePage, setActivePage] = useState<PageView>(initialRoute?.page || 'home');
   useEffect(() => {
     // Delay also prevents React StrictMode's discarded mount from counting twice.
     const timer = window.setTimeout(() => void recordSiteActivity('page_view', activePage), 250);
     return () => window.clearTimeout(timer);
   }, [activePage]);
-  const [activeStaticTab, setActiveStaticTab] = useState<'about' | 'contact' | 'privacy' | 'terms' | 'cookies' | 'disclosure'>('about');
+  const [activeStaticTab, setActiveStaticTab] = useState<'about' | 'contact' | 'privacy' | 'terms' | 'cookies' | 'disclosure'>(initialRoute?.staticTab || 'about');
   const [selectedCategory, setSelectedCategoryState] = useState<string>('all');
   const [selectedSubcategory, setSelectedSubcategoryState] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<VideoReview | null>(null);
+
+  useEffect(() => {
+    const syncRoute = () => {
+      const route = pageFromPath(window.location.pathname);
+      setActivePage(route?.page || 'home');
+      if (route?.staticTab) setActiveStaticTab(route.staticTab);
+      const productId = productIdFromPath(window.location.pathname);
+      setSelectedProduct(productId ? (products.find(product => product.id === productId) || null) : null);
+      window.scrollTo({ top: 0 });
+    };
+    syncRoute();
+    window.addEventListener('popstate', syncRoute);
+    return () => window.removeEventListener('popstate', syncRoute);
+  }, [products]);
 
   // Video Import & Replacement Modal (Device / Link)
   const [importVideoModalOpen, setImportVideoModalOpen] = useState<boolean>(false);
@@ -704,6 +742,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (staticTab) {
       setActiveStaticTab(staticTab);
     }
+    const nextPath = pagePath(page, staticTab);
+    if (window.location.pathname !== nextPath) window.history.pushState({}, '', nextPath);
+    setSelectedProduct(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -736,6 +777,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return [...prev, { productId, quantity, addedAt: new Date().toISOString() }];
     });
+    void recordSiteActivity('add_to_cart', activePage, productId);
   };
 
   const removeFromCart = (productId: string) => {
@@ -773,6 +815,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const openProductDetail = (product: Product) => {
     setSelectedProduct(product);
+    const nextPath = productPath(product);
+    if (window.location.pathname !== nextPath) window.history.pushState({}, '', nextPath);
     setRecentlyViewedIds(prev => {
       const filtered = prev.filter(id => id !== product.id);
       return [product.id, ...filtered].slice(0, 10);
@@ -780,7 +824,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     void recordSiteActivity('product_view', activePage, product.id);
   };
 
-  const closeProductDetail = () => setSelectedProduct(null);
+  const closeProductDetail = () => {
+    setSelectedProduct(null);
+    if (productIdFromPath(window.location.pathname)) window.history.pushState({}, '', '/products');
+  };
 
   const openVideoModal = (video: VideoReview) => {
     setSelectedVideo(video);
@@ -792,7 +839,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const closePriceAlertModal = () => setAlertModalProduct(null);
 
   const addPriceAlert = (product: Product, email: string, targetPrice?: number) => {
-    const title = language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr;
+    const title = language === 'en' ? (product.titleEn || 'Featured product') : product.titleAr;
     const newAlert: PriceAlert = {
       id: `alert-${Date.now()}`,
       productId: product.id,
@@ -895,14 +942,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const importProductsBulk = (importedList: Product[]) => {
     if (!importedList || importedList.length === 0) return;
+    // CSV/JSON imports often contain blank cells. Blank values mean “not
+    // supplied”, not “erase the value already saved in Supabase”.
+    const importPatch = (product: Product): Partial<Product> => Object.fromEntries(
+      Object.entries(product).filter(([key, value]) => {
+        if (key === 'id' || value === undefined || value === null) return false;
+        if (typeof value === 'string' && value.trim() === '') return false;
+        if (Array.isArray(value) && value.length === 0) return false;
+        if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) return false;
+        return true;
+      })
+    ) as Partial<Product>;
+
     setProducts(prev => {
-      const importedById = new Map(importedList.map(product => [product.id, product]));
-      const updatedExisting = prev.map(product => importedById.get(product.id) || product);
+      const importedById = new Map(importedList.map(product => [product.id, importPatch(product)]));
+      const updatedExisting = prev.map(product => {
+        const patch = importedById.get(product.id);
+        return patch ? { ...product, ...patch } : product;
+      });
       const existingIds = new Set(prev.map(product => product.id));
       const newItems = importedList.filter(product => !existingIds.has(product.id));
       return [...newItems, ...updatedExisting];
     });
-    importedList.forEach(product => void catalogDatabase.saveProduct(product).catch(console.error));
+    const existingIds = new Set(products.map(product => product.id));
+    importedList.forEach(product => {
+      if (existingIds.has(product.id)) {
+        void catalogDatabase.patchProduct(product.id, importPatch(product) as Record<string, unknown>).catch(console.error);
+      } else {
+        void catalogDatabase.saveProduct(product).catch(console.error);
+      }
+    });
   };
 
   const addReview = (productId: string, userName: string, rating: number, comment: string) => {
@@ -939,8 +1008,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateProduct = (updatedProduct: Product) => {
-    setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
-    void catalogDatabase.saveProduct(updatedProduct).catch(console.error);
+    const current = products.find(product => product.id === updatedProduct.id);
+    if (!current) {
+      setProducts(prev => [updatedProduct, ...prev]);
+      void catalogDatabase.saveProduct(updatedProduct).catch(console.error);
+      return;
+    }
+
+    // Send only fields the user actually changed. An older copy of the
+    // product can no longer overwrite a newer image, video, affiliate link,
+    // translation or SEO field that arrived from another action/tab.
+    const changed = Object.fromEntries(
+      Object.entries(updatedProduct).filter(([key, value]) => {
+        if (key === 'id' || value === undefined) return false;
+        return JSON.stringify(value) !== JSON.stringify((current as any)[key]);
+      })
+    ) as Partial<Product>;
+    if (Object.keys(changed).length === 0) return;
+    setProducts(prev => prev.map(p => p.id === updatedProduct.id ? { ...p, ...changed } : p));
+    void catalogDatabase.patchProduct(updatedProduct.id, changed as Record<string, unknown>).catch(console.error);
   };
 
   const patchProduct = (productId: string, patch: Partial<Product>) => {

@@ -97,13 +97,13 @@ if (!products.length) {
 }
 
 const pageDefinitions = [
-  ['/', 'Yousra Smile | يسرى سمايل - Smart Home, Kitchen & Lifestyle Picks', 'Curated smart-home, kitchen, cleaning, lifestyle and personal-care product reviews, deals and buying links.'],
+  ['/', 'Yousra Smile | Smart Home, Kitchen & Lifestyle Picks', 'Curated smart-home, kitchen, cleaning, lifestyle and personal-care product reviews, deals and buying links.'],
   ['/products', 'Smart Products Catalog & Reviews | Yousra Smile', 'Browse Yousra Smile product reviews, specifications, current retailer pricing and buying links.'],
   ['/videos', 'Product Video Reviews | Yousra Smile', 'Watch product demonstrations and video reviews for smart-home, kitchen and lifestyle products.'],
   ['/deals', 'Current Deals & Coupons | Yousra Smile', 'Browse current product deals, discounts and coupons from supported retailers.'],
   ['/compare', 'Compare Products | Yousra Smile', 'Compare product prices, specifications and features side by side.'],
-  ['/about', 'About Yousra Smile | من نحن', 'Learn about Yousra Smile and how products, reviews and affiliate links are selected.'],
-  ['/contact', 'Contact Yousra Smile | اتصل بنا', 'Contact Yousra Smile for questions, feedback and collaboration.'],
+  ['/about', 'About Yousra Smile', 'Learn about Yousra Smile and how products, reviews and affiliate links are selected.'],
+  ['/contact', 'Contact Yousra Smile', 'Contact Yousra Smile for questions, feedback and collaboration.'],
   ['/privacy', 'Privacy Policy | Yousra Smile', 'Read the Yousra Smile privacy policy.'],
   ['/terms', 'Terms of Use | Yousra Smile', 'Read the Yousra Smile terms of use.'],
   ['/cookies', 'Cookie Policy | Yousra Smile', 'Read the Yousra Smile cookie policy.'],
@@ -126,10 +126,9 @@ for (const [route, title, description] of pageDefinitions) {
 }
 
 for (const product of products) {
-  const titleEn = String(product.titleEn || product.titleAr || product.brand || 'Product').trim();
-  const titleAr = String(product.titleAr || '').trim();
+  const titleEn = String(product.titleEn || product.brand || 'Featured product').trim();
   const pageTitle = compact(`${titleEn} | Review, Price & Details | Yousra Smile`, 66);
-  const rawDescription = product.descriptionEn || product.longDescriptionEn || product.description || product.longDescription || '';
+  const rawDescription = product.descriptionEn || product.longDescriptionEn || '';
   const description = compact(rawDescription || `Review ${titleEn}, specifications, current price and retailer buying options on Yousra Smile.`, 158);
   const canonical = absoluteProductUrl(product);
   const image = String(product.image || (Array.isArray(product.images) ? product.images[0] : '') || '').trim();
@@ -141,7 +140,6 @@ for (const product of products) {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: titleEn,
-    ...(titleAr ? { alternateName: titleAr } : {}),
     description,
     ...(image ? { image: [image, ...(Array.isArray(product.images) ? product.images.filter(Boolean).slice(0, 7) : [])] } : {}),
     ...(product.brand ? { brand: { '@type': 'Brand', name: product.brand } } : {}),
@@ -166,9 +164,9 @@ for (const product of products) {
     } : {})
   };
 
-  const features = (product.featuresEn?.length ? product.featuresEn : product.features || []).filter(Boolean).slice(0, 8);
-  const specs = Object.entries(product.specsEn && Object.keys(product.specsEn).length ? product.specsEn : product.specs || {}).slice(0, 12);
-  const fallbackArticle = `<article style="max-width:960px;margin:0 auto;padding:32px 20px;color:#f8fafc;background:#0d0714;font-family:Arial,sans-serif;line-height:1.7"><nav><a href="/products" style="color:#facc15">Yousra Smile Products</a></nav><h1>${escapeHtml(titleEn)}</h1>${titleAr ? `<h2 dir="rtl">${escapeHtml(titleAr)}</h2>` : ''}${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(titleEn)}" width="720" height="720" style="max-width:100%;height:auto;border-radius:18px" />` : ''}<p>${escapeHtml(description)}</p>${price > 0 ? `<p><strong>Current listed price:</strong> ${escapeHtml(currency)} ${escapeHtml(price.toFixed(2))}</p>` : ''}${features.length ? `<h2>Key features</h2><ul>${features.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}${specs.length ? `<h2>Specifications</h2><dl>${specs.map(([key, value]) => `<dt><strong>${escapeHtml(key)}</strong></dt><dd>${escapeHtml(value)}</dd>`).join('')}</dl>` : ''}<p><small>Affiliate disclosure: Yousra Smile may earn a commission from qualifying purchases through retailer links, at no additional cost to you.</small></p></article>`;
+  const features = (product.featuresEn || []).filter(Boolean).slice(0, 8);
+  const specs = Object.entries(product.specsEn || {}).slice(0, 12);
+  const fallbackArticle = `<article style="max-width:960px;margin:0 auto;padding:32px 20px;color:#f8fafc;background:#0d0714;font-family:Arial,sans-serif;line-height:1.7"><nav><a href="/products" style="color:#facc15">Yousra Smile Products</a></nav><h1>${escapeHtml(titleEn)}</h1>${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(titleEn)}" width="720" height="720" style="max-width:100%;height:auto;border-radius:18px" />` : ''}<p>${escapeHtml(description)}</p>${price > 0 ? `<p><strong>Current listed price:</strong> ${escapeHtml(currency)} ${escapeHtml(price.toFixed(2))}</p>` : ''}${features.length ? `<h2>Key features</h2><ul>${features.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}${specs.length ? `<h2>Specifications</h2><dl>${specs.map(([key, value]) => `<dt><strong>${escapeHtml(key)}</strong></dt><dd>${escapeHtml(value)}</dd>`).join('')}</dl>` : ''}<p><small>Affiliate disclosure: Yousra Smile may earn a commission from qualifying purchases through retailer links, at no additional cost to you.</small></p></article>`;
 
   let html = baseTemplate;
   html = setTitle(html, pageTitle);

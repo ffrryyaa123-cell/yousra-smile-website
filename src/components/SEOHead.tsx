@@ -11,24 +11,28 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
   const { activePage, selectedProduct, language, activeStaticTab, siteSettings } = useApp();
 
   useEffect(() => {
-    const siteName = siteSettings.siteName || 'ابتسامة يسرى (Yousra Smile)';
+    const siteName = language === 'en' ? 'Yousra Smile' : (siteSettings.siteName || 'ابتسامة يسرى');
     const siteLogo = siteSettings.siteLogo || 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80';
     
-    let title = `${siteName} - مراجعات الأجهزة الذكية والمنزل العصري`;
-    let description = `موقع ${siteName} لمراجعات الأجهزة المنزلية الذكية والمطبخ العصري والجمال مع أفضل كوبونات وعروض أمازون وعلي إكسبريس.`;
-    let keywords = `${siteName}, مراجعات أجهزة, تسويق بالعمولة, أمازون, علي إكسبريس, مكانس روبوتية, قلاية هوائية, أجهزة منزلية ذكية`;
+    let title = language === 'en' ? 'Yousra Smile | Smart Home, Kitchen & Lifestyle Picks' : `${siteName} - مراجعات الأجهزة الذكية والمنزل العصري`;
+    let description = language === 'en' ? 'Curated smart-home, kitchen, cleaning, lifestyle and personal-care product reviews, deals and buying links.' : `موقع ${siteName} لمراجعات الأجهزة المنزلية الذكية والمطبخ العصري والجمال مع أفضل كوبونات وعروض أمازون وعلي إكسبريس.`;
+    let keywords = language === 'en' ? 'Yousra Smile, product reviews, smart home, kitchen appliances, Amazon, AliExpress, deals' : `${siteName}, مراجعات أجهزة, تسويق بالعمولة, أمازون, علي إكسبريس, مكانس روبوتية, قلاية هوائية, أجهزة منزلية ذكية`;
     let ogType = 'website';
     let imageUrl = siteLogo;
-    let currentUrl = window.location.href;
+    let currentUrl = `${window.location.origin}${window.location.pathname}`;
 
     const currentProduct: Product | null = selectedProduct;
 
     if (currentProduct) {
-      const prodName = language === 'en' ? (currentProduct.titleEn || currentProduct.titleAr) : currentProduct.titleAr;
-      title = `${prodName} | سعر ومراجعة Yousra Smile`;
-      description = `${currentProduct.description} • السعر الأصلي: ${currentProduct.originalPrice} ${currentProduct.currency} | السعر بعد الخصم: ${currentProduct.discountPrice} ${currentProduct.currency} (${currentProduct.discountPercent}% خصم). تقييم ${currentProduct.rating}/5 من ${currentProduct.reviewCount} تقييم.`;
-      keywords = `${currentProduct.keywords.join(', ')}, ${currentProduct.brand}, سعر ${prodName}, مراجعة ${prodName}, خصم أمازون`;
-      ogType = 'og:product';
+      const prodName = language === 'en' ? (currentProduct.titleEn || 'Featured product') : currentProduct.titleAr;
+      title = language === 'en' ? `${prodName} | Review, Price & Details | Yousra Smile` : `${prodName} | سعر ومراجعة يسرى سمايل`;
+      description = language === 'en'
+        ? (currentProduct.descriptionEn || `Review ${prodName}, specifications, current price and retailer buying options on Yousra Smile.`)
+        : `${currentProduct.description} • السعر الحالي: ${currentProduct.discountPrice} ${currentProduct.currency}.`;
+      keywords = language === 'en'
+        ? `${currentProduct.brand || ''}, ${prodName}, product review, current price, Amazon deal`
+        : `${currentProduct.keywords.join(', ')}, ${currentProduct.brand}, سعر ${prodName}, مراجعة ${prodName}`;
+      ogType = 'product';
       imageUrl = currentProduct.image;
     } else {
       switch (activePage) {
@@ -61,12 +65,12 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
         case 'terms':
         case 'cookies':
         case 'disclosure':
-          if (activeStaticTab === 'about') title = 'قصة يسرى سمايل | من نحن';
-          else if (activeStaticTab === 'contact') title = 'اتصل بنا والتعاون التجاري | يسرى سمايل';
-          else if (activeStaticTab === 'disclosure') title = 'إفصاح روابط الأفلييت والتسويق بالعمولة | يسرى سمايل';
-          else if (activeStaticTab === 'privacy') title = 'سياسة الخصوصية | يسرى سمايل';
-          else if (activeStaticTab === 'terms') title = 'شروط الاستخدام | يسرى سمايل';
-          else if (activeStaticTab === 'cookies') title = 'سياسة الكوكيز | يسرى سمايل';
+          if (activeStaticTab === 'about') title = language === 'en' ? 'About Yousra Smile' : 'قصة يسرى سمايل | من نحن';
+          else if (activeStaticTab === 'contact') title = language === 'en' ? 'Contact Yousra Smile' : 'اتصل بنا والتعاون التجاري | يسرى سمايل';
+          else if (activeStaticTab === 'disclosure') title = language === 'en' ? 'Affiliate Disclosure | Yousra Smile' : 'إفصاح روابط الأفلييت والتسويق بالعمولة | يسرى سمايل';
+          else if (activeStaticTab === 'privacy') title = language === 'en' ? 'Privacy Policy | Yousra Smile' : 'سياسة الخصوصية | يسرى سمايل';
+          else if (activeStaticTab === 'terms') title = language === 'en' ? 'Terms of Use | Yousra Smile' : 'شروط الاستخدام | يسرى سمايل';
+          else if (activeStaticTab === 'cookies') title = language === 'en' ? 'Cookie Policy | Yousra Smile' : 'سياسة الكوكيز | يسرى سمايل';
           break;
         default:
           break;
@@ -123,13 +127,13 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
     let schemaObj: any = null;
 
     if (currentProduct) {
-      const prodName = language === 'en' ? (currentProduct.titleEn || currentProduct.titleAr) : currentProduct.titleAr;
+      const prodName = language === 'en' ? (currentProduct.titleEn || 'Featured product') : currentProduct.titleAr;
       schemaObj = {
         "@context": "https://schema.org/",
         "@type": "Product",
         "name": prodName,
         "image": [currentProduct.image, ...(currentProduct.images || [])],
-        "description": currentProduct.description,
+        "description": language === 'en' ? currentProduct.descriptionEn : currentProduct.description,
         "sku": currentProduct.id,
         "mpn": currentProduct.id,
         "brand": {
@@ -147,7 +151,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
             },
             "author": {
               "@type": "Person",
-              "name": "Yousra Smile (يسرى سمايل)"
+              "name": "Yousra Smile"
             },
             "datePublished": currentProduct.createdAt
           }
@@ -252,7 +256,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ customTitle, customDescription
     }
     scriptTag.textContent = JSON.stringify(schemaObj, null, 2);
 
-  }, [activePage, selectedProduct, language, activeStaticTab, customTitle, customDescription]);
+  }, [activePage, selectedProduct, language, activeStaticTab, customTitle, customDescription, siteSettings]);
 
   return null;
 };
