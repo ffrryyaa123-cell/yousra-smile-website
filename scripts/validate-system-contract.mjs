@@ -11,6 +11,7 @@ const app = read('src/App.tsx');
 const productCard = read('src/components/ProductCard.tsx');
 const videosPage = read('src/pages/VideosPage.tsx');
 const socialExportPatch = read('scripts/patch-social-export-language-mode.mjs');
+const categoryWritePatch = read('scripts/patch-category-write-safety.mjs');
 const types = read('src/types.ts');
 const categoryMigration = read('supabase/migrations/20260917091500_categories_and_product_reference.sql');
 
@@ -18,9 +19,14 @@ const categoryMigration = read('supabase/migrations/20260917091500_categories_an
 assert(context.includes("from '../services/supabaseCatalog'"), 'AppContext must use Supabase catalog service.');
 assert(!context.includes("from '../services/catalogDatabase'"), 'Legacy Firebase catalog service must not be reintroduced into AppContext.');
 assert(categories.includes(".from('categories')"), 'Categories must persist in the Supabase categories table.');
-assert(categories.includes('saveManagedCategories'), 'Managed categories must have a real persistent save path.');
-assert(!categories.includes(".from('categories').delete()"), 'Saving a category list must never implicitly delete existing categories.');
-assert(categories.includes('ADD/UPDATE only'), 'Non-destructive category-save invariant is missing.');
+assert(categories.includes('addManagedCategory'), 'Category creation must have a single-row persistent path.');
+assert(categories.includes('updateManagedCategory'), 'Category edits must have a single-row persistent path.');
+assert(categories.includes(".from('categories').insert"), 'Adding a category must insert a real Supabase row.');
+assert(!categories.includes(".from('categories').delete()"), 'Category management must never implicitly delete existing categories.');
+assert(categories.includes('used solely\n * for their IDs/order') || categories.includes('used solely'), 'Bulk category save must be reorder-only.');
+assert(categoryWritePatch.includes('await addCategory(next);'), 'Admin add-category action must write only the new category row.');
+assert(categoryWritePatch.includes('await updateCategory({ ...current, ...patch });'), 'Admin category edit must write only the selected category row.');
+assert(categoryWritePatch.includes('القسم محمي من الحذف'), 'Existing category deletion must remain disabled in Admin.');
 
 // Historical seed data must never become authoritative again.
 assert(!context.includes('setProducts(INITIAL_PRODUCTS)'), 'Catalog reset must never restore historical seed products.');
@@ -52,4 +58,4 @@ assert(app.includes('dir="rtl" lang="ar"'), 'Admin dashboard must remain Arabic 
 // Crash containment must stay installed globally.
 assert(app.includes('AppErrorBoundary') || read('src/main.tsx').includes('AppErrorBoundary'), 'Global error boundary is missing.');
 
-console.log('[system-contract] Supabase authority, non-destructive catalog/categories, category references, bilingual mode, Arabic admin, theme persistence, and crash containment are locked.');
+console.log('[system-contract] Supabase authority, scoped/non-destructive catalog categories, category references, bilingual mode, Arabic admin, theme persistence, and crash containment are locked.');
