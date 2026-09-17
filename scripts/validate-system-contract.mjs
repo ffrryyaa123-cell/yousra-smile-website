@@ -9,6 +9,7 @@ const context = read('src/context/AppContext.tsx');
 const categories = read('src/services/categoryManager.ts');
 const app = read('src/App.tsx');
 const productCard = read('src/components/ProductCard.tsx');
+const videosPage = read('src/pages/VideosPage.tsx');
 const socialExportPatch = read('scripts/patch-social-export-language-mode.mjs');
 const types = read('src/types.ts');
 const categoryMigration = read('supabase/migrations/20260917091500_categories_and_product_reference.sql');
@@ -17,7 +18,7 @@ const categoryMigration = read('supabase/migrations/20260917091500_categories_an
 assert(context.includes("from '../services/supabaseCatalog'"), 'AppContext must use Supabase catalog service.');
 assert(!context.includes("from '../services/catalogDatabase'"), 'Legacy Firebase catalog service must not be reintroduced into AppContext.');
 assert(categories.includes(".from('categories')"), 'Categories must persist in the Supabase categories table.');
-assert(categories.includes("saveManagedCategories"), 'Managed categories must have a real persistent save path.');
+assert(categories.includes('saveManagedCategories'), 'Managed categories must have a real persistent save path.');
 assert(!categories.includes(".from('categories').delete()"), 'Saving a category list must never implicitly delete existing categories.');
 assert(categories.includes('ADD/UPDATE only'), 'Non-destructive category-save invariant is missing.');
 
@@ -33,12 +34,18 @@ assert(context.includes('LOCAL_STORAGE_LANG_KEY'), 'Language mode persistence ke
 assert(context.includes('LOCAL_STORAGE_DARK_KEY'), 'Dark/light mode persistence key is missing.');
 assert(context.includes('localStorage.setItem(LOCAL_STORAGE_LANG_KEY'), 'Language selection is not persisted.');
 assert(context.includes('localStorage.setItem(LOCAL_STORAGE_DARK_KEY'), 'Dark/light selection is not persisted.');
+assert(context.includes("document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr'"), 'Public document direction must follow language mode.');
+assert(context.includes('document.documentElement.lang = language'), 'Public document language attribute must follow language mode.');
 
-// Public-language contract: storefront/reviews export follows selected language.
+// Public-language contract: storefront, review gallery and export follow selected language.
 assert(productCard.includes("language === 'en'"), 'Product cards must render from the selected language.');
+assert(videosPage.includes("language === 'en'"), 'Review/video gallery must render from the selected language after build patches.');
 assert(socialExportPatch.includes('Social export follows the selected Arabic/English mode'), 'Review/social export language guard is missing.');
+
+// Admin is intentionally Arabic regardless of public mode.
+assert(app.includes('dir="rtl" lang="ar"'), 'Admin dashboard must remain Arabic RTL independently of public language mode.');
 
 // Crash containment must stay installed globally.
 assert(app.includes('AppErrorBoundary') || read('src/main.tsx').includes('AppErrorBoundary'), 'Global error boundary is missing.');
 
-console.log('[system-contract] Supabase authority, additive categories, category references, language/theme persistence, and crash containment are locked.');
+console.log('[system-contract] Supabase authority, additive categories, category references, bilingual mode, Arabic admin, theme persistence, and crash containment are locked.');
