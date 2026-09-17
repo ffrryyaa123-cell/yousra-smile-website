@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { HomePage } from './pages/HomePage';
 import { SEOHead } from './components/SEOHead';
 import { WhatsAppButton } from './components/WhatsAppButton';
 import { ScrollToTop } from './components/ScrollToTop';
@@ -89,4 +90,3 @@ const AppContent: React.FC = () => {
 export default function App() {
   return <AppProvider><AppContent /></AppProvider>;
 }
-const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })));
