@@ -103,7 +103,9 @@ export async function saveManagedCategories(items: ManagedCategory[]): Promise<M
     throw new Error('انتهت جلسة الدخول. سجّلي الدخول إلى لوحة التحكم ثم أعيدي المحاولة.');
   }
 
-  // Upsert first. Deletions happen only after every desired row is safely stored.
+  // Permanent safety rule: category saves are ADD/UPDATE only.
+  // A stale/partial admin screen or an automated agent must never delete an
+  // existing category merely because it was absent from the submitted list.
   const rows = normalized.map((category, index) => ({
     id: category.id,
     data: category,
@@ -116,18 +118,11 @@ export async function saveManagedCategories(items: ManagedCategory[]): Promise<M
     .upsert(rows, { onConflict: 'id' });
   if (saveError) throw new Error(`تعذر حفظ الأقسام في قاعدة البيانات: ${saveError.message}`);
 
-  const desiredIds = new Set(normalized.map(category => category.id));
-  const { data: currentRows, error: readError } = await supabase.from('categories').select('id');
-  if (readError) throw new Error(`تم حفظ الأقسام الجديدة لكن تعذر التحقق من الأقسام القديمة: ${readError.message}`);
-
-  const obsoleteIds = (currentRows || []).map(row => row.id).filter(id => !desiredIds.has(id));
-  for (const id of obsoleteIds) {
-    const { error: deleteError } = await supabase.from('categories').delete().eq('id', id);
-    if (deleteError) throw new Error(`تعذر حذف القسم القديم ${id}: ${deleteError.message}`);
-  }
-
-  emit(normalized);
-  return normalized;
+  // Reload from Supabase so local state always reflects the durable database,
+  // including pre-existing categories that were not part of this save call.
+  const saved = await loadManagedCategories(true);
+  emit(saved);
+  return saved;
 }
 
 export function useManagedCategories() {
