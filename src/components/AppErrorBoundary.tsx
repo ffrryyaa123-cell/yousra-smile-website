@@ -10,6 +10,7 @@ interface State {
 }
 
 export class AppErrorBoundary extends React.Component<Props, State> {
+  declare readonly props: Props;
   state: State = { hasError: false };
 
   static getDerivedStateFromError(error: unknown): State {
