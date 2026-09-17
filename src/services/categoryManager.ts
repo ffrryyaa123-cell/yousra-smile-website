@@ -57,6 +57,13 @@ const loadLocalFallback = (): ManagedCategory[] => {
   return defaults;
 };
 
+const requireAdminSession = async () => {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session?.access_token) {
+    throw new Error('انتهت جلسة الدخول. سجّلي الدخول إلى لوحة التحكم ثم أعيدي المحاولة.');
+  }
+};
+
 export async function loadManagedCategories(force = false): Promise<ManagedCategory[]> {
   if (cache && !force) return cache;
   if (loadingPromise && !force) return loadingPromise;
@@ -94,18 +101,51 @@ export async function loadManagedCategories(force = false): Promise<ManagedCateg
   }
 }
 
+/**
+ * Adds exactly one new category row. It intentionally does not submit or
+ * rewrite the existing category list, so adding a category from a stale tab
+ * can never roll back edits made to any category that already exists.
+ */
+export async function addManagedCategory(category: ManagedCategory): Promise<ManagedCategory[]> {
+  await requireAdminSession();
+  const normalized = normalizeOne(category);
+  const existing = await loadManagedCategories(true);
+  if (existing.some(item => item.id === normalized.id)) {
+    throw new Error(`معرّف القسم ${normalized.id} مستخدم مسبقًا.`);
+  }
+
+  const nextSortOrder = (existing.length + 1) * 10;
+  const { error } = await supabase.from('categories').insert({
+    id: normalized.id,
+    data: normalized,
+    sort_order: nextSortOrder,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw new Error(`تعذر إضافة القسم إلى قاعدة البيانات: ${error.message}`);
+
+  return loadManagedCategories(true);
+}
+
+/** Updates exactly one category row. No other category row is written. */
+export async function updateManagedCategory(category: ManagedCategory): Promise<ManagedCategory[]> {
+  await requireAdminSession();
+  const normalized = normalizeOne(category);
+  const { error } = await supabase
+    .from('categories')
+    .update({ data: normalized, updated_at: new Date().toISOString() })
+    .eq('id', normalized.id);
+  if (error) throw new Error(`تعذر تحديث القسم في قاعدة البيانات: ${error.message}`);
+  return loadManagedCategories(true);
+}
+
 export async function saveManagedCategories(items: ManagedCategory[]): Promise<ManagedCategory[]> {
   const normalized = normalize(items);
   if (!normalized.length) throw new Error('لا يمكن حفظ قائمة أقسام فارغة بالكامل. أضيفي قسمًا واحدًا على الأقل.');
 
-  const { data: sessionData } = await supabase.auth.getSession();
-  if (!sessionData.session?.access_token) {
-    throw new Error('انتهت جلسة الدخول. سجّلي الدخول إلى لوحة التحكم ثم أعيدي المحاولة.');
-  }
+  await requireAdminSession();
 
-  // Permanent safety rule: category saves are ADD/UPDATE only.
-  // A stale/partial admin screen or an automated agent must never delete an
-  // existing category merely because it was absent from the submitted list.
+  // Permanent safety rule: category saves are ADD/UPDATE only. Never delete.
+  // This bulk path is kept only for explicit reordering/maintenance screens.
   const rows = normalized.map((category, index) => ({
     id: category.id,
     data: category,
@@ -118,8 +158,6 @@ export async function saveManagedCategories(items: ManagedCategory[]): Promise<M
     .upsert(rows, { onConflict: 'id' });
   if (saveError) throw new Error(`تعذر حفظ الأقسام في قاعدة البيانات: ${saveError.message}`);
 
-  // Reload from Supabase so local state always reflects the durable database,
-  // including pre-existing categories that were not part of this save call.
   const saved = await loadManagedCategories(true);
   emit(saved);
   return saved;
@@ -169,5 +207,27 @@ export function useManagedCategories() {
     }
   };
 
-  return { categories, saveCategories, isSaving };
+  const addCategory = async (category: ManagedCategory) => {
+    setIsSaving(true);
+    try {
+      const saved = await addManagedCategory(category);
+      setCategories(saved);
+      return saved;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const updateCategory = async (category: ManagedCategory) => {
+    setIsSaving(true);
+    try {
+      const saved = await updateManagedCategory(category);
+      setCategories(saved);
+      return saved;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return { categories, saveCategories, addCategory, updateCategory, isSaving };
 }
