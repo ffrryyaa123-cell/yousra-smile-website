@@ -22,6 +22,10 @@ assert(categories.includes('saveManagedCategories'), 'Managed categories must ha
 assert(!categories.includes(".from('categories').delete()"), 'Saving a category list must never implicitly delete existing categories.');
 assert(categories.includes('ADD/UPDATE only'), 'Non-destructive category-save invariant is missing.');
 
+// Historical seed data must never become authoritative again.
+assert(!context.includes('setProducts(INITIAL_PRODUCTS)'), 'Catalog reset must never restore historical seed products.');
+assert(context.includes('window.location.reload()'), 'Catalog reset/reload path must reload the live catalog instead of replacing it locally.');
+
 // Database relationship contract: products may only be assigned to real categories.
 assert(categoryMigration.includes('products_category_reference_guard'), 'Product/category database guard migration is missing.');
 assert(categoryMigration.includes('validate_product_category_reference'), 'Product/category validation function is missing.');
@@ -48,4 +52,4 @@ assert(app.includes('dir="rtl" lang="ar"'), 'Admin dashboard must remain Arabic 
 // Crash containment must stay installed globally.
 assert(app.includes('AppErrorBoundary') || read('src/main.tsx').includes('AppErrorBoundary'), 'Global error boundary is missing.');
 
-console.log('[system-contract] Supabase authority, additive categories, category references, bilingual mode, Arabic admin, theme persistence, and crash containment are locked.');
+console.log('[system-contract] Supabase authority, non-destructive catalog/categories, category references, bilingual mode, Arabic admin, theme persistence, and crash containment are locked.');
