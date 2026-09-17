@@ -37,6 +37,14 @@ const isoDuration = value => {
   const hours = Number(match[1] || 0), minutes = Number(match[2] || 0), seconds = Number(match[3] || 0);
   return `PT${hours ? `${hours}H` : ''}${minutes ? `${minutes}M` : ''}${seconds}S`;
 };
+const safeIsoDate = (...values) => {
+  for (const value of values) {
+    if (value === undefined || value === null || value === '') continue;
+    const date = new Date(value);
+    if (Number.isFinite(date.getTime())) return date.toISOString();
+  }
+  return new Date().toISOString();
+};
 const writeRoute = (route, html) => {
   const dir = path.join(DIST, route.replace(/^\/+|\/+$/g, ''));
   fs.mkdirSync(dir, { recursive: true });
@@ -62,8 +70,8 @@ for (const video of videos) {
   const title = compact(video.title || `Video review: ${video.productTitle || product.titleEn || product.titleAr || 'Product'}`, 100);
   const description = compact(video.seoDescription || product.descriptionEn || product.description || `Watch ${title} on Yousra Smile.`, 180);
   const thumbnail = String(video.thumbnailUrl || video.productImage || product.image || (Array.isArray(product.images) ? product.images[0] : '') || '').trim();
-  if (!thumbnail) continue; // Google requires a crawlable thumbnail for VideoObject eligibility.
-  const uploadDate = new Date(video.date || video._updatedAt || Date.now()).toISOString();
+  if (!thumbnail) continue;
+  const uploadDate = safeIsoDate(video.date, video._updatedAt, Date.now());
   const canonical = absoluteVideoUrl(video);
   const duration = isoDuration(video.duration);
   const schema = {
