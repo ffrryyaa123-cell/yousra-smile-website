@@ -2,10 +2,13 @@ import { CurrencyCode } from './utils/currency';
 
 export type { CurrencyCode };
 
-// Categories are managed in Supabase, so this cannot be a closed union. A
-// newly-created category (for example `garden-outdoor`) must work everywhere
-// without requiring a frontend release first.
-export type CategoryId = string;
+export type CategoryId = 
+  | 'smart-home'
+  | 'smart-kitchen'
+  | 'furniture-decor'
+  | 'smart-gadgets'
+  | 'women-corner'
+  | 'health-fitness';
 
 export interface UserReview {
   id: string;

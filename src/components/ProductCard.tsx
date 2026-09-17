@@ -2,7 +2,6 @@ import React from 'react';
 import { ProductCouponBadge } from './ProductCoupon';
 import { Product } from '../types';
 import { useApp } from '../context/AppContext';
-import { productPath } from '../utils/productSeo';
 import { 
   Heart, 
   Scale, 
@@ -49,8 +48,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
   const isAlerted = isSubscribedToAlert(product.id);
   const inCart = isInCart(product.id);
 
-  const displayTitle = language === 'en' ? (product.titleEn || 'Featured product') : product.titleAr;
-  const displayDesc = language === 'en' ? (product.descriptionEn || 'Product details are being updated.') : product.description;
+  const displayTitle = language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr;
+  const displayDesc = language === 'en' ? (product.descriptionEn || product.description) : product.description;
   const displayFeatures = language === 'en' ? (product.featuresEn || []) : (product.features || []);
 
   const handleBuyAmazon = (e: React.MouseEvent) => {
@@ -135,7 +134,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
               </span>
               <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
                 <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                <span>{product.rating > 0 && product.rating <= 5 ? `${product.rating} / 5` : (language === 'en' ? 'Rating unavailable' : 'التقييم غير متاح')}</span>
+                <span>{product.rating > 0 && product.rating <= 5 ? `${product.rating} / 5` : 'التقييم غير متاح'}</span>
                 <span className="text-slate-300 font-normal">({product.reviewCount})</span>
               </div>
             </div>
@@ -209,8 +208,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           src={product.image} 
           alt={displayTitle}
           referrerPolicy="no-referrer"
-          loading="lazy"
-          decoding="async"
           className="w-full h-full object-contain p-2 transition-transform duration-700 ease-out transform-gpu group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
@@ -269,14 +266,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           <button
             onClick={(e) => { 
               e.stopPropagation(); 
-              const shareUrl = `${window.location.origin}${productPath(product)}`;
               if (navigator.share) {
                 navigator.share({
-                  title: language === 'en' ? (product.titleEn || 'Featured product') : product.titleAr,
-                  url: shareUrl,
+                  title: language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr,
+                  url: window.location.href,
                 }).catch(() => {});
               } else {
-                navigator.clipboard.writeText(shareUrl);
+                navigator.clipboard.writeText(window.location.href);
                 alert(language === 'ar' ? 'تم نسخ رابط المنتج لمشاركته!' : 'Product link copied to clipboard!');
               }
             }}
@@ -332,7 +328,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
             </span>
             <div className="flex items-center gap-1 text-amber-400 font-bold">
               <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-              <span>{product.rating > 0 && product.rating <= 5 ? `${product.rating} / 5` : (language === 'en' ? 'Rating unavailable' : 'التقييم غير متاح')}</span>
+              <span>{product.rating > 0 && product.rating <= 5 ? `${product.rating} / 5` : 'التقييم غير متاح'}</span>
               <span className="text-slate-300 font-normal">({product.reviewCount})</span>
             </div>
           </div>
@@ -363,7 +359,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
             <button
               onClick={handleBuyAmazon}
               className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[11px] py-1.5 px-1.5 rounded-lg flex items-center justify-center gap-0.5 shadow-xs transition-all hover:shadow-md"
-              title={language === 'en' ? 'Amazon affiliate link' : 'رابط التسويق بالعمولة لأمازون'}
+              title="رابط التسويق بالعمولة لأمازون"
             >
               <ShoppingBag className="w-3 h-3" />
               {t.buyNowAmazon}
@@ -374,7 +370,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
               <button
                 onClick={handleBuyAliExpress}
                 className="w-full bg-red-600 hover:bg-red-500 text-white font-extrabold text-[11px] py-1.5 px-1.5 rounded-lg flex items-center justify-center gap-0.5 shadow-xs transition-all hover:shadow-md"
-                title={language === 'en' ? 'AliExpress affiliate link' : 'رابط التسويق بالعمولة لعلي إكسبريس'}
+                title="رابط التسويق بالعمولة لعلي إكسبريس"
               >
                 {t.buyNowAliExpress}
                 <ExternalLink className="w-2.5 h-2.5 text-white opacity-70" />

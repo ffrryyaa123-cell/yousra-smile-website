@@ -125,10 +125,12 @@ const queueVideoSave = (video: VideoReview) => {
 };
 
 const directSaveProduct = async (product: Product) => {
-  // Never replace the JSON document from the browser. The database function
-  // atomically merges fields and also creates the row when it is genuinely
-  // new. This makes every save resilient to stale tabs and partial forms.
-  await directPatchProduct(product.id, product as unknown as Record<string, unknown>);
+  const { data, error } = await supabase
+    .from('products')
+    .upsert({ id: product.id, data: product, updated_at: new Date().toISOString() })
+    .select('id')
+    .single();
+  if (error || !data) throw error || new Error('لم تؤكد قاعدة البيانات حفظ المنتج.');
 };
 
 const directPatchProduct = async (productId: string, patch: Record<string, unknown>): Promise<Product> => {
@@ -335,12 +337,19 @@ export const catalogDatabase = {
   /** Removes only the video-related fields from a product's saved data,
    * keeping everything else (title, images, affiliate link, SEO...) intact. */
   async clearProductVideo(productId: string) {
-    await directPatchProduct(productId, {
-      videoUrl: null,
-      videoThumbnailUrl: null,
-      videoStoragePath: null,
-      youtubeUrl: null
-    });
+    const { data, error } = await supabase.from('products').select('data').eq('id', productId).maybeSingle();
+    if (error) throw error;
+    if (!data?.data) return;
+    const cleared = { ...(data.data as Record<string, unknown>) };
+    delete cleared.videoUrl;
+    delete cleared.videoThumbnailUrl;
+    delete cleared.videoStoragePath;
+    delete cleared.youtubeUrl;
+    const { error: saveError } = await supabase
+      .from('products')
+      .update({ data: cleared, updated_at: new Date().toISOString() })
+      .eq('id', productId);
+    if (saveError) throw saveError;
   },
 
   /**

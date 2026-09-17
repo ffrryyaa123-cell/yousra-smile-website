@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { useManagedCategories } from '../services/categoryManager';
+import { CATEGORIES } from '../data/categories';
 import { SlidersHorizontal, RotateCcw, Search, Tag, Filter } from 'lucide-react';
 import { FilterState } from '../types';
 
@@ -15,16 +15,12 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   onFilterChange,
   onReset
 }) => {
-  const { products, formatPrice, language } = useApp();
-  const { categories } = useManagedCategories();
+  const { products, formatPrice } = useApp();
 
   // Extract unique brands
   const brands = Array.from(new Set(products.map(p => p.brand))).filter(Boolean);
 
-  const currentCategoryObj = categories.find(c => c.id === filters.category);
-  const subcategories = language === 'en' && currentCategoryObj?.subcategoriesEn?.length
-    ? currentCategoryObj.subcategoriesEn
-    : currentCategoryObj?.subcategories || [];
+  const currentCategoryObj = CATEGORIES.find(c => c.id === filters.category);
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 space-y-6 shadow-sm">
@@ -33,43 +29,43 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
       <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-purple-600" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white font-['Tajawal']">{language === 'ar' ? 'تصفية المنتجات' : 'Filter Products'}</h3>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white font-['Tajawal']">تصفية المنتجات</h3>
         </div>
         <button
           onClick={onReset}
           className="text-xs text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 flex items-center gap-1 transition-colors cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          {language === 'ar' ? 'إعادة ضبط' : 'Reset'}
+          إعادة ضبط
         </button>
       </div>
 
       {/* Category Filter */}
       <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">{language === 'ar' ? 'القسم الرئيسي' : 'Category'}</label>
+        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">القسم الرئيسي</label>
         <select
           value={filters.category}
           onChange={(e) => onFilterChange({ category: e.target.value, subcategory: 'all' })}
           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-purple-500"
         >
-          <option value="all">{language === 'ar' ? 'جميع الأقسام' : 'All Categories'}</option>
-          {categories.map(cat => (
-            <option key={cat.id} value={cat.id}>{language === 'en' ? cat.nameEn : cat.nameAr}</option>
+          <option value="all">جميع الأقسام</option>
+          {CATEGORIES.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.nameAr}</option>
           ))}
         </select>
       </div>
 
       {/* Subcategory Filter */}
-      {currentCategoryObj && subcategories.length > 0 && (
+      {currentCategoryObj && currentCategoryObj.subcategories.length > 0 && (
         <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">{language === 'ar' ? 'الفرع / التخصص' : 'Subcategory'}</label>
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">الفرع / التخصص</label>
           <select
             value={filters.subcategory}
             onChange={(e) => onFilterChange({ subcategory: e.target.value })}
             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-purple-500"
           >
-            <option value="all">{language === 'ar' ? 'جميع التخصصات الفرعية' : 'All Subcategories'}</option>
-            {subcategories.map((sub, i) => (
+            <option value="all">جميع التخصصات الفرعية</option>
+            {currentCategoryObj.subcategories.map((sub, i) => (
               <option key={i} value={sub}>{sub}</option>
             ))}
           </select>
@@ -78,13 +74,13 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
 
       {/* Brand Filter */}
       <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">{language === 'ar' ? 'العلامة التجارية' : 'Brand'}</label>
+        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">العلامة التجارية (Brand)</label>
         <select
           value={filters.brand}
           onChange={(e) => onFilterChange({ brand: e.target.value })}
           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-purple-500"
         >
-          <option value="all">{language === 'ar' ? `جميع الماركات (${brands.length})` : `All Brands (${brands.length})`}</option>
+          <option value="all">جميع الماركات ({brands.length})</option>
           {brands.map((b, i) => (
             <option key={i} value={b}>{b}</option>
           ))}
@@ -93,7 +89,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
 
       {/* Minimum Discount Filter */}
       <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">{language === 'ar' ? 'نسبة الخصم الأدنى' : 'Minimum Discount'}</label>
+        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">نسبة الخصم الأدنى</label>
         <div className="grid grid-cols-3 gap-1.5">
           {[0, 15, 25, 35, 40, 50].map(disc => (
             <button
@@ -105,7 +101,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
                   : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-purple-300'
               }`}
             >
-              {disc === 0 ? (language === 'ar' ? 'الكل' : 'All') : `${disc}%+`}
+              {disc === 0 ? 'الكل' : `${disc}%+`}
             </button>
           ))}
         </div>
@@ -114,7 +110,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
       {/* Price Range Slider */}
       <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
         <div className="flex justify-between items-center text-xs text-slate-700 dark:text-slate-300 font-bold">
-          <span>{language === 'ar' ? 'نطاق السعر الأقصى:' : 'Maximum price:'}</span>
+          <span>نطاق السعر الأقصى:</span>
           <span className="text-purple-600 dark:text-purple-400 font-extrabold font-['Tajawal']">{formatPrice(filters.maxPrice)}</span>
         </div>
         <input 

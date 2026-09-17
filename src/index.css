@@ -205,35 +205,4 @@ html, body, #root {
 }
 
 
-@font-face {
-  font-family: 'Cairo';
-  src: local('Arial');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Tajawal';
-  src: local('Arial');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Plus Jakarta Sans';
-  src: local('Arial');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Readex Pro';
-  src: local('Arial');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
 

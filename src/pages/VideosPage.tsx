@@ -6,7 +6,7 @@ import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 import { ReviewOpenCount } from '../components/ReviewOpenCount';
 
 export const VideosPage: React.FC = () => {
-  const { videos, visibleProducts: products, openVideoModal, removeVideoThumbnail, deleteVideo, logAffiliateClick, formatPrice, getAffiliateUrl, openImportVideoModal, language } = useApp();
+  const { videos, visibleProducts: products, openVideoModal, removeVideoThumbnail, deleteVideo, logAffiliateClick, formatPrice, getAffiliateUrl, openImportVideoModal } = useApp();
   const [platformFilter, setPlatformFilter] = useState<'all' | 'youtube' | 'tiktok' | 'pinterest'>('all');
   const [selectedExportVideo, setSelectedExportVideo] = useState<VideoReview | null>(null);
   // Public gallery is read-only, including for an owner with a saved session.
@@ -72,13 +72,13 @@ export const VideosPage: React.FC = () => {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 bg-red-600/30 text-red-300 border border-red-500/30 px-3 py-1 rounded-full text-xs font-bold">
               <PlaySquare className="w-4 h-4 text-red-400" />
-              {language === 'en' ? 'Video Review Library' : 'مكتبة فيديوهات المراجعات'}
+              مكتبة فيديوهات المراجعات
             </div>
             <h1 className="text-3xl sm:text-4xl font-black font-['Tajawal']">
-              {language === 'en' ? 'Watch Yousra Smile Reviews Before You Buy 🎥' : 'شاهد مراجعات يسرى سمايل قبل الشراء 🎥'}
+              شاهد مراجعات يسرى سمايل قبل الشراء 🎥
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              {language === 'en' ? 'Watch product reviews, explore product details, and open retailer links.' : 'شاهد فيديوهات المراجعات وتصفّح تفاصيل المنتجات وروابط المتاجر.'}
+              شاهد فيديوهات المراجعات وتصفّح تفاصيل المنتجات وروابط المتاجر.
             </p>
           </div>
 
@@ -115,7 +115,7 @@ export const VideosPage: React.FC = () => {
               : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50'
           }`}
         >
-          {language === 'en' ? `All Platforms (${videos.length})` : `جميع المنصات (${videos.length})`}
+          جميع المنصات ({videos.length})
         </button>
 
         <button
@@ -127,7 +127,7 @@ export const VideosPage: React.FC = () => {
           }`}
         >
           <Youtube className="w-4 h-4 text-red-500" />
-          {language === 'en' ? 'YouTube' : 'يوتيوب (YouTube)'}
+          يوتيوب (YouTube)
         </button>
 
         <button
@@ -139,7 +139,7 @@ export const VideosPage: React.FC = () => {
           }`}
         >
           <Video className="w-4 h-4 text-pink-500" />
-          {language === 'en' ? 'TikTok' : 'تيك توك (TikTok)'}
+          تيك توك (TikTok)
         </button>
 
         <button
@@ -151,7 +151,7 @@ export const VideosPage: React.FC = () => {
           }`}
         >
           <Sparkles className="w-4 h-4 text-red-400" />
-          {language === 'en' ? 'Pinterest' : 'بنترست (Pinterest)'}
+          بنترست (Pinterest)
         </button>
       </div>
 
@@ -178,12 +178,6 @@ export const VideosPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredVideos.map(video => {
           const linkedProd = products.find(p => p.id === video.productId);
-          const englishVideoTitle = language === 'en' && /[\u0600-\u06FF]/.test(video.title || '')
-            ? (linkedProd?.titleEn ? `Video review: ${linkedProd.titleEn}` : 'Product video review')
-            : video.title;
-          const englishProductTitle = language === 'en' && /[\u0600-\u06FF]/.test(video.productTitle || '')
-            ? (linkedProd?.titleEn || 'Featured product')
-            : video.productTitle;
           return (
             <div
               key={video.id}
@@ -201,7 +195,7 @@ export const VideosPage: React.FC = () => {
                 ) : (
                   <img
                     src={video.thumbnailUrl || video.productImage}
-                    alt={englishVideoTitle}
+                    alt={video.title}
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
                   />
@@ -246,10 +240,10 @@ export const VideosPage: React.FC = () => {
               <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
                 <div>
                   <span className="text-xs font-bold text-purple-600 dark:text-purple-400">
-                    {englishProductTitle}
+                    {video.productTitle}
                   </span>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-2 font-['Tajawal'] mt-1">
-                    {englishVideoTitle}
+                    {video.title}
                   </h3>
                   <div className="flex items-center justify-between text-xs text-slate-400 pt-2">
                     <ReviewOpenCount videoId={video.id} />
@@ -304,7 +298,7 @@ export const VideosPage: React.FC = () => {
                 {linkedProd && (
                   <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                     <div className="text-xs">
-                      <span className="text-slate-400 block text-[10px]">{language === 'en' ? 'Direct purchase price:' : 'سعر الشراء المباشر:'}</span>
+                      <span className="text-slate-400 block text-[10px]">سعر الشراء المباشر:</span>
                       <strong className="text-purple-600 dark:text-purple-400 text-sm font-black font-['Tajawal']">
                         {formatPrice(linkedProd.discountPrice)}
                       </strong>
@@ -319,7 +313,7 @@ export const VideosPage: React.FC = () => {
                       className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs flex items-center gap-1 shadow cursor-pointer"
                     >
                       <ShoppingBag className="w-3.5 h-3.5" />
-                      {language === 'en' ? 'Buy on Amazon' : 'شراء من أمازون'}
+                      شراء من أمازون
                       <ExternalLink className="w-3 h-3" />
                     </button>
                   </div>

@@ -28,12 +28,11 @@ import {
   FileText
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { useManagedCategories } from '../services/categoryManager';
+import { CATEGORIES } from '../data/categories';
 import { CURRENCIES, CurrencyCode } from '../utils/currency';
-import logoImg from '../assets/images/yousra_smile_avatar.webp';
+import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
 
 export const Header: React.FC = () => {
-  const { categories } = useManagedCategories();
   const { 
     activePage, 
     setPage, 
@@ -109,7 +108,7 @@ export const Header: React.FC = () => {
                 target="_blank" 
                 rel="noreferrer"
                 className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
-                title={language === 'en' ? 'YouTube channel' : 'قناة يوتيوب'}
+                title="قناة يوتيوب"
               >
                 <Youtube className="w-3 h-3 text-red-500" />
                 <span>{language === 'ar' ? 'يوتيوب' : 'YouTube'}</span>
@@ -119,7 +118,7 @@ export const Header: React.FC = () => {
                 target="_blank" 
                 rel="noreferrer"
                 className="bg-pink-500/10 hover:bg-pink-500/20 text-pink-300 border border-pink-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
-                title={language === 'en' ? 'TikTok account' : 'حساب تيك توك'}
+                title="حساب تيك توك"
               >
                 <Video className="w-3 h-3 text-pink-400" />
                 <span>{language === 'ar' ? 'تيك توك' : 'TikTok'}</span>
@@ -129,7 +128,7 @@ export const Header: React.FC = () => {
                 target="_blank" 
                 rel="noreferrer"
                 className="bg-purple-500/10 hover:bg-purple-500/20 text-pink-400 border border-purple-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
-                title={language === 'en' ? 'Instagram account' : 'حساب انستغرام'}
+                title="حساب انستغرام"
               >
                 <Instagram className="w-3 h-3 text-pink-400" />
                 <span>{language === 'ar' ? 'انستغرام' : 'Instagram'}</span>
@@ -139,7 +138,7 @@ export const Header: React.FC = () => {
                 target="_blank" 
                 rel="noreferrer"
                 className="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition-all shadow-xs"
-                title={language === 'en' ? 'Snapchat account' : 'حساب سناب شات'}
+                title="حساب سناب شات"
               >
                 <Ghost className="w-3 h-3 text-yellow-400" />
                 <span>{language === 'ar' ? 'سناب شات' : 'Snapchat'}</span>
@@ -198,7 +197,7 @@ export const Header: React.FC = () => {
             <button
               onClick={toggleLanguage}
               className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-950/80 hover:bg-purple-900/80 text-[#D4AF37] border border-[#D4AF37]/50 text-[11px] font-['Tajawal'] font-bold transition-all cursor-pointer shadow-xs"
-              title={language === 'ar' ? 'Switch to English' : 'Switch to Arabic'}
+              title={language === 'ar' ? 'Switch to English' : 'التحويل إلى العربية'}
               id="language-switcher-top"
             >
               <Globe className="w-3.5 h-3.5 text-[#D4AF37]" />
@@ -294,7 +293,7 @@ export const Header: React.FC = () => {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-bold truncate text-slate-100 font-['Tajawal']">
-                          {language === 'en' ? (product.titleEn || 'Featured product') : product.titleAr}
+                          {language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr}
                         </div>
                         <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
                           <span className="text-amber-400 font-bold">{product.brand}</span>
@@ -445,7 +444,7 @@ export const Header: React.FC = () => {
                           {language === 'ar' ? 'أقسام المنتجات' : 'Product Categories'}
                         </span>
                         <span className="text-[10px] bg-purple-950 text-amber-300 px-2 py-0.5 rounded-full border border-purple-800">
-                          {categories.length} {language === 'ar' ? 'أقسام' : 'Categories'}
+                          {CATEGORIES.length} {language === 'ar' ? 'أقسام' : 'Categories'}
                         </span>
                       </div>
 
@@ -466,7 +465,7 @@ export const Header: React.FC = () => {
                       </button>
                       <hr className="my-1.5 border-purple-500/20" />
                       
-                      {categories.map(cat => (
+                      {CATEGORIES.map(cat => (
                         <button
                           key={cat.id}
                           type="button"
@@ -552,7 +551,7 @@ export const Header: React.FC = () => {
                     ? 'text-amber-300 bg-purple-950/90 font-bold border border-amber-400'
                     : 'text-amber-400 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-800/40'
                 }`}
-                title={language === 'en' ? 'Store admin and analytics' : 'لوحة تحكم وإحصائيات المتجر'}
+                title="لوحة تحكم وإحصائيات المتجر"
               >
                 <Settings className="w-4 h-4 text-amber-400" />
                 <span>{t.adminPanel}</span>
@@ -583,7 +582,7 @@ export const Header: React.FC = () => {
               <button 
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2 text-slate-300 hover:text-white bg-slate-800/80 rounded-xl transition-colors cursor-pointer border border-amber-400/30"
-                title={language === 'en' ? 'Close' : 'إغلاق'}
+                title="إغلاق"
               >
                 <X className="w-6 h-6 text-amber-300" />
               </button>
@@ -697,7 +696,7 @@ export const Header: React.FC = () => {
                   {language === 'ar' ? 'تصفح الأقسام الرئيسية:' : 'Main Categories:'}
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {categories.map(cat => (
+                  {CATEGORIES.map(cat => (
                     <button
                       key={cat.id}
                       onClick={() => { handleCategorySelect(cat.id); setMobileMenuOpen(false); }}

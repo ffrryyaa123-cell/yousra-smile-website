@@ -1,18 +1,13 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { useManagedCategories } from '../services/categoryManager';
+import { CATEGORIES } from '../data/categories';
 import { PlaySquare, CheckCircle2, Search, ArrowLeft, Flame } from 'lucide-react';
-import bannerImg from '../assets/images/yousra_smile_banner.webp';
-import logoImg from '../assets/images/yousra_smile_avatar.webp';
+import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.jpg';
+import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
 
 export const HeroBanner: React.FC = () => {
-  const { categories } = useManagedCategories();
   const { setPage, setSelectedCategory, searchQuery, setSearchQuery, language, t, videos, visibleProducts, openVideoModal } = useApp();
   const showcase = videos.find(video => !video.productId || visibleProducts.some(p => p.id === video.productId));
-  const showcaseProduct = visibleProducts.find(product => product.id === showcase?.productId);
-  const showcaseTitle = language === 'en'
-    ? (showcaseProduct?.titleEn || 'Product reviews')
-    : (showcase?.productTitle || showcase?.title || 'مراجعات المنتجات');
 
   return (
     <div className="relative w-full overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 text-white rounded-3xl my-4 sm:my-6 border border-purple-800/60 shadow-2xl">
@@ -47,10 +42,10 @@ export const HeroBanner: React.FC = () => {
               <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"><PlaySquare className="w-3 h-3" />{t.liveBadge}</span>
             </div>
             <div className="relative h-44 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800">
-              {showcase && !showcase.hideThumbnail && <img src={showcase.thumbnailUrl || showcase.productImage} alt={showcaseTitle} loading="lazy" decoding="async" fetchPriority="low" className="w-full h-full object-cover" />}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent flex items-end p-3"><div className="w-full flex items-center justify-between"><div><span className="text-[10px] text-amber-300 font-bold block">{t.reviewOfTheWeek} 🔥</span><h5 className="text-xs font-bold text-white">{showcaseTitle}</h5></div><button aria-label={language === 'ar' ? 'تشغيل المراجعة' : 'Play review'} onClick={() => showcase ? openVideoModal(showcase) : setPage('videos')} className="p-2 bg-red-600 hover:bg-red-500 rounded-full text-white shadow-md transition-transform hover:scale-110"><PlaySquare className="w-4 h-4" /></button></div></div>
+              {showcase && !showcase.hideThumbnail && <img src={showcase.thumbnailUrl || showcase.productImage} alt={showcase.productTitle || showcase.title} loading="lazy" decoding="async" fetchPriority="low" className="w-full h-full object-cover" />}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent flex items-end p-3"><div className="w-full flex items-center justify-between"><div><span className="text-[10px] text-amber-300 font-bold block">{t.reviewOfTheWeek} 🔥</span><h5 className="text-xs font-bold text-white">{showcase?.productTitle || showcase?.title || (language === 'ar' ? 'مراجعات المنتجات' : 'Product reviews')}</h5></div><button aria-label={language === 'ar' ? 'تشغيل المراجعة' : 'Play review'} onClick={() => showcase ? openVideoModal(showcase) : setPage('videos')} className="p-2 bg-red-600 hover:bg-red-500 rounded-full text-white shadow-md transition-transform hover:scale-110"><PlaySquare className="w-4 h-4" /></button></div></div>
             </div>
-            <div className="space-y-1.5"><span className="text-[11px] text-slate-400 font-bold block">{t.quickJumpCategories}</span><div className="flex flex-wrap gap-1.5">{categories.slice(0, 4).map(cat => <button key={cat.id} onClick={() => { setSelectedCategory(cat.id); setPage('products'); }} className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg transition-colors border border-slate-700">{language === 'en' ? cat.nameEn : cat.nameAr}</button>)}</div></div>
+            <div className="space-y-1.5"><span className="text-[11px] text-slate-400 font-bold block">{t.quickJumpCategories}</span><div className="flex flex-wrap gap-1.5">{CATEGORIES.slice(0, 4).map(cat => <button key={cat.id} onClick={() => { setSelectedCategory(cat.id); setPage('products'); }} className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg transition-colors border border-slate-700">{language === 'en' ? cat.nameEn : cat.nameAr}</button>)}</div></div>
           </div>
         </div>
       </div>

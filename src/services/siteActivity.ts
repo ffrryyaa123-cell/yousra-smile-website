@@ -1,6 +1,8 @@
 import { adminAccount, supabase } from './adminAccount';
+import { getApps } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
 
-type EventKind = 'page_view' | 'product_view' | 'add_to_cart' | 'affiliate_click';
+type EventKind = 'page_view' | 'product_view' | 'affiliate_click';
 const fallbackVisitor = crypto.randomUUID();
 const fallbackSession = crypto.randomUUID();
 const validId = (id: unknown): id is string => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id);
@@ -26,6 +28,8 @@ export async function recordSiteActivity(kind: EventKind, page: string, productI
   try {
     // Exclusion only, never an authorization decision. Dashboard access still
     // depends on the existing auth/RLS rules.
+    const firebaseEmail = getApps().length ? getAuth().currentUser?.email?.toLowerCase() : '';
+    if (firebaseEmail && ['ffrryyaa123@gmail.com','sarsar336699@gmail.com'].includes(firebaseEmail)) return;
     if (!adminCheck || Date.now()-adminCheckedAt > 30000) {
       adminCheckedAt = Date.now();
       adminCheck = adminAccount.loadProfile().then(profile => Boolean(profile));
@@ -38,8 +42,8 @@ export async function recordSiteActivity(kind: EventKind, page: string, productI
 
 export interface ActivityReport {
   days:number;
-  totals:{visitors:number;sessions:number;page_views:number;product_views:number;add_to_carts:number;clicks:number};
-  products:Array<{product_id:string;views:number;add_to_carts:number;amazon_clicks:number;aliexpress_clicks:number}>;
+  totals:{visitors:number;sessions:number;page_views:number;product_views:number;clicks:number};
+  products:Array<{product_id:string;views:number;amazon_clicks:number;aliexpress_clicks:number}>;
   first_event:string|null;
   catalog:{products:number;public_products:number;reviews:number};
   sales:null; commissions:null;

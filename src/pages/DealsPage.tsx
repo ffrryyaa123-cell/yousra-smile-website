@@ -4,7 +4,7 @@ import { ProductCard } from '../components/ProductCard';
 import { Tag, Flame, Percent, ArrowLeft } from 'lucide-react';
 
 export const DealsPage: React.FC = () => {
-  const { visibleProducts: products, language } = useApp();
+  const { visibleProducts: products } = useApp();
   const [minDiscount, setMinDiscount] = useState<number>(20);
 
   const discountedProducts = products
@@ -18,15 +18,13 @@ export const DealsPage: React.FC = () => {
       <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-purple-950 text-white rounded-3xl p-6 sm:p-10 border border-emerald-800/40 shadow-xl space-y-4">
         <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3.5 py-1 rounded-full text-xs font-bold">
           <Flame className="w-4 h-4 text-emerald-400 animate-bounce" />
-          {language === 'en' ? 'Daily Deals & Coupons' : 'مركز التخفيضات والكوبونات اليومية'}
+          مركز التخفيضات والكوبونات اليومية
         </div>
         <h1 className="text-3xl sm:text-4xl font-black font-['Tajawal']">
-          {language === 'en' ? 'Today’s Biggest Product Deals 🏷️' : 'صفحة العروض والتخفيضات الكبرى 🏷️'}
+          صفحة العروض والتخفيضات الكبرى 🏷️
         </h1>
         <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-          {language === 'en'
-            ? 'Browse products currently showing discounts across Amazon and AliExpress. Retailer prices and availability can change.'
-            : 'جميع المنتجات المتاحة في هذه الصفحة خاضعة لخصومات حقيقية تبدأ من 20% وحتى 50% عبر متاجر أمازون وعلي إكسبريس. تم التحقق من الأسعار حديثاً!'}
+          جميع المنتجات المتاحة في هذه الصفحة خاضعة لخصومات حقيقية تبدأ من 20% وحتى 50% عبر متاجر أمازون وعلي إكسبريس. تم التحقق من الأسعار حديثاً!
         </p>
       </div>
 
@@ -34,7 +32,7 @@ export const DealsPage: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Percent className="w-5 h-5 text-emerald-500" />
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{language === 'en' ? 'Minimum discount:' : 'حد الخصم الأدنى المعروض:'}</span>
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-300">حد الخصم الأدنى المعروض:</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -48,7 +46,7 @@ export const DealsPage: React.FC = () => {
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
               }`}
             >
-              {language === 'en' ? `${disc}% off or more` : `خصم ${disc}% فأكثر`}
+              خصم {disc}% فأكثر
             </button>
           ))}
         </div>
@@ -64,8 +62,8 @@ export const DealsPage: React.FC = () => {
       ) : (
         <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8">
           <Tag className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">{language === 'en' ? `No products currently exceed ${minDiscount}% off` : `لا توجد منتجات بخصم أعلى من ${minDiscount}% حالياً`}</h3>
-          <p className="text-xs text-slate-500 mt-1">{language === 'en' ? 'Lower the minimum discount to see more offers.' : 'جرّبي تخفيض نسبة الخصم لمشاهدة باقي العروض المتاحة.'}</p>
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">لا توجد منتجات بخصم أعلى من {minDiscount}% حالياً</h3>
+          <p className="text-xs text-slate-500 mt-1">جرّبي تخفيض نسبة الخصم لمشاهدة باقي العروض المتاحة.</p>
         </div>
       )}
 

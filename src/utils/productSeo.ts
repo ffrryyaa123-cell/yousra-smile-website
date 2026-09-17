@@ -11,14 +11,12 @@ const normalizeSlug = (value: string): string =>
     .replace(/-{2,}/g, '-')
     .slice(0, 90) || 'product';
 
-type SeoProduct = Pick<Product, 'id' | 'titleEn' | 'titleAr' | 'brand'>;
-
-export const productSlug = (product: SeoProduct): string => {
-  const readable = normalizeSlug(product.titleEn || product.brand || product.id);
+export const productSlug = (product: Pick<Product, 'id' | 'titleEn' | 'titleAr'>): string => {
+  const readable = normalizeSlug(product.titleEn || product.titleAr || product.id);
   return `${readable}--${encodeURIComponent(product.id)}`;
 };
 
-export const productPath = (product: SeoProduct): string =>
+export const productPath = (product: Pick<Product, 'id' | 'titleEn' | 'titleAr'>): string =>
   `/product/${productSlug(product)}`;
 
 export const productIdFromPath = (pathname: string): string | null => {
@@ -62,5 +60,5 @@ export const pageFromPath = (pathname: string): {
   return tab ? { page: tab, staticTab: tab } : null;
 };
 
-export const absoluteProductUrl = (product: SeoProduct): string =>
+export const absoluteProductUrl = (product: Pick<Product, 'id' | 'titleEn' | 'titleAr'>): string =>
   `https://yousrasmile.com${productPath(product)}`;
