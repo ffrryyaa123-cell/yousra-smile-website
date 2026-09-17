@@ -51,7 +51,7 @@ const AppContent: React.FC = () => {
       case 'favorites':
       case 'cart': return <FavoritesPage />;
       case 'compare': return <ComparePage />;
-      case 'admin': return <AdminPage />;
+      case 'admin': return <div dir="rtl" lang="ar"><AdminPage /></div>;
       case 'about':
       case 'contact':
       case 'privacy':

@@ -1,0 +1,54 @@
+name: Validate Yousra Smile PR
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Validate persistence safeguards
+        run: npm run validate:persistence
+
+      - name: TypeScript check and apply build patches
+        run: |
+          npm run lint || {
+            echo '--- AdminPage around first reported failure ---'
+            sed -n '1268,1305p' src/pages/AdminPage.tsx || true
+            echo '--- AdminPage around later parser failures ---'
+            sed -n '3535,3620p' src/pages/AdminPage.tsx || true
+            exit 1
+          }
+
+      - name: Validate permanent system contract
+        run: npm run validate:system
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify SEO generator inputs
+        run: |
+          test -f scripts/generate-static-seo.mjs
+          test -f src/utils/productSeo.ts
+          test -f src/components/AppErrorBoundary.tsx
