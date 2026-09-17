@@ -31,10 +31,7 @@ jobs:
       - name: Validate persistence safeguards
         run: npm run validate:persistence
 
-      - name: Validate permanent system contract
-        run: npm run validate:system
-
-      - name: TypeScript check
+      - name: TypeScript check and apply build patches
         run: |
           npm run lint || {
             echo '--- AdminPage around first reported failure ---'
@@ -43,6 +40,9 @@ jobs:
             sed -n '3535,3620p' src/pages/AdminPage.tsx || true
             exit 1
           }
+
+      - name: Validate permanent system contract
+        run: npm run validate:system
 
       - name: Production build
         run: npm run build
