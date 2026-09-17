@@ -3,17 +3,23 @@ import fs from 'node:fs';
 const file = new URL('../src/pages/AdminPage.tsx', import.meta.url);
 let source = fs.readFileSync(file, 'utf8');
 
+const oldHook = 'const { categories, saveCategories, isSaving: categoriesSaving } = useManagedCategories();';
+const newHook = 'const { categories, saveCategories, addCategory, updateCategory, isSaving: categoriesSaving } = useManagedCategories();';
+
+// The editable-categories patch can run again during `build` after `lint`.
+// If it re-adds the legacy hook beside the protected hook, remove the duplicate
+// before continuing. This keeps the patch chain idempotent across repeated runs.
+if (source.includes(newHook) && source.includes(oldHook)) {
+  source = source.replace(`  ${oldHook}\n`, '');
+}
+
 const replaceRequired = (needle, replacement, label) => {
   if (source.includes(replacement)) return;
   if (!source.includes(needle)) throw new Error(`[patch-category-write-safety] Missing ${label}`);
   source = source.replace(needle, () => replacement);
 };
 
-replaceRequired(
-  'const { categories, saveCategories, isSaving: categoriesSaving } = useManagedCategories();',
-  'const { categories, saveCategories, addCategory, updateCategory, isSaving: categoriesSaving } = useManagedCategories();',
-  'managed categories hook actions',
-);
+replaceRequired(oldHook, newHook, 'managed categories hook actions');
 
 replaceRequired(
   '    await saveCategoryList([...categories, next]);',
@@ -43,4 +49,4 @@ if (deleteButton.test(source)) {
 }
 
 fs.writeFileSync(file, source, 'utf8');
-console.log('[patch-category-write-safety] Category add/update/reorder writes are scoped and existing categories are deletion-protected.');
+console.log('[patch-category-write-safety] Category add/update/reorder writes are scoped, deletion-protected, and repeat-safe.');
