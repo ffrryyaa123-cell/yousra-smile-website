@@ -101,11 +101,7 @@ export async function loadManagedCategories(force = false): Promise<ManagedCateg
   }
 }
 
-/**
- * Adds exactly one new category row. It intentionally does not submit or
- * rewrite the existing category list, so adding a category from a stale tab
- * can never roll back edits made to any category that already exists.
- */
+/** Adds exactly one new category row and touches no existing row. */
 export async function addManagedCategory(category: ManagedCategory): Promise<ManagedCategory[]> {
   await requireAdminSession();
   const normalized = normalizeOne(category);
@@ -138,29 +134,32 @@ export async function updateManagedCategory(category: ManagedCategory): Promise<
   return loadManagedCategories(true);
 }
 
+/**
+ * Reorders existing category rows only. The submitted objects are used solely
+ * for their IDs/order; their data payload is never written by this bulk path.
+ */
 export async function saveManagedCategories(items: ManagedCategory[]): Promise<ManagedCategory[]> {
   const normalized = normalize(items);
-  if (!normalized.length) throw new Error('لا يمكن حفظ قائمة أقسام فارغة بالكامل. أضيفي قسمًا واحدًا على الأقل.');
-
+  if (!normalized.length) throw new Error('لا يمكن حفظ قائمة أقسام فارغة بالكامل.');
   await requireAdminSession();
 
-  // Permanent safety rule: category saves are ADD/UPDATE only. Never delete.
-  // This bulk path is kept only for explicit reordering/maintenance screens.
-  const rows = normalized.map((category, index) => ({
-    id: category.id,
-    data: category,
-    sort_order: (index + 1) * 10,
-    updated_at: new Date().toISOString(),
-  }));
+  const current = await loadManagedCategories(true);
+  const currentIds = new Set(current.map(item => item.id));
+  for (const category of normalized) {
+    if (!currentIds.has(category.id)) {
+      throw new Error(`لا يمكن ترتيب قسم غير محفوظ: ${category.id}`);
+    }
+  }
 
-  const { error: saveError } = await supabase
-    .from('categories')
-    .upsert(rows, { onConflict: 'id' });
-  if (saveError) throw new Error(`تعذر حفظ الأقسام في قاعدة البيانات: ${saveError.message}`);
+  for (let index = 0; index < normalized.length; index += 1) {
+    const { error } = await supabase
+      .from('categories')
+      .update({ sort_order: (index + 1) * 10, updated_at: new Date().toISOString() })
+      .eq('id', normalized[index].id);
+    if (error) throw new Error(`تعذر تحديث ترتيب القسم ${normalized[index].id}: ${error.message}`);
+  }
 
-  const saved = await loadManagedCategories(true);
-  emit(saved);
-  return saved;
+  return loadManagedCategories(true);
 }
 
 export function useManagedCategories() {
