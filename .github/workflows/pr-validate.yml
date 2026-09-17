@@ -31,6 +31,9 @@ jobs:
       - name: Validate persistence safeguards
         run: npm run validate:persistence
 
+      - name: Validate permanent system contract
+        run: npm run validate:system
+
       - name: TypeScript check
         run: |
           npm run lint || {
