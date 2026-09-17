@@ -1,0 +1,44 @@
+name: Validate Yousra Smile PR
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate persistence safeguards
+        run: npm run validate:persistence
+
+      - name: TypeScript check
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify SEO generator inputs
+        run: |
+          test -f scripts/generate-static-seo.mjs
+          test -f src/utils/productSeo.ts
+          test -f src/components/AppErrorBoundary.tsx
