@@ -6,32 +6,23 @@ const write = (url, value) => fs.writeFileSync(url, value, 'utf8');
 const replaceRequired = (source, needle, replacement, label) => {
   if (source.includes(replacement)) return source;
   if (!source.includes(needle)) throw new Error(`[patch-catalog-integrity-priority] Missing ${label}`);
-  return source.replace(needle, replacement);
+  // Important: callback replacement keeps literal "$" text intact (for example
+  // the CSV header "currency $") instead of treating it as a replace token.
+  return source.replace(needle, () => replacement);
 };
 
-// ---------------------------------------------------------------------------
-// 1) Database invariant: an existing product is NEVER replaced wholesale.
-//    saveProduct becomes create-or-patch. Existing rows are merged atomically
-//    by PostgreSQL through patch_catalog_product, so fields omitted by a stale
-//    or partial caller cannot disappear.
-// ---------------------------------------------------------------------------
 const catalogFile = new URL('../src/services/supabaseCatalog.ts', import.meta.url);
 let catalog = read(catalogFile);
 
 catalog = replaceRequired(
   catalog,
   `const directSaveProduct = async (product: Product) => {\n  const { data, error } = await supabase\n    .from('products')\n    .upsert({ id: product.id, data: product, updated_at: new Date().toISOString() })\n    .select('id')\n    .single();\n  if (error || !data) throw error || new Error('لم تؤكد قاعدة البيانات حفظ المنتج.');\n};`,
-  `const stripUndefined = (value: unknown): unknown => {\n  if (Array.isArray(value)) return value.map(stripUndefined);\n  if (!value || typeof value !== 'object') return value;\n  return Object.fromEntries(\n    Object.entries(value as Record<string, unknown>)\n      .filter(([, field]) => field !== undefined)\n      .map(([key, field]) => [key, stripUndefined(field)])\n  );\n};\n\nconst directSaveProduct = async (product: Product) => {\n  const clean = stripUndefined(product) as Product;\n  const { data: existing, error: lookupError } = await supabase\n    .from('products')\n    .select('id')\n    .eq('id', product.id)\n    .maybeSingle();\n  if (lookupError) throw lookupError;\n\n  if (existing?.id) {\n    // Existing catalog rows are patch-only. Never replace their JSON blob.\n    await directPatchProduct(product.id, clean as unknown as Record<string, unknown>);\n    return;\n  }\n\n  const { data, error } = await supabase\n    .from('products')\n    .insert({ id: product.id, data: clean, updated_at: new Date().toISOString() })\n    .select('id')\n    .single();\n  if (error || !data) throw error || new Error('لم تؤكد قاعدة البيانات إنشاء المنتج.');\n};`,
+  `const stripUndefined = (value: unknown): unknown => {\n  if (Array.isArray(value)) return value.map(stripUndefined);\n  if (!value || typeof value !== 'object') return value;\n  return Object.fromEntries(\n    Object.entries(value as Record<string, unknown>)\n      .filter(([, field]) => field !== undefined)\n      .map(([key, field]) => [key, stripUndefined(field)])\n  );\n};\n\nconst directSaveProduct = async (product: Product) => {\n  const clean = stripUndefined(product) as Product;\n  const { data: existing, error: lookupError } = await supabase\n    .from('products')\n    .select('id')\n    .eq('id', product.id)\n    .maybeSingle();\n  if (lookupError) throw lookupError;\n\n  if (existing?.id) {\n    await directPatchProduct(product.id, clean as unknown as Record<string, unknown>);\n    return;\n  }\n\n  const { data, error } = await supabase\n    .from('products')\n    .insert({ id: product.id, data: clean, updated_at: new Date().toISOString() })\n    .select('id')\n    .single();\n  if (error || !data) throw error || new Error('لم تؤكد قاعدة البيانات إنشاء المنتج.');\n};`,
   'safe directSaveProduct',
 );
 
 write(catalogFile, catalog);
 
-// ---------------------------------------------------------------------------
-// 2) App invariant: editing an existing product writes only fields that
-//    actually changed. Bulk imports merge onto the current record locally and
-//    patch the database, instead of replacing the product object.
-// ---------------------------------------------------------------------------
 const contextFile = new URL('../src/context/AppContext.tsx', import.meta.url);
 let context = read(contextFile);
 
@@ -51,11 +42,6 @@ context = replaceRequired(
 
 write(contextFile, context);
 
-// ---------------------------------------------------------------------------
-// 3) CSV invariant: when an imported row targets an existing product, missing
-//    columns inherit the existing product, NOT arbitrary defaults. This stops
-//    a price-only/import row from wiping images, text, features or metadata.
-// ---------------------------------------------------------------------------
 const adminFile = new URL('../src/pages/AdminPage.tsx', import.meta.url);
 let admin = read(adminFile);
 
