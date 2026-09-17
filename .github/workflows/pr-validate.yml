@@ -32,7 +32,14 @@ jobs:
         run: npm run validate:persistence
 
       - name: TypeScript check
-        run: npm run lint
+        run: |
+          npm run lint || {
+            echo '--- AdminPage around first reported failure ---'
+            sed -n '1268,1305p' src/pages/AdminPage.tsx || true
+            echo '--- AdminPage around later parser failures ---'
+            sed -n '3535,3620p' src/pages/AdminPage.tsx || true
+            exit 1
+          }
 
       - name: Production build
         run: npm run build
