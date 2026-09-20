@@ -5,7 +5,7 @@ import { SAMPLE_BLOG_POSTS } from '../data/blogPosts';
 import { translations, Language } from '../utils/i18n';
 import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../utils/currency';
 import { catalogDatabase } from '../services/lazyCatalog';
-import { LEGACY_WRONG_SITE_LOGOS, optimizedBrandAssetUrl, SITE_BRAND_ASSETS } from '../config/siteBrand';
+import { SITE_BRAND_ASSETS } from '../config/siteBrand';
 import type { MediaLibraryState } from '../services/mediaLibrary';
 import { pageFromPath, pagePath, productIdFromPath, productPath } from '../utils/productSeo';
 
@@ -362,9 +362,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return {
           ...DEFAULT_SITE_SETTINGS,
           ...parsed,
-          siteLogo: !parsed.siteLogo || LEGACY_WRONG_SITE_LOGOS.has(parsed.siteLogo) ? SITE_BRAND_ASSETS.siteLogo : optimizedBrandAssetUrl(parsed.siteLogo, SITE_BRAND_ASSETS.siteLogo),
-          creatorAvatarUrl: optimizedBrandAssetUrl(parsed.creatorAvatarUrl, SITE_BRAND_ASSETS.creatorAvatar),
-          heroBannerUrl: optimizedBrandAssetUrl(parsed.heroBannerUrl, SITE_BRAND_ASSETS.heroBanner),
+          // Media placements are shared state, not per-device preferences.
+          // Start every browser with the safe bundled assets so a stale
+          // localStorage value can never flash the old phone-in-hand image;
+          // the Supabase media library replaces these values after readback.
+          siteLogo: SITE_BRAND_ASSETS.siteLogo,
+          creatorAvatarUrl: SITE_BRAND_ASSETS.creatorAvatar,
+          heroBannerUrl: SITE_BRAND_ASSETS.heroBanner,
+          smartHomeBannerUrl: undefined,
         };
       }
     } catch (e) {

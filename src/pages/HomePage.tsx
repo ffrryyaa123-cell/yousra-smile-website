@@ -48,7 +48,6 @@ const DeferredBlock: React.FC<{ children: React.ReactNode; minHeight?: string }>
 );
 
 export const HomePage: React.FC = () => {
-  const [showDeferredContent, setShowDeferredContent] = React.useState(false);
   const { categories } = useManagedCategories();
   const {
     visibleProducts: products,
@@ -96,11 +95,6 @@ export const HomePage: React.FC = () => {
       container.scrollBy({ left: offset, behavior: 'smooth' });
     }
   };
-
-  React.useEffect(() => {
-    const timer = window.setTimeout(() => setShowDeferredContent(true), 2500);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   return (
     <div className="space-y-3 sm:space-y-4 pb-6 text-[#2C1802] dark:text-[#FDFCFB]">
@@ -181,8 +175,6 @@ export const HomePage: React.FC = () => {
           </p>
         </div>
       </section>
-
-      {showDeferredContent ? <>
 
       {/* Daily Deals Notice Line above Product Cards */}
       <div
@@ -367,7 +359,7 @@ export const HomePage: React.FC = () => {
           {/* Scroll container */}
           <div
             ref={dealsCarouselRef}
-            className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-none pb-2 select-none"
+            className="flex gap-4 overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-mandatory scrollbar-none pb-2 select-none"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {featuredProducts.map(prod => (
@@ -503,7 +495,7 @@ export const HomePage: React.FC = () => {
           {/* Scroll container */}
           <div
             ref={topSellingCarouselRef}
-            className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-none pb-2 select-none"
+            className="flex gap-4 overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-mandatory scrollbar-none pb-2 select-none"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {topSellingProducts.map(prod => (
@@ -750,8 +742,6 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
-
-      </> : <div className="min-h-[60vh]" aria-hidden="true" />}
 
     </div>
   );
