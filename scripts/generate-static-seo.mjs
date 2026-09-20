@@ -28,7 +28,7 @@ const normalizeSlug = value =>
     .slice(0, 90) || 'product';
 
 const productSlug = product => `${normalizeSlug(product.titleEn || product.titleAr || product.id)}--${encodeURIComponent(product.id)}`;
-const productPath = product => `/product/${productSlug(product)}`;
+const productPath = product => `/product/${productSlug(product)}/`;
 const absoluteProductUrl = product => `${ORIGIN}${productPath(product)}`;
 
 const escapeHtml = value => String(value ?? '')
@@ -132,16 +132,16 @@ if (heldFromSeo > 0) console.warn(`[generate-static-seo] Held ${heldFromSeo} inc
 
 const pageDefinitions = [
   ['/', 'Yousra Smile | يسرى سمايل - Smart Home, Kitchen & Lifestyle Picks', 'Curated smart-home, kitchen, cleaning, lifestyle and personal-care product reviews, deals and buying links.'],
-  ['/products', 'Smart Products Catalog & Reviews | Yousra Smile', 'Browse Yousra Smile product reviews, specifications, current retailer pricing and buying links.'],
-  ['/videos', 'Product Video Reviews | Yousra Smile', 'Watch product demonstrations and video reviews for smart-home, kitchen and lifestyle products.'],
-  ['/deals', 'Current Deals & Coupons | Yousra Smile', 'Browse current product deals, discounts and coupons from supported retailers.'],
-  ['/compare', 'Compare Products | Yousra Smile', 'Compare product prices, specifications and features side by side.'],
-  ['/about', 'About Yousra Smile | من نحن', 'Learn about Yousra Smile and how products, reviews and affiliate links are selected.'],
-  ['/contact', 'Contact Yousra Smile | اتصل بنا', 'Contact Yousra Smile for questions, feedback and collaboration.'],
-  ['/privacy', 'Privacy Policy | Yousra Smile', 'Read the Yousra Smile privacy policy.'],
-  ['/terms', 'Terms of Use | Yousra Smile', 'Read the Yousra Smile terms of use.'],
-  ['/cookies', 'Cookie Policy | Yousra Smile', 'Read the Yousra Smile cookie policy.'],
-  ['/disclosure', 'Affiliate Disclosure | Yousra Smile', 'Yousra Smile affiliate disclosure for retailer links and qualifying purchases.']
+  ['/products/', 'Smart Products Catalog & Reviews | Yousra Smile', 'Browse Yousra Smile product reviews, specifications, current retailer pricing and buying links.'],
+  ['/videos/', 'Product Video Reviews | Yousra Smile', 'Watch product demonstrations and video reviews for smart-home, kitchen and lifestyle products.'],
+  ['/deals/', 'Current Deals & Coupons | Yousra Smile', 'Browse current product deals, discounts and coupons from supported retailers.'],
+  ['/compare/', 'Compare Products | Yousra Smile', 'Compare product prices, specifications and features side by side.'],
+  ['/about/', 'About Yousra Smile | من نحن', 'Learn about Yousra Smile and how products, reviews and affiliate links are selected.'],
+  ['/contact/', 'Contact Yousra Smile | اتصل بنا', 'Contact Yousra Smile for questions, feedback and collaboration.'],
+  ['/privacy/', 'Privacy Policy | Yousra Smile', 'Read the Yousra Smile privacy policy.'],
+  ['/terms/', 'Terms of Use | Yousra Smile', 'Read the Yousra Smile terms of use.'],
+  ['/cookies/', 'Cookie Policy | Yousra Smile', 'Read the Yousra Smile cookie policy.'],
+  ['/disclosure/', 'Affiliate Disclosure | Yousra Smile', 'Yousra Smile affiliate disclosure for retailer links and qualifying purchases.']
 ];
 
 for (const [route, title, description] of pageDefinitions) {
@@ -158,6 +158,11 @@ for (const [route, title, description] of pageDefinitions) {
   if (route !== '/') writeRoute(route, html);
   else fs.writeFileSync(path.join(DIST, 'index.html'), html, 'utf8');
 }
+
+let legacyHome = setCanonical(baseTemplate, `${ORIGIN}/`);
+legacyHome = replaceMeta(legacyHome, 'name:robots', 'noindex, follow');
+legacyHome = injectVerification(legacyHome);
+writeRoute('/home/', legacyHome);
 
 for (const product of seoProducts) {
   const titleEn = String(product.titleEn || product.titleAr || product.brand || 'Product').trim();
