@@ -1,12 +1,13 @@
+// PUBLIC_LANGUAGE_V4
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { 
-  Bell, 
-  X, 
-  Mail, 
-  CheckCircle2, 
-  TrendingDown, 
-  Sparkles, 
+import {
+  Bell,
+  X,
+  Mail,
+  CheckCircle2,
+  TrendingDown,
+  Sparkles,
   ShieldCheck,
   DollarSign,
   AlertCircle
@@ -21,7 +22,7 @@ export const PriceAlertModal: React.FC = () => {
 
   if (!alertModalProduct) return null;
 
-  const title = language === 'en' ? (alertModalProduct.titleEn || alertModalProduct.titleAr) : alertModalProduct.titleAr;
+  const title = language === 'en' ? (alertModalProduct.titleEn || alertModalProduct.brand || 'Product') : (alertModalProduct.titleAr || alertModalProduct.titleEn || alertModalProduct.brand || 'منتج');
   const isAlreadyAlerted = isSubscribedToAlert(alertModalProduct.id);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -81,8 +82,8 @@ export const PriceAlertModal: React.FC = () => {
 
           {/* Product Summary Card */}
           <div className="flex items-center gap-4 bg-[#18181B] p-4 rounded-2xl border border-[#FDFCFB]/10">
-            <img 
-              src={alertModalProduct.image} 
+            <img
+              src={alertModalProduct.image}
               alt={title}
               referrerPolicy="no-referrer"
               className="w-16 h-16 object-cover rounded-xl border border-[#FDFCFB]/10 shrink-0"
@@ -117,7 +118,7 @@ export const PriceAlertModal: React.FC = () => {
                   {language === 'en' ? 'Alert Activated Successfully!' : 'تم تفعيل التنبيه بنجاح!'}
                 </h4>
                 <p className="text-xs text-emerald-200/80 leading-relaxed">
-                  {language === 'en' 
+                  {language === 'en'
                     ? `We will email ${email} immediately when the price drops below ${targetPrice} ${alertModalProduct.currency}.`
                     : `سنقوم بإرسال إشعار فوري إلى ${email} بمجرد انخفاض السعر إلى أقل من ${targetPrice} ${alertModalProduct.currency}.`}
                 </p>
@@ -140,7 +141,7 @@ export const PriceAlertModal: React.FC = () => {
                 </label>
                 <div className="relative">
                   <Mail className="w-5 h-5 text-slate-400 absolute top-3.5 right-3.5 ltr:right-auto ltr:left-3.5 pointer-events-none" />
-                  <input 
+                  <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -161,7 +162,7 @@ export const PriceAlertModal: React.FC = () => {
                     {formatPrice(targetPrice)}
                   </span>
                 </div>
-                <input 
+                <input
                   type="range"
                   min={Math.round(alertModalProduct.discountPrice * 0.5)}
                   max={alertModalProduct.discountPrice}

@@ -2,12 +2,12 @@ import React, { Suspense, lazy } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
-import { HomePage } from './pages/HomePage';
 import { SEOHead } from './components/SEOHead';
 import { WhatsAppButton } from './components/WhatsAppButton';
 import { ScrollToTop } from './components/ScrollToTop';
 
 const ProductsPage = lazy(() => import('./pages/ProductsPage').then(m => ({ default: m.ProductsPage })));
+const HomePage = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })));
 const VideosPage = lazy(() => import('./pages/VideosPage').then(m => ({ default: m.VideosPage })));
 const DealsPage = lazy(() => import('./pages/DealsPage').then(m => ({ default: m.DealsPage })));
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage').then(m => ({ default: m.FavoritesPage })));
@@ -20,14 +20,15 @@ const PriceAlertModal = lazy(() => import('./components/PriceAlertModal').then(m
 const ThumbnailEditorModal = lazy(() => import('./components/ThumbnailEditorModal').then(m => ({ default: m.ThumbnailEditorModal })));
 const CartModal = lazy(() => import('./components/CartModal').then(m => ({ default: m.CartModal })));
 const RecentPurchaseToast = lazy(() => import('./components/RecentPurchaseToast').then(m => ({ default: m.RecentPurchaseToast })));
+const PublicVisitorBadge = lazy(() => import('./components/PublicVisitorBadge').then(m => ({ default: m.PublicVisitorBadge })));
 const VideoImportModal = lazy(() => import('./components/VideoImportModal').then(m => ({ default: m.VideoImportModal })));
 
 const LoadingFallback = () => <div className="min-h-[20vh]" aria-hidden="true" />;
 
 const AppContent: React.FC = () => {
-  const { 
-    activePage, 
-    selectedProduct, 
+  const {
+    activePage,
+    selectedProduct,
     closeProductDetail,
     selectedVideo,
     closeVideoModal,
@@ -79,6 +80,7 @@ const AppContent: React.FC = () => {
         {editingThumbnailVideo && <ThumbnailEditorModal video={editingThumbnailVideo} onClose={closeThumbnailEditor} />}
         {importVideoModalOpen && <VideoImportModal isOpen={importVideoModalOpen} onClose={closeImportVideoModal} preselectedProductId={importVideoPreselectedProductId} isReplacing={importVideoIsReplacing} defaultMode={importVideoDefaultMode} />}
         {activePage === 'admin' && <RecentPurchaseToast />}
+        {activePage !== 'admin' && <PublicVisitorBadge />}
       </Suspense>
 
       <WhatsAppButton />

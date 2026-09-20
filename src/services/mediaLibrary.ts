@@ -3,12 +3,15 @@ import { supabase } from './adminAccount';
 const BUCKET = 'product-videos';
 const FOLDER = 'media-library';
 
+export type MediaPlacement = 'none' | 'siteLogo' | 'heroBanner' | 'smartHomeBanner' | 'creatorAvatar';
+
 export interface MediaLibraryItem {
   id: string;
   name: string;
   url: string;
   type: 'logo' | 'banner' | 'product' | 'other';
   storagePath?: string;
+  placement?: MediaPlacement;
 }
 
 const safeFileName = (name: string) => {

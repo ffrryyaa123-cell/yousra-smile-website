@@ -1,15 +1,16 @@
+// PUBLIC_LANGUAGE_V2
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { 
-  Search, 
-  Sparkles, 
-  ExternalLink, 
-  CheckCircle2, 
-  Zap, 
-  ShieldCheck, 
-  Copy, 
-  Check, 
-  Video, 
+import {
+  Search,
+  Sparkles,
+  ExternalLink,
+  CheckCircle2,
+  Zap,
+  ShieldCheck,
+  Copy,
+  Check,
+  Video,
   ShoppingBag,
   ArrowRight,
   TrendingDown
@@ -17,7 +18,7 @@ import {
 import { extractBasicProductInfoFromUrl } from '../services/productVideoService';
 
 export const AffiliateDealScanner: React.FC = () => {
-  const { products, siteSettings, formatPrice, openProductDetail, setPage } = useApp();
+  const { products, siteSettings, formatPrice, openProductDetail, setPage, language } = useApp();
   const [inputQuery, setInputQuery] = useState('');
   const [scanResult, setScanResult] = useState<any | null>(null);
   const [copied, setCopied] = useState(false);
@@ -28,10 +29,10 @@ export const AffiliateDealScanner: React.FC = () => {
 
     const trimmed = inputQuery.trim();
     // 1. Try matching with existing products catalog first
-    const matched = products.find(p => 
-      p.titleAr.toLowerCase().includes(trimmed.toLowerCase()) ||
-      p.titleEn.toLowerCase().includes(trimmed.toLowerCase()) ||
-      p.brand.toLowerCase().includes(trimmed.toLowerCase()) ||
+    const matched = products.find(p =>
+      String(p.titleAr || '').toLowerCase().includes(trimmed.toLowerCase()) ||
+      String(p.titleEn || '').toLowerCase().includes(trimmed.toLowerCase()) ||
+      String(p.brand || '').toLowerCase().includes(trimmed.toLowerCase()) ||
       (p.amazonUrl && p.amazonUrl.includes(trimmed)) ||
       (p.aliexpressUrl && p.aliexpressUrl.includes(trimmed))
     );
@@ -74,13 +75,13 @@ export const AffiliateDealScanner: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-black border border-red-500/30 mb-2">
             <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-            <span>فاحص الروابط والعروض الفوري (Affiliate Link Scanner)</span>
+            <span>{language === 'ar' ? 'فاحص الروابط والعروض الفوري' : 'Affiliate Link & Deal Scanner'}</span>
           </div>
           <h3 className="text-lg sm:text-xl font-black text-white font-['Tajawal']">
-            هل لديك رابط منتج وتريد أفضل كود خصم ورابط شراء موثوق؟
+            {language === 'ar' ? 'هل لديك رابط منتج وتريد التحقق من رابط الشراء؟' : 'Have a product link? Check the matching product and purchase link.'}
           </h3>
           <p className="text-xs text-slate-300 mt-0.5">
-            الصق أي رابط من أمازون أو علي إكسبريس أو اكتب اسم الجهاز للتحقق من العرض ورابط الخصم الترويجي
+            {language === 'ar' ? 'الصق رابط Amazon أو AliExpress أو اكتب اسم المنتج للبحث في الكتالوج.' : 'Paste an Amazon or AliExpress URL, or enter a product name to search the catalog.'}
           </p>
         </div>
       </div>
@@ -92,7 +93,7 @@ export const AffiliateDealScanner: React.FC = () => {
             type="text"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
-            placeholder="الصق رابط المنتج (Amazon / AliExpress) أو اكتب اسم الجهاز (مثل: Roborock، قلاية فيليبس)..."
+            placeholder={language === 'ar' ? 'الصق رابط المنتج أو اكتب اسم الجهاز...' : 'Paste a product URL or enter a product name...'}
             className="w-full pl-4 pr-11 py-3 rounded-2xl bg-slate-950 border border-purple-500/50 text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
           />
           <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
@@ -103,7 +104,7 @@ export const AffiliateDealScanner: React.FC = () => {
           className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 cursor-pointer transition-all shrink-0"
         >
           <Sparkles className="w-4 h-4 text-amber-300" />
-          <span>فحص العرض وتجهيز الرابط</span>
+          <span>{language === 'ar' ? 'فحص العرض وتجهيز الرابط' : 'Check Product Link'}</span>
         </button>
       </form>
 
@@ -116,16 +117,16 @@ export const AffiliateDealScanner: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-emerald-400">تم التحقق من الرابط والخصم</span>
+                <span className="text-xs font-bold text-emerald-400">{language === 'ar' ? 'تم التحقق من الرابط' : 'Link checked'}</span>
                 <span className="text-[10px] bg-red-600 text-white font-black px-2 py-0.5 rounded-md">
-                  خصم حتى {scanResult.discountPercent}%
+                  {language === 'ar' ? `خصم حتى ${scanResult.discountPercent}%` : `Up to ${scanResult.discountPercent}% off`}
                 </span>
               </div>
               <h4 className="text-sm font-bold text-white mt-1">
-                {scanResult.type === 'matched' ? scanResult.product.titleAr : scanResult.name}
+                {scanResult.type === 'matched' ? (language === 'en' ? (scanResult.product.titleEn || scanResult.product.brand || 'Product') : (scanResult.product.titleAr || scanResult.product.titleEn)) : scanResult.name}
               </h4>
               <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                العلامة التجارية: {scanResult.type === 'matched' ? scanResult.product.brand : scanResult.brand}
+                {language === 'ar' ? 'العلامة التجارية:' : 'Brand:'} {scanResult.type === 'matched' ? scanResult.product.brand : scanResult.brand}
               </p>
             </div>
           </div>
@@ -139,12 +140,12 @@ export const AffiliateDealScanner: React.FC = () => {
               {copied ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>تم نسخ الرابط!</span>
+                  <span>{language === 'ar' ? 'تم نسخ الرابط!' : 'Link copied!'}</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5 text-slate-400" />
-                  <span>نسخ الرابط المعتمد</span>
+                  <span>{language === 'ar' ? 'نسخ الرابط' : 'Copy Link'}</span>
                 </>
               )}
             </button>
@@ -156,7 +157,7 @@ export const AffiliateDealScanner: React.FC = () => {
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer"
             >
               <ShoppingBag className="w-3.5 h-3.5" />
-              <span>الشراء بالخصم المباشر</span>
+              <span>{language === 'ar' ? 'الشراء عبر الرابط' : 'Open Purchase Link'}</span>
               <ExternalLink className="w-3 h-3" />
             </a>
 
@@ -166,7 +167,7 @@ export const AffiliateDealScanner: React.FC = () => {
                 onClick={() => openProductDetail(scanResult.product)}
                 className="px-3 py-2 rounded-xl bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-700 text-xs font-bold flex items-center gap-1 cursor-pointer"
               >
-                <span>تفاصيل السلعة</span>
+                <span>{language === 'ar' ? 'تفاصيل السلعة' : 'Product Details'}</span>
                 <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
               </button>
             )}

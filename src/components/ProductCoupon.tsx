@@ -1,5 +1,7 @@
+// PUBLIC_LANGUAGE_V4
 import React from 'react';
 import { Product } from '../types';
+import { useApp } from '../context/AppContext';
 
 export function ProductCouponFields({ value, onChange }: {
   value: Product['coupon']; onChange: (value: NonNullable<Product['coupon']>) => void;
@@ -29,12 +31,13 @@ export function ProductCouponFields({ value, onChange }: {
 }
 
 export function ProductCouponBadge({ coupon }: { coupon: Product['coupon'] }) {
+  const { language } = useApp();
   if (!coupon?.isPublic || !coupon.label.trim() || !coupon.terms.trim()) return null;
   if (coupon.expiresOn && Date.now() > Date.parse(`${coupon.expiresOn}T23:59:59Z`)) return null;
   return <div className="rounded-lg border border-green-500/40 p-2 text-xs text-green-300">
     <strong>{coupon.label}</strong>{coupon.code && <span dir="ltr"> — {coupon.code}</span>}
     <p>{coupon.terms}</p>
-    {coupon.expiresOn && <p>حتى {coupon.expiresOn}</p>}
-    <p>يُطبق حسب أهلية الحساب وشروط المتجر عند الدفع.</p>
+    {coupon.expiresOn && <p>{language === 'ar' ? 'حتى' : 'Valid through'} {coupon.expiresOn}</p>}
+    <p>{language === 'ar' ? 'يُطبق حسب أهلية الحساب وشروط المتجر عند الدفع.' : 'Coupon eligibility and final terms are determined by the retailer at checkout.'}</p>
   </div>;
 }

@@ -23,6 +23,16 @@ export interface ManagedCategory {
 }
 
 const defaults: ManagedCategory[] = CATEGORIES.map(category => ({ ...category, id: String(category.id) }));
+// CANONICAL_CATEGORY_ID_RECOVERY: preserve product/category relationships after a category is recreated.
+const canonicalCategoryId = (item: any): string | null => {
+  const ar = String(item?.nameAr || '').trim().toLocaleLowerCase();
+  const en = String(item?.nameEn || '').trim().toLocaleLowerCase();
+  const match = defaults.find(candidate =>
+    (ar && String(candidate.nameAr).trim().toLocaleLowerCase() === ar) ||
+    (en && String(candidate.nameEn).trim().toLocaleLowerCase() === en)
+  );
+  return match ? String(match.id) : null;
+};
 let cache: ManagedCategory[] | null = null;
 let loadingPromise: Promise<ManagedCategory[]> | null = null;
 
@@ -31,7 +41,7 @@ const normalize = (value: unknown): ManagedCategory[] => {
   return value
     .filter(item => item && typeof item === 'object')
     .map((item: any) => ({
-      id: String(item.id || `category-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`),
+      id: canonicalCategoryId(item) || String(item.id || `category-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`),
       nameAr: String(item.nameAr || item.nameEn || 'قسم جديد'),
       nameEn: String(item.nameEn || item.nameAr || 'New Category'),
       icon: String(item.icon || '📦'),
