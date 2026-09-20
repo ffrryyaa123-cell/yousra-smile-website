@@ -290,6 +290,7 @@ export const catalogDatabase = {
     } catch (error) {
       scheduleOutboxFlush();
       console.warn('Product save queued for automatic retry.', error);
+      throw error;
     }
   },
 
@@ -303,6 +304,7 @@ export const catalogDatabase = {
     } catch (error) {
       scheduleOutboxFlush();
       console.warn('Video save queued for automatic retry.', error);
+      throw error;
     }
   },
 
@@ -402,7 +404,7 @@ export const catalogDatabase = {
     } catch (error) {
       scheduleOutboxFlush();
       console.warn('Product patch queued for automatic retry.', error);
-      return { ...patch, id: productId } as Product;
+      throw error;
     }
   },
 

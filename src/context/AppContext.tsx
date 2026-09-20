@@ -4,11 +4,9 @@ import { INITIAL_PRODUCTS } from '../data/initialProducts';
 import { SAMPLE_BLOG_POSTS } from '../data/blogPosts';
 import { translations, Language } from '../utils/i18n';
 import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../utils/currency';
-import { catalogDatabase } from '../services/supabaseCatalog';
+import { catalogDatabase } from '../services/lazyCatalog';
 import { LEGACY_WRONG_SITE_LOGOS, optimizedBrandAssetUrl, SITE_BRAND_ASSETS } from '../config/siteBrand';
-import { loadMediaLibraryState, mediaPlacementSettings, MediaLibraryState } from '../services/mediaLibrary';
-import { loadReviewCounts, recordReviewOpen } from '../services/reviewEngagement';
-import { recordSiteActivity } from '../services/siteActivity';
+import type { MediaLibraryState } from '../services/mediaLibrary';
 import { pageFromPath, pagePath, productIdFromPath, productPath } from '../utils/productSeo';
 
 interface AppContextType {
@@ -121,6 +119,14 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const recordSiteActivity = (...args: Parameters<typeof import('../services/siteActivity')['recordSiteActivity']>) => {
+  void import('../services/siteActivity').then(({ recordSiteActivity: record }) => record(...args));
+};
+
+const recordReviewOpen = (videoId: string) => {
+  void import('../services/reviewEngagement').then(({ recordReviewOpen: record }) => record(videoId));
+};
+
 const LOCAL_STORAGE_PRODUCTS_KEY = 'yousrasmile_products_v5';
 const LOCAL_STORAGE_DELETED_PRODUCTS_KEY = 'yousrasmile_deleted_products_v1';
 const LOCAL_STORAGE_FAVS_KEY = 'yousrasmile_favorites_v1';
@@ -224,7 +230,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     let active = true;
     const load = async () => {
-      try { const counts = await loadReviewCounts(); if (active) setReviewOpenCounts(counts); }
+      try {
+        const { loadReviewCounts } = await import('../services/reviewEngagement');
+        const counts = await loadReviewCounts();
+        if (active) setReviewOpenCounts(counts);
+      }
       catch { if (active) setReviewOpenCounts(null); }
     };
     const update = (event: Event) => {
@@ -232,10 +242,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (typeof videoId==='string' && Number.isSafeInteger(opens) && opens>=0)
         setReviewOpenCounts(previous => previous ? {...previous,[videoId]:opens} : previous);
     };
-    void load();
+    const initialTimer = window.setTimeout(() => void load(), 1800);
     const timer = window.setInterval(() => { if (!document.hidden) void load(); },30000);
     window.addEventListener('review-count-updated',update);
-    return () => {active=false; window.clearInterval(timer); window.removeEventListener('review-count-updated',update);};
+    return () => {active=false; window.clearTimeout(initialTimer); window.clearInterval(timer); window.removeEventListener('review-count-updated',update);};
   },[]);
 
   const [videos, setVideos] = useState<VideoReview[]>(() => {
@@ -257,13 +267,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Static data remains the safe fallback while the visitor is offline or on
   // the very first load before the remote fetch resolves.
   useEffect(() => {
-    const stopProducts = catalogDatabase.subscribeProducts(remoteProducts => {
-      if (remoteProducts.length > 0) setProducts(remoteProducts.map(normalizeProduct));
-    }, error => console.warn('Supabase products unavailable; using local catalog.', error));
-    const stopVideos = catalogDatabase.subscribeVideos(remoteVideos => {
-      setVideos(remoteVideos);
-    }, error => console.warn('Supabase videos unavailable; using local catalog.', error));
-    return () => { stopProducts(); stopVideos(); };
+    let active = true;
+    let stopProducts = () => undefined;
+    let stopVideos = () => undefined;
+    const timer = window.setTimeout(() => {
+      if (!active) return;
+      stopProducts = catalogDatabase.subscribeProducts(remoteProducts => {
+        if (remoteProducts.length > 0) setProducts(remoteProducts.map(normalizeProduct));
+      }, error => console.warn('Supabase products unavailable; using local catalog.', error));
+      stopVideos = catalogDatabase.subscribeVideos(remoteVideos => {
+        setVideos(remoteVideos);
+      }, error => console.warn('Supabase videos unavailable; using local catalog.', error));
+    }, 1200);
+    return () => { active = false; window.clearTimeout(timer); stopProducts(); stopVideos(); };
   }, []);
 
   const [editingThumbnailVideo, setEditingThumbnailVideo] = useState<VideoReview | null>(null);
@@ -371,14 +387,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     let active = true;
+    let mapPlacements: ((state: MediaLibraryState) => Partial<SiteSettings>) | null = null;
     const apply = (state: MediaLibraryState) => {
-      if (!active) return;
-      setSiteSettings(previous => ({ ...previous, ...mediaPlacementSettings(state) }));
+      if (!active || !mapPlacements) return;
+      setSiteSettings(previous => ({ ...previous, ...mapPlacements!(state) }));
     };
-    void loadMediaLibraryState().then(apply).catch(error => console.warn('Media placement settings unavailable; using safe defaults.', error));
+    const timer = window.setTimeout(() => {
+      void import('../services/mediaLibrary').then(({ loadMediaLibraryState, mediaPlacementSettings }) => {
+        mapPlacements = mediaPlacementSettings;
+        return loadMediaLibraryState().then(apply);
+      }).catch(error => console.warn('Media placement settings unavailable; using safe defaults.', error));
+    }, 1200);
     const listener = (event: Event) => apply((event as CustomEvent<MediaLibraryState>).detail);
     window.addEventListener('yousra-media-library-updated', listener);
-    return () => { active = false; window.removeEventListener('yousra-media-library-updated', listener); };
+    return () => { active = false; window.clearTimeout(timer); window.removeEventListener('yousra-media-library-updated', listener); };
   }, []);
 
   const getAffiliateUrl = useCallback((product: Product, platform: 'amazon' | 'aliexpress'): string => {
@@ -504,7 +526,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activePage, setActivePage] = useState<PageView>('home');
   useEffect(() => {
     // Delay also prevents React StrictMode's discarded mount from counting twice.
-    const timer = window.setTimeout(() => void recordSiteActivity('page_view', activePage), 250);
+    const timer = window.setTimeout(() => void recordSiteActivity('page_view', activePage), 2500);
     return () => window.clearTimeout(timer);
   }, [activePage]);
   const [activeStaticTab, setActiveStaticTab] = useState<'about' | 'contact' | 'privacy' | 'terms' | 'cookies' | 'disclosure'>('about');

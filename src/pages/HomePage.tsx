@@ -37,7 +37,6 @@ import { FlashDealsTicker } from '../components/FlashDealsTicker';
 import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
 import { SmartSavingsCalculator } from '../components/SmartSavingsCalculator';
 import { AffiliateDealScanner } from '../components/AffiliateDealScanner';
-import { InstantVideoStudio } from '../components/InstantVideoStudio';
 import { ReviewOpenCount } from '../components/ReviewOpenCount';
 import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/imageUrl';
 
