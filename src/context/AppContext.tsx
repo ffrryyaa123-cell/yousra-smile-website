@@ -9,6 +9,7 @@ import { LEGACY_WRONG_SITE_LOGOS, SITE_BRAND_ASSETS } from '../config/siteBrand'
 import { loadMediaLibraryState, mediaPlacementSettings, MediaLibraryState } from '../services/mediaLibrary';
 import { loadReviewCounts, recordReviewOpen } from '../services/reviewEngagement';
 import { recordSiteActivity } from '../services/siteActivity';
+import { pageFromPath, pagePath, productIdFromPath, productPath } from '../utils/productSeo';
 
 interface AppContextType {
   products: Product[];
@@ -47,7 +48,7 @@ interface AppContextType {
   currencyConfig: CurrencyConfig;
   t: typeof translations.ar;
   activeStaticTab: 'about' | 'contact' | 'privacy' | 'terms' | 'cookies' | 'disclosure';
-  
+
   // Currency helpers
   setCurrency: (code: CurrencyCode) => void;
   formatPrice: (priceInSar: number) => string;
@@ -72,12 +73,12 @@ interface AppContextType {
   isSubscribedToAlert: (productId: string) => boolean;
   openThumbnailEditor: (video: VideoReview) => void;
   closeThumbnailEditor: () => void;
-  updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => Promise<void>;
+  updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
   removeVideoThumbnail: (videoId: string) => Promise<void>;
   replaceReviewMedia: (videoId: string, productId: string, media: Pick<VideoReview, 'videoUrl' | 'platform' | 'duration'> & { storagePath?: string }) => Promise<void>;
   addVideo: (videoData: Omit<VideoReview, 'id' | 'views' | 'date'> & { id?: string; views?: string; date?: string }) => Promise<boolean>;
   deleteVideo: (videoId: string) => Promise<void>;
-  
+
   // Video Import & Replacement Modal (from device or link)
   importVideoModalOpen: boolean;
   importVideoPreselectedProductId: string | null;
@@ -93,7 +94,7 @@ interface AppContextType {
   setLanguage: (lang: Language) => void;
   recentlyViewedIds: string[];
   filterByBrand: (brandName: string) => void;
-  
+
   // Admin CRUD
   addProduct: (newProduct: Omit<Product, 'id' | 'createdAt' | 'viewsCount'> & Partial<Pick<Product, 'id' | 'createdAt' | 'viewsCount'>>) => Product;
   importProductsBulk: (newProducts: Product[]) => void;
@@ -108,7 +109,7 @@ interface AppContextType {
   deleteProduct: (id: string) => void;
   resetCatalog: () => void;
   addReview: (productId: string, userName: string, rating: number, comment: string) => void;
-  
+
   // Metrics
   logAffiliateClick: (productId: string, platform: 'amazon' | 'aliexpress') => void;
 
@@ -136,15 +137,16 @@ const LOCAL_STORAGE_SETTINGS_KEY = 'yousrasmile_settings_v4';
 
 const DEFAULT_SITE_SETTINGS: SiteSettings = {
   siteName: 'ابتسامة يسرى (Yousra Smile)',
-  siteLogo: SITE_BRAND_ASSETS.siteLogo,
-  creatorAvatarUrl: SITE_BRAND_ASSETS.creatorAvatar,
-  heroBannerUrl: SITE_BRAND_ASSETS.heroBanner,
+  siteLogo: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=200&q=80',
   defaultLanguage: 'ar',
   defaultCurrency: 'USD',
   instagramUrl: 'https://instagram.com/yousrasmile',
   snapchatUrl: 'https://snapchat.com/add/yousrasmile',
+  twitterUrl: 'https://x.com/yousrasmile',
+  threadsUrl: 'https://www.threads.com/@yousrasmile1',
   pinterestUrl: 'https://pinterest.com/yousrasmile',
   youtubeUrl: 'https://youtube.com/@yousrasmile',
+  youtubeOAuthClientId: '',
   tiktokUrl: 'https://tiktok.com/@yousrasmile',
   amazonTag: 'frial-20',
   aliexpressTag: 'yousra_affiliate_id',
@@ -204,20 +206,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Always merge newly published catalog products without removing products
-          // the administrator has already saved in this browser.
+          // CURRENT_CATALOG_AUTHORITY: never resurrect deleted historical seed products.
           const activeSaved = parsed.filter((p: Product) => !deletedIds.has(p.id));
-          const existingIds = new Set(activeSaved.map((p: Product) => p.id));
-          const newDefaults = INITIAL_PRODUCTS.filter(p => !existingIds.has(p.id) && !deletedIds.has(p.id));
-          return [...activeSaved.map(normalizeProduct), ...newDefaults.map(normalizeProduct)];
+          return activeSaved.map(normalizeProduct);
         }
       }
     } catch (e) {
       console.error('Error loading products from localStorage:', e);
     }
-    const deletedIdsRaw = localStorage.getItem(LOCAL_STORAGE_DELETED_PRODUCTS_KEY);
-    const deletedIds = new Set<string>(deletedIdsRaw ? JSON.parse(deletedIdsRaw) : []);
-    return INITIAL_PRODUCTS.filter(p => !deletedIds.has(p.id)).map(normalizeProduct);
+    // CURRENT_CATALOG_AUTHORITY: Supabase will populate the current catalog.
+    return [];
   });
 
   const [reviewOpenCounts, setReviewOpenCounts] = useState<Record<string,number> | null>(null);
@@ -341,16 +339,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_SETTINGS_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved) as Partial<SiteSettings>;
-        return {
-          ...DEFAULT_SITE_SETTINGS,
-          ...parsed,
-          siteLogo: !parsed.siteLogo || LEGACY_WRONG_SITE_LOGOS.has(parsed.siteLogo) ? SITE_BRAND_ASSETS.siteLogo : parsed.siteLogo,
-          creatorAvatarUrl: parsed.creatorAvatarUrl || SITE_BRAND_ASSETS.creatorAvatar,
-          heroBannerUrl: parsed.heroBannerUrl || SITE_BRAND_ASSETS.heroBanner,
-        };
-      }
+      if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error('Error loading settings:', e);
     }
@@ -367,18 +356,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return updated;
     });
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    const apply = (state: MediaLibraryState) => {
-      if (!active) return;
-      setSiteSettings(previous => ({ ...previous, ...mediaPlacementSettings(state) }));
-    };
-    void loadMediaLibraryState().then(apply).catch(error => console.warn('Media placement settings unavailable; using safe defaults.', error));
-    const listener = (event: Event) => apply((event as CustomEvent<MediaLibraryState>).detail);
-    window.addEventListener('yousra-media-library-updated', listener);
-    return () => { active = false; window.removeEventListener('yousra-media-library-updated', listener); };
   }, []);
 
   const getAffiliateUrl = useCallback((product: Product, platform: 'amazon' | 'aliexpress'): string => {
@@ -435,7 +412,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_LANG_KEY);
       if (saved === 'en' || saved === 'ar') return saved;
-      
+
       const savedSettings = localStorage.getItem(LOCAL_STORAGE_SETTINGS_KEY);
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings);
@@ -444,24 +421,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {}
     return 'ar';
   });
-
-  useEffect(() => {
-    if (!products.length) return;
-    setVideos(previous => {
-      let changed = false;
-      const next = previous.map(video => {
-        const product = video.productId ? products.find(item => item.id === video.productId) : undefined;
-        if (!product) return video;
-        const productTitle = video.productTitle || (language === 'en' ? product.titleEn : product.titleAr) || product.titleEn || product.titleAr;
-        const productImage = video.productImage || product.image || product.images?.[0] || '';
-        const thumbnailUrl = video.hideThumbnail ? '' : (video.thumbnailUrl || productImage);
-        if (productTitle === video.productTitle && productImage === video.productImage && thumbnailUrl === video.thumbnailUrl) return video;
-        changed = true;
-        return { ...video, productTitle, productImage, thumbnailUrl };
-      });
-      return changed ? next : previous;
-    });
-  }, [products, language]);
 
   // Currency state
   const [currency, setCurrencyState] = useState<CurrencyCode>(() => {
@@ -512,6 +471,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedSubcategory, setSelectedSubcategoryState] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Keep the existing state-driven UI, but give every public page and product a
+  // stable browser URL. Direct visits from Google resolve after the live
+  // Supabase catalog arrives; back/forward navigation stays in sync too.
+  const syncRouteFromLocation = useCallback(() => {
+    const pathname = window.location.pathname;
+    const route = pageFromPath(pathname);
+    if (route) {
+      setActivePage(route.page);
+      if (route.staticTab) setActiveStaticTab(route.staticTab);
+    }
+
+    const routeProductId = productIdFromPath(pathname);
+    if (routeProductId) {
+      const match = products.find(product => product.id === routeProductId && product.isActive !== false && !product.isHidden);
+      if (match) setSelectedProduct(match);
+    } else {
+      setSelectedProduct(null);
+    }
+  }, [products]);
+
+  useEffect(() => {
+    syncRouteFromLocation();
+    window.addEventListener('popstate', syncRouteFromLocation);
+    return () => window.removeEventListener('popstate', syncRouteFromLocation);
+  }, [syncRouteFromLocation]);
+
+  useEffect(() => {
+    if (!selectedProduct || activePage === 'admin') return;
+    const timer = window.setTimeout(
+      () => void recordSiteActivity('product_view', 'products', selectedProduct.id),
+      250
+    );
+    return () => window.clearTimeout(timer);
+  }, [selectedProduct?.id, activePage]);
   const [selectedVideo, setSelectedVideo] = useState<VideoReview | null>(null);
 
   // Video Import & Replacement Modal (Device / Link)
@@ -559,7 +553,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Update or Add to videos feed
     const existingVideoIndex = videos.findIndex(v => v.productId === productId);
     const videoTitle = customTitle || `مراجعة وتجربة حصرية لـ ${prod.titleAr}`;
-    
+
     if (existingVideoIndex >= 0) {
       setVideos(prev => prev.map((v, i) => {
         if (i !== existingVideoIndex) return v;
@@ -743,6 +737,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [language]);
 
   const setPage = (page: PageView, staticTab?: 'about' | 'contact' | 'privacy' | 'terms' | 'cookies' | 'disclosure') => {
+    const nextPath = pagePath(page, staticTab);
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState({ ysPage: page }, '', nextPath);
+    }
+    setSelectedProduct(null);
     setActivePage(page);
     if (staticTab) {
       setActiveStaticTab(staticTab);
@@ -756,9 +755,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const toggleFavorite = (productId: string) => {
-    setFavorites(prev => 
-      prev.includes(productId) 
-        ? prev.filter(id => id !== productId) 
+    setFavorites(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
         : [...prev, productId]
     );
   };
@@ -767,6 +766,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const closeCartModal = () => setCartModalOpen(false);
 
   const addToCart = (productId: string, quantity: number = 1) => {
+    if (activePage !== 'admin') void recordSiteActivity('cart_add', activePage, productId);
     setCart(prev => {
       const existingIndex = prev.findIndex(item => item.productId === productId);
       if (existingIndex > -1) {
@@ -815,15 +815,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const clearCompare = () => setCompareList([]);
 
   const openProductDetail = (product: Product) => {
+    if (activePage !== 'admin') {
+      const nextProductPath = productPath(product);
+      if (window.location.pathname !== nextProductPath) {
+        window.history.pushState({ ysProductId: product.id }, '', nextProductPath);
+      }
+    }
     setSelectedProduct(product);
     setRecentlyViewedIds(prev => {
       const filtered = prev.filter(id => id !== product.id);
       return [product.id, ...filtered].slice(0, 10);
     });
-    void recordSiteActivity('product_view', activePage, product.id);
   };
 
-  const closeProductDetail = () => setSelectedProduct(null);
+  const closeProductDetail = () => {
+    setSelectedProduct(null);
+    if (activePage !== 'admin' && productIdFromPath(window.location.pathname)) {
+      window.history.replaceState(
+        { ysPage: activePage },
+        '',
+        pagePath(activePage, activeStaticTab)
+      );
+    }
+  };
 
   const openVideoModal = (video: VideoReview) => {
     setSelectedVideo(video);
@@ -858,9 +872,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openThumbnailEditor = (video: VideoReview) => setEditingThumbnailVideo(video);
   const closeThumbnailEditor = () => setEditingThumbnailVideo(null);
 
-  const updateVideoThumbnail = async (videoId: string, newThumbnailUrl: string) => {
-    const updated = await catalogDatabase.patchVideo(videoId, { thumbnailUrl: newThumbnailUrl, hideThumbnail: false });
-    setVideos(prev => prev.map(v => v.id === videoId ? updated : v));
+  const updateVideoThumbnail = (videoId: string, newThumbnailUrl: string) => {
+    setVideos(prev => prev.map(v => {
+      if (v.id !== videoId) return v;
+      const updated = { ...v, thumbnailUrl: newThumbnailUrl, hideThumbnail: false };
+      void catalogDatabase.saveVideo(updated).catch(console.error);
+      return updated;
+    }));
   };
 
   const removeVideoThumbnail = async (videoId: string) => {
@@ -941,9 +959,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const newItems = importedList.filter(product => !existingIds.has(product.id));
       return [...newItems, ...updatedExisting];
     });
-    importedList.forEach(product => void catalogDatabase.patchProduct(product.id, product as unknown as Record<string, unknown>).catch(async () => {
-      await catalogDatabase.saveProduct(product);
-    }));
+    importedList.forEach(product => void catalogDatabase.saveProduct(product).catch(console.error));
   };
 
   const addReview = (productId: string, userName: string, rating: number, comment: string) => {
@@ -981,16 +997,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateProduct = (updatedProduct: Product) => {
     setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
-    void catalogDatabase.patchProduct(updatedProduct.id, updatedProduct as unknown as Record<string, unknown>).catch(console.error);
+    void catalogDatabase.saveProduct(updatedProduct).catch(console.error);
   };
 
   const patchProduct = (productId: string, patch: Partial<Product>) => {
-    const safePatch = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)) as Partial<Product>;
     // Optimistic local update so the open screen reflects the change
     // immediately — merged onto whatever local copy exists, same as the
     // database merge below.
-    setProducts(prev => prev.map(p => p.id === productId ? { ...p, ...safePatch } : p));
-    void catalogDatabase.patchProduct(productId, safePatch as Record<string, unknown>).catch(console.error);
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, ...patch } : p));
+    void catalogDatabase.patchProduct(productId, patch as Record<string, unknown>).catch(console.error);
   };
 
   const deleteProduct = (id: string) => {
@@ -1018,13 +1033,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const resetCatalog = () => {
-    const confirmMsg = language === 'ar' 
-      ? 'هل أنت تأكيد من إعادة ضبط قائمة المنتجات إلى الوضع الافتراضي الأصلي؟'
-      : 'Are you sure you want to reset product catalog to original defaults?';
+    const confirmMsg = language === 'ar'
+      ? 'إعادة تحميل قائمة المنتجات الحالية المحفوظة في قاعدة البيانات؟ لن تتم استعادة أي منتجات قديمة.'
+      : 'Reload the current saved catalog from the database? No historical products will be restored.';
     if (window.confirm(confirmMsg)) {
-      setProducts(INITIAL_PRODUCTS);
       localStorage.removeItem(LOCAL_STORAGE_PRODUCTS_KEY);
       localStorage.removeItem(LOCAL_STORAGE_DELETED_PRODUCTS_KEY);
+      window.location.reload();
     }
   };
 

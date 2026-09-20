@@ -1,12 +1,13 @@
+// PUBLIC_LANGUAGE_V4
 import React from 'react';
-import { 
-  ShoppingBag, 
-  X, 
-  Trash2, 
-  Plus, 
-  Minus, 
-  ExternalLink, 
-  ShoppingBasket, 
+import {
+  ShoppingBag,
+  X,
+  Trash2,
+  Plus,
+  Minus,
+  ExternalLink,
+  ShoppingBasket,
   ArrowRight,
   Sparkles,
   CheckCircle2
@@ -14,13 +15,13 @@ import {
 import { useApp } from '../context/AppContext';
 
 export const CartModal: React.FC = () => {
-  const { 
-    cart, 
-    products, 
-    cartModalOpen, 
-    closeCartModal, 
-    removeFromCart, 
-    updateCartQuantity, 
+  const {
+    cart,
+    products,
+    cartModalOpen,
+    closeCartModal,
+    removeFromCart,
+    updateCartQuantity,
     clearCart,
     formatPriceObject,
     language,
@@ -48,7 +49,7 @@ export const CartModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
-      <div 
+      <div
         className="relative w-full max-w-lg h-full bg-[#111113] text-[#FDFCFB] border-l ltr:border-r ltr:border-l-0 border-[#D4AF37]/30 shadow-2xl flex flex-col justify-between overflow-hidden animate-in slide-in-from-right duration-300"
         onClick={(e) => e.stopPropagation()}
       >
@@ -92,8 +93,8 @@ export const CartModal: React.FC = () => {
                   {language === 'ar' ? 'سلة التسوق فارغة حالياً' : 'Your Shopping Cart is Empty'}
                 </h3>
                 <p className="text-xs text-slate-400 max-w-xs">
-                  {language === 'ar' 
-                    ? 'تصفحي منتجات يسرى المميزة وأضيفي المنتجات التي تنال إعجابكِ لمتابعة الشراء' 
+                  {language === 'ar'
+                    ? 'تصفحي منتجات يسرى المميزة وأضيفي المنتجات التي تنال إعجابكِ لمتابعة الشراء'
                     : 'Browse featured items and add products to your cart for direct shopping.'}
                 </p>
               </div>
@@ -119,18 +120,18 @@ export const CartModal: React.FC = () => {
               </div>
 
               {cartItems.map(({ productId, quantity, product }) => {
-                const title = language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr;
+                const title = language === 'en' ? (product.titleEn || product.brand || 'Product') : (product.titleAr || product.titleEn || product.brand || 'منتج');
                 const priceObj = formatPriceObject(product.discountPrice * quantity);
                 const unitPriceObj = formatPriceObject(product.discountPrice);
 
                 return (
-                  <div 
+                  <div
                     key={productId}
                     className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-[#D4AF37]/40 transition-all flex gap-3 items-center group shadow-md"
                   >
                     {/* Thumbnail */}
-                    <img 
-                      src={product.image} 
+                    <img
+                      src={product.image}
                       alt={title}
                       onClick={() => {
                         openProductDetail(product);
@@ -141,7 +142,7 @@ export const CartModal: React.FC = () => {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <h4 
+                      <h4
                         onClick={() => {
                           openProductDetail(product);
                           closeCartModal();
@@ -224,7 +225,7 @@ export const CartModal: React.FC = () => {
                   <span className="font-mono font-bold">-{formattedSavings.fullText}</span>
                 </div>
               )}
-              
+
               <div className="flex justify-between items-center text-slate-300 text-sm font-bold pt-1 border-t border-slate-800">
                 <span>{language === 'ar' ? 'المجموع الكلي' : 'Total Amount'}</span>
                 <span className="text-amber-400 font-mono text-base font-extrabold">{formattedTotal.fullText}</span>

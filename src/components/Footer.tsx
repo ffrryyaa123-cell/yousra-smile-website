@@ -2,7 +2,7 @@ import React from 'react';
 import { Youtube, Video, Instagram, Sparkles, Heart, ShieldCheck, Mail, ArrowLeft, Settings, Ghost } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useManagedCategories } from '../services/categoryManager';
-import { SITE_BRAND_ASSETS } from '../config/siteBrand';
+import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.webp';
 
 export const Footer: React.FC = () => {
   const { categories } = useManagedCategories();
@@ -23,11 +23,11 @@ export const Footer: React.FC = () => {
     <footer className="bg-black text-white border-t border-slate-800 transition-colors pt-16 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-800">
-          
+
           {/* Brand Info & Story */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <img src={siteSettings.siteLogo || SITE_BRAND_ASSETS.siteLogo} alt="Yousra Smile" className="w-12 h-12 rounded-xl object-cover border-2 border-purple-500/40" referrerPolicy="no-referrer" />
+              <img src={siteSettings.siteLogo || logoImg} alt="Yousra Smile" loading="lazy" decoding="async" fetchPriority="low" className="w-12 h-12 rounded-xl object-cover border-2 border-purple-500/40" referrerPolicy="no-referrer" />
               <div>
                 <span className="text-xl font-extrabold text-white font-['Tajawal'] tracking-wide">
                   {t.siteTitle}
@@ -41,45 +41,45 @@ export const Footer: React.FC = () => {
             </p>
 
             <div className="flex items-center gap-3 pt-2">
-              <a 
-                href={siteSettings.youtubeUrl || "https://youtube.com"} 
-                target="_blank" 
+              <a
+                href={siteSettings.youtubeUrl || "https://youtube.com"}
+                target="_blank"
                 rel="noreferrer"
                 className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-red-600 text-white border border-slate-700 flex items-center justify-center transition-all"
                 title="YouTube Channel"
               >
                 <Youtube className="w-5 h-5" />
               </a>
-              <a 
-                href={siteSettings.tiktokUrl || "https://tiktok.com"} 
-                target="_blank" 
+              <a
+                href={siteSettings.tiktokUrl || "https://tiktok.com"}
+                target="_blank"
                 rel="noreferrer"
                 className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-pink-600 text-white border border-slate-700 flex items-center justify-center transition-all"
                 title="TikTok Account"
               >
                 <Video className="w-5 h-5" />
               </a>
-              <a 
-                href={siteSettings.instagramUrl || "https://instagram.com/yousrasmile"} 
-                target="_blank" 
+              <a
+                href={siteSettings.instagramUrl || "https://instagram.com/yousrasmile"}
+                target="_blank"
                 rel="noreferrer"
                 className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-gradient-to-tr hover:from-amber-500 hover:via-pink-500 hover:to-purple-600 text-white border border-slate-700 flex items-center justify-center transition-all shadow-xs"
                 title="Instagram Account"
               >
                 <Instagram className="w-5 h-5" />
               </a>
-              <a 
-                href={siteSettings.snapchatUrl || "https://snapchat.com/add/yousrasmile"} 
-                target="_blank" 
+              <a
+                href={siteSettings.snapchatUrl || "https://snapchat.com/add/yousrasmile"}
+                target="_blank"
                 rel="noreferrer"
                 className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-yellow-400 hover:text-black text-yellow-300 border border-slate-700 flex items-center justify-center transition-all shadow-xs"
                 title="Snapchat Account"
               >
                 <Ghost className="w-5 h-5" />
               </a>
-              <a 
-                href={siteSettings.pinterestUrl || "https://pinterest.com"} 
-                target="_blank" 
+              <a
+                href={siteSettings.pinterestUrl || "https://pinterest.com"}
+                target="_blank"
                 rel="noreferrer"
                 className="w-10 h-10 rounded-xl bg-slate-900 hover:bg-red-600 text-white border border-slate-700 flex items-center justify-center transition-all shadow-xs"
                 title="Pinterest Boards"
@@ -117,8 +117,8 @@ export const Footer: React.FC = () => {
                 </button>
               </li>
               <li>
-                <button 
-                  onClick={() => setPage('admin')} 
+                <button
+                  onClick={() => setPage('admin')}
                   className="hover:text-white text-white font-bold transition-colors flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-purple-900 border border-purple-600 w-fit"
                 >
                   <Settings className="w-3.5 h-3.5 text-amber-300" />
@@ -172,7 +172,7 @@ export const Footer: React.FC = () => {
 
             <form onSubmit={handleSubscribe} className="space-y-2">
               <div className="relative">
-                <input 
+                <input
                   type="email"
                   required
                   placeholder={t.newsletterPlaceholder}
@@ -180,7 +180,7 @@ export const Footer: React.FC = () => {
                   onChange={(e) => setEmailInput(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-purple-400"
                 />
-                <button 
+                <button
                   type="submit"
                   className="absolute left-1 top-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black p-1.5 rounded-lg transition-colors font-bold"
                 >

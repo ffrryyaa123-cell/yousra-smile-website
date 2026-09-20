@@ -1,13 +1,14 @@
+// PUBLIC_LANGUAGE_V4
 import React from 'react';
 import { ProductCouponBadge } from './ProductCoupon';
 import { Product } from '../types';
 import { useApp } from '../context/AppContext';
-import { 
-  Heart, 
-  Scale, 
-  Star, 
-  PlaySquare, 
-  ShoppingBag, 
+import {
+  Heart,
+  Scale,
+  Star,
+  PlaySquare,
+  ShoppingBag,
   ShoppingCart,
   ExternalLink,
   Eye,
@@ -24,11 +25,11 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'grid' }) => {
-  const { 
-    favorites, 
-    compareList, 
-    toggleFavorite, 
-    toggleCompare, 
+  const {
+    favorites,
+    compareList,
+    toggleFavorite,
+    toggleCompare,
     openProductDetail,
     openVideoModal,
     openPriceAlertModal,
@@ -48,8 +49,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
   const isAlerted = isSubscribedToAlert(product.id);
   const inCart = isInCart(product.id);
 
-  const displayTitle = language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr;
-  const displayDesc = language === 'en' ? (product.descriptionEn || product.description) : product.description;
+  const displayTitle = language === 'en' ? (product.titleEn || product.brand || 'Product') : (product.titleAr || product.titleEn || product.brand || 'منتج');
+  const displayDesc = language === 'en' ? (product.descriptionEn || product.longDescriptionEn || '') : (product.description || product.longDescription || '');
   const displayFeatures = language === 'en' ? (product.featuresEn || []) : (product.features || []);
 
   const handleBuyAmazon = (e: React.MouseEvent) => {
@@ -77,7 +78,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
         const match = product.youtubeUrl.match(/(?:v=|\/embed\/|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
         embedId = match ? match[1] : 'nB6r6qL0xQc';
       }
-      
+
       openVideoModal({
         id: `vid-${product.id}`,
         productId: product.id,
@@ -99,14 +100,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
 
   if (layout === 'list') {
     return (
-      <div 
+      <div
         onClick={() => openProductDetail(product)}
         className="group bg-[#180D2B] rounded-2xl border border-purple-500/20 p-3.5 hover:shadow-xl hover:border-amber-400/60 transition-all duration-300 flex flex-col sm:flex-row gap-4 cursor-pointer text-slate-100"
       >
         {/* Product Image */}
         <div className="relative w-full sm:w-52 h-44 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-purple-500/20">
-          <img 
-            src={product.image} 
+          <img
+            src={product.image}
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
             alt={displayTitle}
             referrerPolicy="no-referrer"
             className="w-full h-full object-contain p-2 transition-transform duration-700 ease-out transform-gpu group-hover:scale-105"
@@ -134,7 +138,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
               </span>
               <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
                 <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                <span>{product.rating > 0 && product.rating <= 5 ? `${product.rating} / 5` : 'التقييم غير متاح'}</span>
+                <span>{product.rating > 0 && product.rating <= 5 ? `${product.rating} / 5` : (language === 'ar' ? 'التقييم غير متاح' : 'Rating unavailable')}</span>
                 <span className="text-slate-300 font-normal">({product.reviewCount})</span>
               </div>
             </div>
@@ -198,14 +202,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
   }
 
   return (
-    <div 
+    <div
       onClick={() => openProductDetail(product)}
       className="group bg-[#180D2B] rounded-2xl border border-purple-500/20 hover:border-amber-400/60 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden cursor-pointer relative text-slate-100 w-full max-w-sm sm:max-w-none mx-auto"
     >
       {/* Top Image Container */}
       <div className="relative w-full h-40 sm:h-44 bg-slate-900 overflow-hidden border-b border-purple-500/20">
-        <img 
-          src={product.image} 
+        <img
+          src={product.image}
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
           alt={displayTitle}
           referrerPolicy="no-referrer"
           className="w-full h-full object-contain p-2 transition-transform duration-700 ease-out transform-gpu group-hover:scale-105"
@@ -221,8 +228,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           )}
           {product.originalPrice > product.discountPrice && (
             <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-1.5 py-0.5 rounded shadow border border-amber-300">
-              {language === 'ar' 
-                ? `توفير ${formatPrice(product.originalPrice - product.discountPrice)}` 
+              {language === 'ar'
+                ? `توفير ${formatPrice(product.originalPrice - product.discountPrice)}`
                 : `Save ${formatPrice(product.originalPrice - product.discountPrice)}`}
             </span>
           )}
@@ -239,8 +246,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           <button
             onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }}
             className={`p-1.5 rounded-full shadow-md backdrop-blur-md transition-all ${
-              isFav 
-                ? 'bg-red-500 text-white' 
+              isFav
+                ? 'bg-red-500 text-white'
                 : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-red-400 border border-slate-700/60'
             }`}
             title={isFav ? (language === 'ar' ? 'إزالة من المفضلة' : 'Remove from Favorites') : (language === 'ar' ? 'إضافة للمفضلة' : 'Add to Favorites')}
@@ -249,13 +256,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           </button>
 
           <button
-            onClick={(e) => { 
-              e.stopPropagation(); 
+            onClick={(e) => {
+              e.stopPropagation();
               addToCart(product.id);
             }}
             className={`p-1.5 rounded-full shadow-md backdrop-blur-md transition-all ${
-              inCart 
-                ? 'bg-amber-400 text-slate-950 font-bold border border-amber-300' 
+              inCart
+                ? 'bg-amber-400 text-slate-950 font-bold border border-amber-300'
                 : 'bg-slate-900/80 text-amber-300 hover:bg-slate-800 hover:text-amber-400 border border-slate-700/60'
             }`}
             title={inCart ? (language === 'ar' ? 'المنتج في السلة' : 'In Cart') : (language === 'ar' ? 'إضافة إلى سلة التسوق' : 'Add to Shopping Cart')}
@@ -264,8 +271,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           </button>
 
           <button
-            onClick={(e) => { 
-              e.stopPropagation(); 
+            onClick={(e) => {
+              e.stopPropagation();
               if (navigator.share) {
                 navigator.share({
                   title: language === 'en' ? (product.titleEn || product.titleAr) : product.titleAr,
@@ -285,8 +292,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           <button
             onClick={(e) => { e.stopPropagation(); toggleCompare(product.id); }}
             className={`p-1.5 rounded-full shadow-md backdrop-blur-md transition-all ${
-              isCompared 
-                ? 'bg-purple-600 text-white' 
+              isCompared
+                ? 'bg-purple-600 text-white'
                 : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-amber-400 border border-slate-700/60'
             }`}
             title={isCompared ? (language === 'ar' ? 'إزالة من المقارنة' : 'Remove from Compare') : (language === 'ar' ? 'إضافة للمقارنة' : 'Add to Compare')}
@@ -297,8 +304,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           <button
             onClick={(e) => { e.stopPropagation(); openPriceAlertModal(product); }}
             className={`p-1.5 rounded-full shadow-md backdrop-blur-md transition-all ${
-              isAlerted 
-                ? 'bg-amber-500 text-slate-950 font-bold' 
+              isAlerted
+                ? 'bg-amber-500 text-slate-950 font-bold'
                 : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-amber-400 border border-slate-700/60'
             }`}
             title={language === 'en' ? 'Set Price Alert' : 'تنبيه انخفاض السعر'}
@@ -387,8 +394,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           </div>
 
           <button
-            onClick={(e) => { 
-              e.stopPropagation(); 
+            onClick={(e) => {
+              e.stopPropagation();
               if (!inCart) addToCart(product.id);
               openCartModal();
             }}
@@ -396,8 +403,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
           >
             <ShoppingCart className="w-3 h-3 text-amber-400" />
             <span>
-              {inCart 
-                ? (language === 'ar' ? 'في السلة — اضغط للعرض' : 'In Cart — View Cart') 
+              {inCart
+                ? (language === 'ar' ? 'في السلة — اضغط للعرض' : 'In Cart — View Cart')
                 : (language === 'ar' ? 'إضافة لسلة التسوق' : 'Add to Shopping Cart')}
             </span>
           </button>

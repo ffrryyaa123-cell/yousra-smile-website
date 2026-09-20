@@ -1,18 +1,24 @@
+// PUBLIC_LANGUAGE_V2
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { useManagedCategories } from '../services/categoryManager';
 import { PlaySquare, CheckCircle2, Search, ArrowLeft, Flame } from 'lucide-react';
-import { SITE_BRAND_ASSETS } from '../config/siteBrand';
+import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.webp';
+import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.webp';
 
 export const HeroBanner: React.FC = () => {
   const { categories } = useManagedCategories();
   const { setPage, setSelectedCategory, searchQuery, setSearchQuery, language, t, videos, visibleProducts, openVideoModal, siteSettings } = useApp();
   const showcase = videos.find(video => !video.productId || visibleProducts.some(p => p.id === video.productId));
+  const showcaseProduct = showcase?.productId ? visibleProducts.find(p => p.id === showcase.productId) : undefined;
+  const showcaseTitle = language === 'en'
+    ? (showcaseProduct?.titleEn || showcaseProduct?.brand || (!/[\u0600-\u06FF]/.test(String(showcase?.productTitle || showcase?.title || '')) ? (showcase?.productTitle || showcase?.title) : 'Product review'))
+    : (showcaseProduct?.titleAr || showcase?.productTitle || showcase?.title || 'مراجعات المنتجات');
 
   return (
     <div className="relative w-full overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 text-white rounded-3xl my-4 sm:my-6 border border-purple-800/60 shadow-2xl">
       <div className="absolute inset-0 z-0 opacity-25 mix-blend-overlay">
-        <img src={siteSettings.heroBannerUrl || SITE_BRAND_ASSETS.heroBanner} alt="" aria-hidden="true" loading="lazy" decoding="async" fetchPriority="low" className="w-full h-full object-cover scale-105" />
+        <img src={siteSettings.heroBannerUrl || bannerImg} alt="" aria-hidden="true" loading="lazy" decoding="async" fetchPriority="low" className="w-full h-full object-cover scale-105" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-10 py-12 sm:py-16 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -38,12 +44,12 @@ export const HeroBanner: React.FC = () => {
         <div className="lg:col-span-5 flex justify-center">
           <div className="relative w-full max-w-sm bg-slate-900/90 backdrop-blur-xl border border-purple-800/60 p-5 rounded-3xl shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2.5"><img src={siteSettings.creatorAvatarUrl || SITE_BRAND_ASSETS.creatorAvatar} alt="Yousra" width="40" height="40" loading="lazy" decoding="async" className="w-10 h-10 rounded-full border border-purple-400" /><div><h4 className="text-xs font-bold text-white">{t.creatorName}</h4><p className="text-[10px] text-slate-400">{t.creatorBio}</p></div></div>
+              <div className="flex items-center gap-2.5"><img src={siteSettings.creatorAvatarUrl || siteSettings.siteLogo || logoImg} alt="Yousra" width="40" height="40" loading="lazy" decoding="async" className="w-10 h-10 rounded-full border border-purple-400" /><div><h4 className="text-xs font-bold text-white">{t.creatorName}</h4><p className="text-[10px] text-slate-400">{t.creatorBio}</p></div></div>
               <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"><PlaySquare className="w-3 h-3" />{t.liveBadge}</span>
             </div>
             <div className="relative h-44 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800">
               {showcase && !showcase.hideThumbnail && <img src={showcase.thumbnailUrl || showcase.productImage} alt={showcase.productTitle || showcase.title} loading="lazy" decoding="async" fetchPriority="low" className="w-full h-full object-cover" />}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent flex items-end p-3"><div className="w-full flex items-center justify-between"><div><span className="text-[10px] text-amber-300 font-bold block">{t.reviewOfTheWeek} 🔥</span><h5 className="text-xs font-bold text-white">{showcase?.productTitle || showcase?.title || (language === 'ar' ? 'مراجعات المنتجات' : 'Product reviews')}</h5></div><button aria-label={language === 'ar' ? 'تشغيل المراجعة' : 'Play review'} onClick={() => showcase ? openVideoModal(showcase) : setPage('videos')} className="p-2 bg-red-600 hover:bg-red-500 rounded-full text-white shadow-md transition-transform hover:scale-110"><PlaySquare className="w-4 h-4" /></button></div></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent flex items-end p-3"><div className="w-full flex items-center justify-between"><div><span className="text-[10px] text-amber-300 font-bold block">{t.reviewOfTheWeek} 🔥</span><h5 className="text-xs font-bold text-white">{showcaseTitle}</h5></div><button aria-label={language === 'ar' ? 'تشغيل المراجعة' : 'Play review'} onClick={() => showcase ? openVideoModal(showcase) : setPage('videos')} className="p-2 bg-red-600 hover:bg-red-500 rounded-full text-white shadow-md transition-transform hover:scale-110"><PlaySquare className="w-4 h-4" /></button></div></div>
             </div>
             <div className="space-y-1.5"><span className="text-[11px] text-slate-400 font-bold block">{t.quickJumpCategories}</span><div className="flex flex-wrap gap-1.5">{categories.slice(0, 4).map(cat => <button key={cat.id} onClick={() => { setSelectedCategory(cat.id); setPage('products'); }} className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg transition-colors border border-slate-700">{language === 'en' ? cat.nameEn : cat.nameAr}</button>)}</div></div>
           </div>

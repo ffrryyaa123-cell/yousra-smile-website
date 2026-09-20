@@ -91,7 +91,8 @@ videos = videos.replace(
   "const { videos, visibleProducts: products, openVideoModal, removeVideoThumbnail, deleteVideo, logAffiliateClick, formatPrice, getAffiliateUrl, openImportVideoModal } = useApp();",
   "const { videos, visibleProducts: products, openVideoModal, removeVideoThumbnail, deleteVideo, logAffiliateClick, formatPrice, getAffiliateUrl, openImportVideoModal, language } = useApp();"
 );
-videos = videos
+if (!videos.includes("Video Review Library")) {
+  videos = videos
   .replace('مكتبة فيديوهات المراجعات', "{language === 'en' ? 'Video Review Library' : 'مكتبة فيديوهات المراجعات'}")
   .replace('شاهد مراجعات يسرى سمايل قبل الشراء 🎥', "{language === 'en' ? 'Watch Yousra Smile reviews before you buy 🎥' : 'شاهد مراجعات يسرى سمايل قبل الشراء 🎥'}")
   .replace('شاهد فيديوهات المراجعات وتصفّح تفاصيل المنتجات وروابط المتاجر.', "{language === 'en' ? 'Watch product reviews and browse product details and retailer links.' : 'شاهد فيديوهات المراجعات وتصفّح تفاصيل المنتجات وروابط المتاجر.'}")
@@ -103,6 +104,7 @@ videos = videos
   .replace('                    {video.title}', "                    {language === 'en' ? (linkedProd?.titleEn ? `Yousra Smile Review: ${linkedProd.titleEn}` : (!/[\\u0600-\\u06FF]/.test(String(video.title || '')) ? (video.title || 'Product Review') : 'Product Review')) : video.title}")
   .replace('سعر الشراء المباشر:', "{language === 'en' ? 'Current buying price:' : 'سعر الشراء المباشر:'}")
   .replace('شراء من أمازون', "{language === 'en' ? 'Buy on Amazon' : 'شراء من أمازون'}");
+}
 fs.writeFileSync(videosFile, videos, 'utf8');
 
 console.log('[patch-language-and-sitemap-safety] Strict bilingual public mode + canonical sitemap recovery enabled.');

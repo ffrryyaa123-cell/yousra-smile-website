@@ -96,28 +96,16 @@ if (!products.length) {
   throw new Error('[generate-static-seo] Public product catalog is empty; refusing to publish an empty sitemap.');
 }
 
-const { data: videoRows, error: videoError } = await supabase
-  .from('videos')
-  .select('id,product_id,data,updated_at')
-  .order('updated_at', { ascending: false });
-if (videoError) throw new Error(`[generate-static-seo] Could not read public videos from Supabase: ${videoError.message}`);
-
-const videosByProduct = new Map();
-for (const row of videoRows || []) {
-  const video = { ...(row.data || {}), id: row.id, productId: row.product_id || row.data?.productId, _updatedAt: row.updated_at || nowIso };
-  if (!video.productId || !/^https?:\/\//i.test(String(video.videoUrl || ''))) continue;
-  const list = videosByProduct.get(video.productId) || [];
-  list.push(video);
-  videosByProduct.set(video.productId, list);
-}
-
-const isoDuration = value => {
-  const parts = String(value || '').split(':').map(Number);
-  if (parts.some(part => !Number.isFinite(part))) return undefined;
-  const seconds = parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : parts.length === 2 ? parts[0] * 60 + parts[1] : parts[0];
-  if (!seconds) return undefined;
-  return `PT${Math.floor(seconds / 3600) ? `${Math.floor(seconds / 3600)}H` : ''}${Math.floor((seconds % 3600) / 60) ? `${Math.floor((seconds % 3600) / 60)}M` : ''}${seconds % 60 ? `${seconds % 60}S` : ''}`;
+const hasMeaningfulTitle = product => {
+  const title = String(product.titleEn || product.titleAr || '').trim();
+  if (!title) return false;
+  const id = String(product.id || '').trim().toLowerCase();
+  const normalized = title.toLowerCase();
+  return normalized !== id && normalized !== `product ${id}` && normalized !== 'featured product' && normalized !== 'product';
 };
+const seoProducts = products.filter(hasMeaningfulTitle);
+const heldFromSeo = products.length - seoProducts.length;
+if (heldFromSeo > 0) console.warn(`[generate-static-seo] Held ${heldFromSeo} incomplete products out of sitemap until their real titles are restored.`);
 
 const pageDefinitions = [
   ['/', 'Yousra Smile | يسرى سمايل - Smart Home, Kitchen & Lifestyle Picks', 'Curated smart-home, kitchen, cleaning, lifestyle and personal-care product reviews, deals and buying links.'],
@@ -148,7 +136,7 @@ for (const [route, title, description] of pageDefinitions) {
   else fs.writeFileSync(path.join(DIST, 'index.html'), html, 'utf8');
 }
 
-for (const product of products) {
+for (const product of seoProducts) {
   const titleEn = String(product.titleEn || product.titleAr || product.brand || 'Product').trim();
   const titleAr = String(product.titleAr || '').trim();
   const pageTitle = compact(`${titleEn} | Review, Price & Details | Yousra Smile`, 66);
@@ -228,11 +216,11 @@ const sitemapEntries = [
     loc: `${ORIGIN}${route === '/' ? '/' : route}`,
     lastmod: nowIso
   })),
-  ...products.map(product => ({ loc: absoluteProductUrl(product), lastmod: product._updatedAt || nowIso }))
+  ...seoProducts.map(product => ({ loc: absoluteProductUrl(product), lastmod: product._updatedAt || nowIso }))
 ];
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n${sitemapEntries.map(entry => { const product = products.find(item => absoluteProductUrl(item) === entry.loc); const productVideos = product ? (videosByProduct.get(product.id) || []) : []; return `  <url>\n    <loc>${escapeHtml(entry.loc)}</loc>\n    <lastmod>${escapeHtml(new Date(entry.lastmod).toISOString())}</lastmod>${productVideos.map(video => { const thumbnail = video.thumbnailUrl || video.productImage || product?.image; return thumbnail && video.videoUrl ? `\n    <video:video><video:thumbnail_loc>${escapeHtml(thumbnail)}</video:thumbnail_loc><video:title>${escapeHtml(compact(video.titleEn || video.title || product?.titleEn || product?.titleAr || 'Product video', 100))}</video:title><video:description>${escapeHtml(compact(video.descriptionEn || video.description || product?.descriptionEn || 'Product video review', 200))}</video:description><video:content_loc>${escapeHtml(video.videoUrl)}</video:content_loc></video:video>` : ''; }).join('')}\n  </url>`; }).join('\n')}\n</urlset>\n`;
 fs.writeFileSync(path.join(DIST, 'sitemap.xml'), sitemap, 'utf8');
 fs.writeFileSync(path.join(DIST, 'robots.txt'), 'User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: https://yousrasmile.com/sitemap.xml\n', 'utf8');
 
-console.log(`[generate-static-seo] Generated ${products.length} product pages and ${sitemapEntries.length} sitemap URLs.`);
+console.log(`[generate-static-seo] Generated ${seoProducts.length} product pages and ${sitemapEntries.length} sitemap URLs.`);

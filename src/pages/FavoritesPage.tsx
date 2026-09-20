@@ -1,21 +1,22 @@
+// PUBLIC_LANGUAGE_V2
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { ProductCard } from '../components/ProductCard';
 import { Heart, Trash2, ArrowLeft, Bell, Mail, ShoppingBag, ShoppingCart, ArrowRight } from 'lucide-react';
 
 export const FavoritesPage: React.FC = () => {
-  const { 
+  const {
     visibleProducts: products,
-    favorites, 
-    toggleFavorite, 
-    setPage, 
-    priceAlerts, 
-    removePriceAlert, 
-    openProductDetail, 
+    favorites,
+    toggleFavorite,
+    setPage,
+    priceAlerts,
+    removePriceAlert,
+    openProductDetail,
     addToCart,
     openCartModal,
-    language, 
-    formatPrice 
+    language,
+    formatPrice
   } = useApp();
 
   const favProducts = products.filter(p => favorites.includes(p.id));
@@ -27,7 +28,7 @@ export const FavoritesPage: React.FC = () => {
 
   return (
     <div className="space-y-10 pb-16">
-      
+
       {/* Header */}
       <div className="bg-[#111113] text-[#FDFCFB] rounded-3xl p-6 sm:p-8 border border-[#D4AF37]/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
         <div>
@@ -36,8 +37,8 @@ export const FavoritesPage: React.FC = () => {
             <span>{language === 'ar' ? 'قائمة المفضلات الشخصية للمتسوق' : 'Shopper Personal Favorites'}</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black font-heading text-white">
-            {language === 'ar' 
-              ? `المنتجات المحفوظة في المفضلة (${favProducts.length})` 
+            {language === 'ar'
+              ? `المنتجات المحفوظة في المفضلة (${favProducts.length})`
               : `Saved Favorite Products (${favProducts.length})`}
           </h1>
           <p className="text-xs text-slate-400 mt-1">
@@ -79,16 +80,16 @@ export const FavoritesPage: React.FC = () => {
         <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-4">
           <Heart className="w-16 h-16 text-slate-300 dark:text-slate-700 mx-auto" />
           <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 font-['Tajawal']">
-            قائمة المفضلة فارغة حالياً!
+            {language === 'ar' ? 'قائمة المفضلة فارغة حالياً!' : 'Your favorites list is empty.'}
           </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            اضغطي على أيقونة القلب على أي بطاقة منتج أثناء التصفح لحفظه في هذه القائمة.
+            {language === 'ar' ? 'اضغطي على أيقونة القلب على أي بطاقة منتج أثناء التصفح لحفظه في هذه القائمة.' : 'Use the heart icon on any product card to save it here.'}
           </p>
           <button
             onClick={() => setPage('products')}
             className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md transition-colors inline-flex items-center gap-2 cursor-pointer"
           >
-            تصفحي المنتجات الآن
+            {language === 'ar' ? 'تصفحي المنتجات الآن' : 'Browse Products'}
             <ArrowLeft className="w-4 h-4" />
           </button>
         </div>
@@ -103,10 +104,10 @@ export const FavoritesPage: React.FC = () => {
             </div>
             <div>
               <h2 className="text-xl font-bold font-serif-editorial text-white flex items-center gap-2">
-                تنبيهات الأسعار النشطة ({priceAlerts.length})
+                {language === 'ar' ? `تنبيهات الأسعار النشطة (${priceAlerts.length})` : `Active Price Alerts (${priceAlerts.length})`}
               </h2>
               <p className="text-xs text-slate-400">
-                إدارات التنبيهات التي قمت بتفعيلها لتلقي إشعارات البريد عند هبوط الأسعار.
+                {language === 'ar' ? 'إدارة التنبيهات التي قمت بتفعيلها لتلقي إشعارات البريد عند هبوط الأسعار.' : 'Manage alerts you created for price changes.'}
               </p>
             </div>
           </div>
@@ -117,30 +118,30 @@ export const FavoritesPage: React.FC = () => {
             {priceAlerts.map(alert => {
               const matchingProduct = products.find(p => p.id === alert.productId);
               return (
-                <div 
+                <div
                   key={alert.id}
                   className="bg-[#18181B] border border-[#FDFCFB]/10 rounded-2xl p-4 flex items-center gap-4 hover:border-[#D4AF37]/50 transition-all"
                 >
-                  <img 
-                    src={alert.productImage} 
+                  <img
+                    src={alert.productImage}
                     alt={alert.productTitle}
                     referrerPolicy="no-referrer"
                     className="w-16 h-16 object-cover rounded-xl border border-[#FDFCFB]/10 shrink-0 cursor-pointer"
                     onClick={() => matchingProduct && openProductDetail(matchingProduct)}
                   />
                   <div className="flex-1 min-w-0 space-y-1">
-                    <h4 
+                    <h4
                       onClick={() => matchingProduct && openProductDetail(matchingProduct)}
                       className="text-xs font-bold text-white truncate cursor-pointer hover:text-[#D4AF37] transition-colors"
                     >
                       {alert.productTitle}
                     </h4>
                     <div className="flex items-center gap-2 text-xs font-mono-meta">
-                      <span className="text-slate-400">السعر الحالي:</span>
+                      <span className="text-slate-400">{language === 'ar' ? 'السعر الحالي:' : 'Current price:'}</span>
                       <span className="text-amber-400 font-bold">{formatPrice(alert.currentPrice)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs font-mono-meta">
-                      <span className="text-slate-400">سعر التنبيه:</span>
+                      <span className="text-slate-400">{language === 'ar' ? 'سعر التنبيه:' : 'Alert price:'}</span>
                       <span className="text-emerald-400 font-bold">≤ {formatPrice(alert.targetPrice)}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px] text-slate-500 truncate pt-1">
@@ -152,7 +153,7 @@ export const FavoritesPage: React.FC = () => {
                   <button
                     onClick={() => removePriceAlert(alert.id)}
                     className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-950/30 rounded-xl transition-colors shrink-0"
-                    title="إلغاء التنبيه"
+                    title={language === 'ar' ? 'إلغاء التنبيه' : 'Remove alert'}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -163,7 +164,7 @@ export const FavoritesPage: React.FC = () => {
         ) : (
           <div className="text-center py-8 text-slate-500 text-xs space-y-2">
             <Bell className="w-8 h-8 mx-auto text-slate-600" />
-            <p>لا يوجد تنبيهات أسعار مفعلة حالياً. يمكنك تفعيل التنبيه على أي منتج من خلال زر الأيقونة الجرس 🔔.</p>
+            <p>{language === 'ar' ? 'لا يوجد تنبيهات أسعار مفعلة حالياً. يمكنك تفعيل التنبيه على أي منتج من خلال زر الجرس 🔔.' : 'No active price alerts. Use the bell button on a product to create one.'}</p>
           </div>
         )}
       </div>

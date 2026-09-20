@@ -2,7 +2,7 @@ import { CurrencyCode } from './utils/currency';
 
 export type { CurrencyCode };
 
-export type CategoryId = 
+export type CategoryId =
   | 'smart-home'
   | 'smart-kitchen'
   | 'furniture-decor'
@@ -181,8 +181,11 @@ export interface SiteSettings {
   defaultCurrency: CurrencyCode;
   instagramUrl?: string;
   snapchatUrl?: string;
+  twitterUrl?: string;
+  threadsUrl?: string;
   pinterestUrl: string;
   youtubeUrl: string;
+  youtubeOAuthClientId?: string;
   tiktokUrl: string;
   amazonTag: string;
   aliexpressTag: string;
@@ -271,18 +274,18 @@ export interface ProductVideoServiceInput {
   agentApiKey?: string;
 }
 
-export type PageView = 
-  | 'home' 
-  | 'products' 
-  | 'videos' 
-  | 'deals' 
-  | 'favorites' 
+export type PageView =
+  | 'home'
+  | 'products'
+  | 'videos'
+  | 'deals'
+  | 'favorites'
   | 'cart'
-  | 'compare' 
-  | 'admin' 
-  | 'about' 
-  | 'contact' 
-  | 'privacy' 
-  | 'terms' 
-  | 'cookies' 
+  | 'compare'
+  | 'admin'
+  | 'about'
+  | 'contact'
+  | 'privacy'
+  | 'terms'
+  | 'cookies'
   | 'disclosure';

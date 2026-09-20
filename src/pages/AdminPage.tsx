@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { useManagedCategories } from '../services/categoryManager';
 import { Product, VideoReview } from '../types';
-import { 
-  Settings, 
-  Plus, 
-  Edit3, 
-  Trash2, 
-  RotateCcw, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Lock, 
-  ShoppingBag, 
+import {
+  Settings,
+  Plus,
+  Edit3,
+  Trash2,
+  RotateCcw,
+  CheckCircle2,
+  ShieldCheck,
+  Lock,
+  ShoppingBag,
   ExternalLink,
   Eye,
   EyeOff,
@@ -70,6 +69,8 @@ import { AdminActivityPanel } from '../components/AdminActivityPanel';
 import { MediaLibraryManager } from '../components/MediaLibraryManager';
 import { CategoriesManager } from '../components/CategoriesManager';
 import { ActivityReport, loadActivityReport } from '../services/siteActivity';
+import { MediaLibraryItem, uploadMediaLibraryImage, deleteMediaLibraryImage } from '../services/mediaLibrary';
+import { useManagedCategories, ManagedCategory } from '../services/categoryManager';
 
 // Accounts allowed to open the dashboard. Kept as a list so a second owner mailbox
 // can be used without locking anyone out of the panel.
@@ -81,17 +82,84 @@ export const OWNER_EMAILS = [
 const isOwnerEmail = (email?: string | null): boolean =>
   Boolean(email && OWNER_EMAILS.includes(email.toLowerCase()));
 
+const cleanSeoText = (value?: string, max = 160) => (value || '').replace(/\s+/g, ' ').trim().slice(0, max);
+
+const uniqueSeo = (items: Array<string | undefined | null>) => Array.from(new Set(items.map(v => (v || '').trim()).filter(Boolean)));
+
+const makeHashtag = (value?: string) => {
+  const cleaned = (value || '').trim().replace(/\s+/g, '_').replace(/[^\p{L}\p{N}_-]/gu, '');
+  return cleaned ? '#' + cleaned : '';
+};
+
+const deriveProductSeoFields = (product: Partial<Product>) => {
+  const titleAr = cleanSeoText(product.titleAr || product.titleEn, 80);
+  const titleEn = cleanSeoText(product.titleEn || product.titleAr, 80);
+  const brand = cleanSeoText(product.brand, 40);
+  const subAr = cleanSeoText(product.subcategory, 60);
+  const subEn = cleanSeoText(product.subcategoryEn || product.subcategory, 60);
+  const descArSource = product.description || product.longDescription || titleAr;
+  const descEnSource = product.descriptionEn || product.longDescriptionEn || product.description || titleEn;
+  const featureAr = (product.features || []).filter(Boolean).slice(0, 4);
+  const featureEn = (product.featuresEn || []).filter(Boolean).slice(0, 4);
+
+  const keywordsAr = uniqueSeo([
+    ...(product.keywordsAr || []),
+    titleAr,
+    brand,
+    subAr,
+    ...featureAr,
+    'مراجعة المنتج',
+    'تسوق ذكي'
+  ]).slice(0, 12);
+
+  const keywordsEn = uniqueSeo([
+    ...(product.keywordsEn || []),
+    titleEn,
+    brand,
+    subEn,
+    ...featureEn,
+    'product review',
+    'smart shopping',
+    'Yousra Smile'
+  ]).slice(0, 12);
+
+  const hashtagsAr = uniqueSeo([
+    ...(product.hashtagsAr || []),
+    makeHashtag(brand),
+    makeHashtag(subAr),
+    '#يسرى_سمايل',
+    '#تسوق_ذكي'
+  ]).filter(Boolean).slice(0, 10);
+
+  const hashtagsEn = uniqueSeo([
+    ...(product.hashtagsEn || []),
+    makeHashtag(brand),
+    makeHashtag(subEn),
+    '#YousraSmile',
+    '#ProductReview',
+    '#SmartShopping'
+  ]).filter(Boolean).slice(0, 10);
+
+  const seoTitleAr = cleanSeoText(product.seoTitleAr || [titleAr, brand].filter(Boolean).join(' | ') + ' | Yousra Smile', 70);
+  const seoTitleEn = cleanSeoText(product.seoTitleEn || [titleEn, brand].filter(Boolean).join(' | ') + ' | Yousra Smile', 70);
+  const seoDescriptionAr = cleanSeoText(product.seoDescriptionAr || descArSource, 160);
+  const seoDescriptionEn = cleanSeoText(product.seoDescriptionEn || descEnSource, 160);
+  const socialCaption = cleanSeoText(product.socialCaption || [titleAr, seoDescriptionAr, ...hashtagsAr].filter(Boolean).join(' '), 320);
+
+  return { seoTitleAr, seoTitleEn, seoDescriptionAr, seoDescriptionEn, keywordsAr, keywordsEn, hashtagsAr, hashtagsEn, socialCaption };
+};
+
 export const AdminPage: React.FC = () => {
-  const { categories } = useManagedCategories();
-  const { 
-    products, 
+  const { categories, saveCategories, isSaving: categoriesSaving } = useManagedCategories();
+  const {
+    products,
     videos,
     favorites,
-    addProduct, 
+    addProduct,
     importProductsBulk,
-    updateProduct, 
+    updateProduct,
     patchProduct,
-    deleteProduct, 
+    deleteProduct,
     resetCatalog,
     openThumbnailEditor,
     openVideoModal,
@@ -130,7 +198,7 @@ export const AdminPage: React.FC = () => {
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const [loginEmail, setLoginEmail] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'categories' | 'messages' | 'analytics' | 'settings' | 'ai-assistant' | 'seo-text' | 'agent-hub' | 'workspace' | 'users'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'messages' | 'analytics' | 'settings' | 'ai-assistant' | 'seo-text' | 'agent-hub' | 'workspace' | 'users'>('overview');
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
@@ -151,6 +219,61 @@ export const AdminPage: React.FC = () => {
   const [isFastExtracting, setIsFastExtracting] = useState<boolean>(false);
 
 
+  const saveCategoryList = async (next: ManagedCategory[]) => {
+    try { await saveCategories(next); }
+    catch (error: any) { window.alert(error?.message || 'تعذر حفظ الأقسام.'); }
+  };
+
+  const handleAddManagedCategory = async () => {
+    const id = `category-${Date.now()}`;
+    const next: ManagedCategory = {
+      id,
+      nameAr: 'قسم جديد',
+      nameEn: 'New Category',
+      icon: '📦',
+      description: '',
+      subcategories: [],
+      image: ''
+    };
+    await saveCategoryList([...categories, next]);
+  };
+
+  const handleUpdateManagedCategory = async (id: string, patch: Partial<ManagedCategory>) => {
+    await saveCategoryList(categories.map(category => category.id === id ? { ...category, ...patch } : category));
+  };
+
+  const handleDeleteManagedCategory = async (category: ManagedCategory) => {
+    const assigned = products.filter(product => String(product.category) === category.id).length;
+    if (assigned > 0) {
+      window.alert(`لا يمكن حذف القسم حالياً لأنه مرتبط بـ ${assigned} منتج. انقلي المنتجات لقسم آخر أولاً.`);
+      return;
+    }
+    if (!window.confirm(`حذف قسم «${category.nameAr}»؟`)) return;
+    if (categories.length <= 1) { window.alert('يجب أن يبقى قسم واحد على الأقل.'); return; }
+    try { await deleteMediaLibraryImage(category.imageStoragePath); } catch { /* category deletion remains valid */ }
+    await saveCategoryList(categories.filter(item => item.id !== category.id));
+  };
+
+  const handleReplaceCategoryImage = async (category: ManagedCategory, file?: File | null) => {
+    if (!file) return;
+    try {
+      const stored = await uploadMediaLibraryImage(file);
+      await handleUpdateManagedCategory(category.id, { image: stored.url, imageStoragePath: stored.storagePath });
+      try { await deleteMediaLibraryImage(category.imageStoragePath); } catch { /* new image already saved */ }
+    } catch (error: any) {
+      window.alert(error?.message || 'تعذر تحديث صورة القسم.');
+    }
+  };
+
+  const moveManagedCategory = async (id: string, direction: -1 | 1) => {
+    const index = categories.findIndex(category => category.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= categories.length) return;
+    const next = [...categories];
+    [next[index], next[target]] = [next[target], next[index]];
+    await saveCategoryList(next);
+  };
+
   // Brands State - Dynamically collect all brands from catalog + defaults
   const [brandsList, setBrandsList] = useState<string[]>(() => {
     const existing = new Set<string>();
@@ -162,13 +285,10 @@ export const AdminPage: React.FC = () => {
   });
   const [newBrandInput, setNewBrandInput] = useState<string>('');
 
-  // Messages State
-  const [messagesList, setMessagesList] = useState([
-    { id: '1', name: 'أحمد العتيبي', email: 'ahmed@example.com', subject: 'استفسار عن مكنسة Roborock S8', message: 'مرحباً، هل يتوفر ضمان محلي مع رابط أمازون؟', date: '2026-08-02', isRead: false, isStarred: true },
-    { id: '2', name: 'نورة الشمري', email: 'noura@example.com', subject: 'طلب استشارة جهاز القلاية', message: 'ما هي أفضل قلاية هوائية لعائلة مكونة من 5 أفراد؟', date: '2026-08-01', isRead: true, isStarred: false },
-    { id: '3', name: 'سارة خالد', email: 'sara@example.com', subject: 'شكر وتقدير للموقع', message: 'شكراً لكم على المراجعة الممتازة لمصفف دايسون، اشتريته بخصم رائع!', date: '2026-07-30', isRead: true, isStarred: true }
-  ]);
-  const [selectedMessage, setSelectedMessage] = useState<typeof messagesList[0] | null>(null);
+  // Messages State — no seeded/demo customer identities.
+  type AdminMessage = { id:string; name:string; email:string; subject:string; message:string; date:string; isRead:boolean; isStarred:boolean };
+  const [messagesList, setMessagesList] = useState<AdminMessage[]>([]);
+  const [selectedMessage, setSelectedMessage] = useState<AdminMessage | null>(null);
   const [replyText, setReplyText] = useState<string>('');
 
   // General Settings State
@@ -179,9 +299,12 @@ export const AdminPage: React.FC = () => {
     defaultCurrency: siteSettings.defaultCurrency,
     pinterestUrl: siteSettings.pinterestUrl,
     youtubeUrl: siteSettings.youtubeUrl,
+    youtubeOAuthClientId: siteSettings.youtubeOAuthClientId || '',
     tiktokUrl: siteSettings.tiktokUrl,
     instagramUrl: siteSettings.instagramUrl,
     snapchatUrl: siteSettings.snapchatUrl,
+    twitterUrl: siteSettings.twitterUrl,
+    threadsUrl: siteSettings.threadsUrl,
     amazonTag: siteSettings.amazonTag,
     aliexpressTag: siteSettings.aliexpressTag,
     contactEmail: siteSettings.contactEmail
@@ -202,23 +325,127 @@ export const AdminPage: React.FC = () => {
       defaultCurrency: siteSettings.defaultCurrency,
       pinterestUrl: siteSettings.pinterestUrl,
       youtubeUrl: siteSettings.youtubeUrl,
+    youtubeOAuthClientId: siteSettings.youtubeOAuthClientId || '',
       tiktokUrl: siteSettings.tiktokUrl,
       instagramUrl: siteSettings.instagramUrl,
       snapchatUrl: siteSettings.snapchatUrl,
+    twitterUrl: siteSettings.twitterUrl,
+    threadsUrl: siteSettings.threadsUrl,
       amazonTag: siteSettings.amazonTag,
       aliexpressTag: siteSettings.aliexpressTag,
       contactEmail: siteSettings.contactEmail
     });
   }, [siteSettings]);
 
-  // Media Library Items
-  const mediaItems = [
+  // Media Library Items - editable by the admin. File bytes live in Supabase Storage;
+  // the library order/name metadata is kept in this browser so the owner can manage it directly.
+  const MEDIA_LIBRARY_KEY = 'yousra-media-library-v2';
+  const MEDIA_PLACEMENT_OPTIONS = [
+    { value: 'none', label: 'غير مرتبطة بمكان' },
+    { value: 'siteLogo', label: 'شعار الموقع - الهيدر والفوتر' },
+    { value: 'heroBanner', label: 'بانر Hero الرئيسي' },
+    { value: 'smartHomeBanner', label: 'بانر الأجهزة الذكية أعلى الرئيسية' },
+    { value: 'creatorAvatar', label: 'صورة/أفاتار يسرى في الرئيسية' }
+  ] as const;
+  const DEFAULT_MEDIA_ITEMS: MediaLibraryItem[] = [
     { id: 'm1', name: 'شعار يسرى سمايل الذهبي', url: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80', type: 'logo' },
     { id: 'm2', name: 'بانر العروض الفلاش الرئيسية', url: 'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?auto=format&fit=crop&w=800&q=80', type: 'banner' },
     { id: 'm3', name: 'صورة مكنسة روبوروك S8 Pro', url: 'https://images.unsplash.com/photo-1618172193763-c511deb635ca?auto=format&fit=crop&w=800&q=80', type: 'product' },
     { id: 'm4', name: 'صورة مصفف دايسون ايرواب', url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80', type: 'product' },
     { id: 'm5', name: 'بانر الأجهزة الذكية', url: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=800&q=80', type: 'banner' }
   ];
+  const [mediaItems, setMediaItems] = useState<MediaLibraryItem[]>(() => {
+    try {
+      const saved = localStorage.getItem(MEDIA_LIBRARY_KEY);
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : DEFAULT_MEDIA_ITEMS;
+    } catch {
+      return DEFAULT_MEDIA_ITEMS;
+    }
+  });
+  const [mediaBusyId, setMediaBusyId] = useState<string | null>(null);
+
+  const persistMediaItems = (items: MediaLibraryItem[]) => {
+    setMediaItems(items);
+    localStorage.setItem(MEDIA_LIBRARY_KEY, JSON.stringify(items));
+  };
+
+  const placementPatch = (placement: MediaLibraryItem['placement'], url: string) => {
+    if (!placement || placement === 'none') return {};
+    if (placement === 'siteLogo') return { siteLogo: url };
+    if (placement === 'heroBanner') return { heroBannerUrl: url };
+    if (placement === 'smartHomeBanner') return { smartHomeBannerUrl: url };
+    if (placement === 'creatorAvatar') return { creatorAvatarUrl: url };
+    return {};
+  };
+
+  const clearPlacementPatch = (placement: MediaLibraryItem['placement']) => {
+    if (placement === 'siteLogo') return { siteLogo: '' };
+    if (placement === 'heroBanner') return { heroBannerUrl: '' };
+    if (placement === 'smartHomeBanner') return { smartHomeBannerUrl: '' };
+    if (placement === 'creatorAvatar') return { creatorAvatarUrl: '' };
+    return {};
+  };
+
+  const applyMediaPlacement = (item: MediaLibraryItem, placement: MediaLibraryItem['placement']) => {
+    const next = mediaItems.map(current => ({
+      ...current,
+      placement: current.id === item.id ? placement : (placement && placement !== 'none' && current.placement === placement ? 'none' : current.placement)
+    }));
+    persistMediaItems(next);
+    if (item.placement && item.placement !== 'none' && item.placement !== placement) updateSiteSettings(clearPlacementPatch(item.placement));
+    if (placement && placement !== 'none') updateSiteSettings(placementPatch(placement, item.url));
+  };
+
+  const handleAddMediaImage = async (file?: File | null) => {
+    if (!file) return;
+    setMediaBusyId('new');
+    try {
+      const stored = await uploadMediaLibraryImage(file);
+      const item: MediaLibraryItem = {
+        id: crypto.randomUUID(),
+        name: file.name.replace(/\.[^.]+$/, ''),
+        url: stored.url,
+        storagePath: stored.storagePath,
+        type: 'other'
+      };
+      persistMediaItems([item, ...mediaItems]);
+    } catch (error: any) {
+      window.alert(error?.message || 'تعذر رفع الصورة.');
+    } finally {
+      setMediaBusyId(null);
+    }
+  };
+
+  const handleReplaceMediaImage = async (item: MediaLibraryItem, file?: File | null) => {
+    if (!file) return;
+    setMediaBusyId(item.id);
+    try {
+      const stored = await uploadMediaLibraryImage(file);
+      const next = mediaItems.map(current => current.id === item.id ? { ...current, url: stored.url, storagePath: stored.storagePath } : current);
+      persistMediaItems(next);
+      if (item.placement && item.placement !== 'none') updateSiteSettings(placementPatch(item.placement, stored.url));
+      try { await deleteMediaLibraryImage(item.storagePath); } catch { /* replacement already succeeded */ }
+    } catch (error: any) {
+      window.alert(error?.message || 'تعذر استبدال الصورة.');
+    } finally {
+      setMediaBusyId(null);
+    }
+  };
+
+  const handleDeleteMediaImage = async (item: MediaLibraryItem) => {
+    if (!window.confirm('حذف هذه الصورة من مكتبة الوسائط؟')) return;
+    setMediaBusyId(item.id);
+    try {
+      await deleteMediaLibraryImage(item.storagePath);
+      if (item.placement && item.placement !== 'none') updateSiteSettings(clearPlacementPatch(item.placement));
+      persistMediaItems(mediaItems.filter(current => current.id !== item.id));
+    } catch (error: any) {
+      window.alert(error?.message || 'تعذر حذف الصورة.');
+    } finally {
+      setMediaBusyId(null);
+    }
+  };
 
   // Product Form states
   const [formData, setFormData] = useState({
@@ -243,10 +470,44 @@ export const AdminPage: React.FC = () => {
     reviewCount: 150,
     featuresStr: '',
     keywordsStr: '',
+    seoTitleAr: '',
+    seoTitleEn: '',
+    seoDescriptionAr: '',
+    seoDescriptionEn: '',
+    keywordsArStr: '',
+    keywordsEnStr: '',
+    hashtagsArStr: '',
+    hashtagsEnStr: '',
+    socialCaption: '',
     isFeatured: false,
     isTopSelling: false,
     isHidden: false
   });
+
+  const seoBackfillDoneRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (!isUnlocked || seoBackfillDoneRef.current || !products.length) return;
+    seoBackfillDoneRef.current = true;
+
+    products.forEach(prod => {
+      const derived = deriveProductSeoFields(prod);
+      const patch: Partial<Product> = {};
+      if (!prod.seoTitleAr) patch.seoTitleAr = derived.seoTitleAr;
+      if (!prod.seoTitleEn) patch.seoTitleEn = derived.seoTitleEn;
+      if (!prod.seoDescriptionAr) patch.seoDescriptionAr = derived.seoDescriptionAr;
+      if (!prod.seoDescriptionEn) patch.seoDescriptionEn = derived.seoDescriptionEn;
+      if (!prod.keywordsAr?.length) patch.keywordsAr = derived.keywordsAr;
+      if (!prod.keywordsEn?.length) patch.keywordsEn = derived.keywordsEn;
+      if (!prod.hashtagsAr?.length) patch.hashtagsAr = derived.hashtagsAr;
+      if (!prod.hashtagsEn?.length) patch.hashtagsEn = derived.hashtagsEn;
+      if (!prod.socialCaption) patch.socialCaption = derived.socialCaption;
+
+      if (Object.keys(patch).length) {
+        patchProduct(prod.id, patch);
+      }
+    });
+  }, [isUnlocked, products, patchProduct]);
 
   // Finishes a redirect based sign-in when the browser had to fall back to it.
   useEffect(() => {
@@ -455,6 +716,7 @@ export const AdminPage: React.FC = () => {
   };
 
   const handleOpenEditModal = (prod: Product) => {
+    const fallbackSeo = deriveProductSeoFields(prod);
     setEditingProduct(prod);
     setFormData({
       titleAr: prod.titleAr,
@@ -478,6 +740,15 @@ export const AdminPage: React.FC = () => {
       reviewCount: prod.reviewCount,
       featuresStr: prod.features ? prod.features.join(', ') : '',
       keywordsStr: prod.keywords ? prod.keywords.join(', ') : '',
+      seoTitleAr: prod.seoTitleAr || fallbackSeo.seoTitleAr,
+      seoTitleEn: prod.seoTitleEn || fallbackSeo.seoTitleEn,
+      seoDescriptionAr: prod.seoDescriptionAr || fallbackSeo.seoDescriptionAr,
+      seoDescriptionEn: prod.seoDescriptionEn || fallbackSeo.seoDescriptionEn,
+      keywordsArStr: (prod.keywordsAr?.length ? prod.keywordsAr : fallbackSeo.keywordsAr).join(', '),
+      keywordsEnStr: (prod.keywordsEn?.length ? prod.keywordsEn : fallbackSeo.keywordsEn).join(', '),
+      hashtagsArStr: (prod.hashtagsAr?.length ? prod.hashtagsAr : fallbackSeo.hashtagsAr).join(' '),
+      hashtagsEnStr: (prod.hashtagsEn?.length ? prod.hashtagsEn : fallbackSeo.hashtagsEn).join(' '),
+      socialCaption: prod.socialCaption || fallbackSeo.socialCaption,
       isFeatured: !!prod.isFeatured,
       isTopSelling: !!prod.isTopSelling,
       isHidden: !!prod.isHidden
@@ -513,7 +784,7 @@ export const AdminPage: React.FC = () => {
     setTimeout(() => {
       const brand = formData.brand || 'Dyson';
       const sub = formData.subcategory || 'المكانس الذكية';
-      
+
       const generatedTitleAr = formData.titleAr || `جهاز ${brand} ${sub} الفاخر الإصدار المطور 2026`;
       const generatedTitleEn = formData.titleEn || `${brand} Premium ${sub} 2026 Edition`;
 
@@ -525,6 +796,15 @@ export const AdminPage: React.FC = () => {
         longDescription: `يُعد جهاز ${brand} في فئة ${sub} الخيار الأول للباحثين عن الراحة والرفاهية المنزلية. تم تصميمه بتكنولوجيا متقدمة تضمن أداءً استثنائياً مع تحكم كامل عبر التطبيق الذكي ونظام أمان متكامل. يضمن لك التوفير في استهلاك الكهرباء والمحافظة على البيئة.`,
         featuresStr: `تقنية ذكية فائقة الأداء, موفر للطاقة بضمان سنتين, تصميم مريح وسهل الاستخدام, متوافق مع المساعد الصوتي, تنظيف وصيانة آلية`,
         keywordsStr: `${brand}, ${sub}, عروض_أمازون, أجهزة_منزلية, تسويق_أفلييت, يسرى_سمايل`,
+        seoTitleAr: generatedTitleAr,
+        seoTitleEn: generatedTitleEn,
+        seoDescriptionAr: `أفضل ${brand} ${sub} مع أهم المواصفات والمميزات وروابط الشراء الموثوقة من Yousra Smile.`,
+        seoDescriptionEn: `Discover ${brand} ${sub}, key features, specifications and trusted buying links from Yousra Smile.`,
+        keywordsArStr: `${brand}, ${sub}, أجهزة ذكية, عروض أمازون, يسرى سمايل`,
+        keywordsEnStr: `${brand}, ${sub}, smart home, product review, Yousra Smile`,
+        hashtagsArStr: `#يسرى_سمايل #أجهزة_ذكية #تسوق_ذكي`,
+        hashtagsEnStr: `#YousraSmile #SmartHome #ProductReview`,
+        socialCaption: `${generatedTitleAr} — اكتشفي المواصفات والمميزات وروابط الشراء.`,
         rating: 4.9,
         reviewCount: 185
       }));
@@ -639,21 +919,47 @@ export const AdminPage: React.FC = () => {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const discountPercent = formData.originalPrice > formData.discountPrice 
-      ? Math.round(((formData.originalPrice - formData.discountPrice) / formData.originalPrice) * 100) 
+    const discountPercent = formData.originalPrice > formData.discountPrice
+      ? Math.round(((formData.originalPrice - formData.discountPrice) / formData.originalPrice) * 100)
       : 0;
 
-    const imagesArray = formData.imagesStr 
-      ? formData.imagesStr.split(',').map(s => s.trim()).filter(Boolean) 
+    const imagesArray = formData.imagesStr
+      ? formData.imagesStr.split(',').map(s => s.trim()).filter(Boolean)
       : [formData.image];
 
-    const featuresArray = formData.featuresStr 
-      ? formData.featuresStr.split(',').map(s => s.trim()).filter(Boolean) 
+    const featuresArray = formData.featuresStr
+      ? formData.featuresStr.split(',').map(s => s.trim()).filter(Boolean)
       : [];
 
-    const keywordsArray = formData.keywordsStr 
-      ? formData.keywordsStr.split(',').map(s => s.trim()).filter(Boolean) 
+    const keywordsArray = formData.keywordsStr
+      ? formData.keywordsStr.split(',').map(s => s.trim()).filter(Boolean)
       : [];
+
+    const keywordsArArray = formData.keywordsArStr ? formData.keywordsArStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const keywordsEnArray = formData.keywordsEnStr ? formData.keywordsEnStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const hashtagsArArray = formData.hashtagsArStr ? formData.hashtagsArStr.split(/[\s,]+/).map(s => s.trim()).filter(Boolean) : [];
+    const hashtagsEnArray = formData.hashtagsEnStr ? formData.hashtagsEnStr.split(/[\s,]+/).map(s => s.trim()).filter(Boolean) : [];
+    const mergedKeywords = Array.from(new Set([...keywordsArray, ...keywordsArArray, ...keywordsEnArray]));
+    const derivedSeo = deriveProductSeoFields({
+      titleAr: formData.titleAr,
+      titleEn: formData.titleEn,
+      description: formData.description,
+      longDescription: formData.longDescription,
+      category: formData.category,
+      subcategory: formData.subcategory,
+      brand: formData.brand,
+      features: featuresArray,
+      keywords: mergedKeywords,
+      seoTitleAr: formData.seoTitleAr,
+      seoTitleEn: formData.seoTitleEn,
+      seoDescriptionAr: formData.seoDescriptionAr,
+      seoDescriptionEn: formData.seoDescriptionEn,
+      keywordsAr: keywordsArArray,
+      keywordsEn: keywordsEnArray,
+      hashtagsAr: hashtagsArArray,
+      hashtagsEn: hashtagsEnArray,
+      socialCaption: formData.socialCaption
+    });
 
     if (editingProduct) {
       updateProduct({
@@ -680,7 +986,16 @@ export const AdminPage: React.FC = () => {
         reviewCount: Number(formData.reviewCount),
         features: featuresArray,
         specs: editingProduct.specs || { 'الضمان': 'سنتان' },
-        keywords: keywordsArray,
+        keywords: mergedKeywords.length ? mergedKeywords : [...derivedSeo.keywordsAr, ...derivedSeo.keywordsEn],
+        seoTitleAr: formData.seoTitleAr || derivedSeo.seoTitleAr,
+        seoTitleEn: formData.seoTitleEn || derivedSeo.seoTitleEn,
+        seoDescriptionAr: formData.seoDescriptionAr || derivedSeo.seoDescriptionAr,
+        seoDescriptionEn: formData.seoDescriptionEn || derivedSeo.seoDescriptionEn,
+        keywordsAr: keywordsArArray.length ? keywordsArArray : derivedSeo.keywordsAr,
+        keywordsEn: keywordsEnArray.length ? keywordsEnArray : derivedSeo.keywordsEn,
+        hashtagsAr: hashtagsArArray.length ? hashtagsArArray : derivedSeo.hashtagsAr,
+        hashtagsEn: hashtagsEnArray.length ? hashtagsEnArray : derivedSeo.hashtagsEn,
+        socialCaption: formData.socialCaption || derivedSeo.socialCaption,
         isFeatured: formData.isFeatured,
         isTopSelling: formData.isTopSelling,
         isHidden: formData.isHidden
@@ -709,7 +1024,16 @@ export const AdminPage: React.FC = () => {
         reviewCount: Number(formData.reviewCount),
         features: featuresArray,
         specs: { 'الضمان': 'سنتان شاملتان' },
-        keywords: keywordsArray,
+        keywords: mergedKeywords.length ? mergedKeywords : [...derivedSeo.keywordsAr, ...derivedSeo.keywordsEn],
+        seoTitleAr: formData.seoTitleAr || derivedSeo.seoTitleAr,
+        seoTitleEn: formData.seoTitleEn || derivedSeo.seoTitleEn,
+        seoDescriptionAr: formData.seoDescriptionAr || derivedSeo.seoDescriptionAr,
+        seoDescriptionEn: formData.seoDescriptionEn || derivedSeo.seoDescriptionEn,
+        keywordsAr: keywordsArArray.length ? keywordsArArray : derivedSeo.keywordsAr,
+        keywordsEn: keywordsEnArray.length ? keywordsEnArray : derivedSeo.keywordsEn,
+        hashtagsAr: hashtagsArArray.length ? hashtagsArArray : derivedSeo.hashtagsAr,
+        hashtagsEn: hashtagsEnArray.length ? hashtagsEnArray : derivedSeo.hashtagsEn,
+        socialCaption: formData.socialCaption || derivedSeo.socialCaption,
         isFeatured: formData.isFeatured,
         isTopSelling: formData.isTopSelling,
         isHidden: formData.isHidden
@@ -792,15 +1116,15 @@ export const AdminPage: React.FC = () => {
           <div className="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 flex items-center justify-center mx-auto">
             <Lock className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-black font-['Tajawal'] text-slate-900 dark:text-white">دخول لوحة تحكم يسرى سمايل</h2>
+          <h2 className="text-xl font-black font-['Tajawal'] text-slate-900 dark:text-white">{language === 'en' ? 'Sign in to Yousra Smile Admin' : 'دخول لوحة تحكم يسرى سمايل'}</h2>
           <p className="text-xs text-slate-500">
-            لوحة التحكم خاصة بالمالك والحسابات التي يمنحها صلاحية فقط.
+            {language === 'en' ? 'The admin panel is restricted to the owner and explicitly authorized accounts.' : 'لوحة التحكم خاصة بالمالك والحسابات التي يمنحها صلاحية فقط.'}
           </p>
         </div>
 
         <form onSubmit={handleAdminSignIn} className="space-y-3">
           <div className="text-right">
-            <label className="block text-[11px] font-bold text-slate-500 mb-1">البريد الإلكتروني</label>
+            <label className="block text-[11px] font-bold text-slate-500 mb-1">{language === 'en' ? 'Email address' : 'البريد الإلكتروني'}</label>
             <input
               type="email"
               dir="ltr"
@@ -814,7 +1138,7 @@ export const AdminPage: React.FC = () => {
           </div>
 
           <div className="text-right">
-            <label className="block text-[11px] font-bold text-slate-500 mb-1">كلمة المرور</label>
+            <label className="block text-[11px] font-bold text-slate-500 mb-1">{language === 'en' ? 'Password' : 'كلمة المرور'}</label>
             <input
               type="password"
               dir="ltr"
@@ -834,13 +1158,13 @@ export const AdminPage: React.FC = () => {
             disabled={isSigningIn}
             className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl shadow-md transition-colors"
           >
-            {isSigningIn ? 'جاري التحقق...' : 'دخول'}
+            {isSigningIn ? (language === 'en' ? 'Checking…' : 'جاري التحقق...') : (language === 'en' ? 'Sign in' : 'دخول')}
           </button>
         </form>
 
         <div className="flex items-center gap-3">
           <span className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
-          <span className="text-[10px] text-slate-400">أو</span>
+          <span className="text-[10px] text-slate-400">{language === 'en' ? 'or' : 'أو'}</span>
           <span className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
         </div>
 
@@ -850,7 +1174,7 @@ export const AdminPage: React.FC = () => {
           onClick={handleOwnerSignIn}
           className="w-full border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60 text-slate-700 dark:text-slate-200 font-bold py-3 rounded-xl transition-colors text-sm"
         >
-          الدخول بحساب Google
+          {language === 'en' ? 'Sign in with Google' : 'الدخول بحساب Google'}
         </button>
       </div>
     );
@@ -950,7 +1274,7 @@ export const AdminPage: React.FC = () => {
       const newProducts: Product[] = [];
       for (let i = 1; i < lines.length; i++) {
         const cols = parseCsvLine(lines[i]);
-        
+
         if (cols.length >= 8) {
           const id = getColumn(cols, ['id'], 0) || `prod-${Date.now()}-${i}`;
           const titleAr = getColumn(cols, ['titleAr'], 1) || 'منتج جديد';
@@ -977,7 +1301,7 @@ export const AdminPage: React.FC = () => {
           const rating = parseNumber(getColumn(cols, ['rating'], 12), 4.8);
           const reviewCount = parseNumber(getColumn(cols, ['reviewCount'], 13), 50);
 
-          const discountPercent = originalPrice > discountPrice 
+          const discountPercent = originalPrice > discountPrice
             ? Math.round(((originalPrice - discountPrice) / originalPrice) * 100)
             : 0;
 
@@ -1031,7 +1355,7 @@ export const AdminPage: React.FC = () => {
           تسجيل خروج المالك
         </button>
       </div>
-      
+
       {/* Admin Main Header Bar */}
       <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-slate-950 text-white rounded-3xl p-6 sm:p-8 border border-purple-800/40 shadow-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div>
@@ -1166,8 +1490,8 @@ export const AdminPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('overview')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
-            activeTab === 'overview' 
-              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black' 
+            activeTab === 'overview'
+              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black'
               : 'bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-white border-slate-700'
           }`}
         >
@@ -1178,8 +1502,8 @@ export const AdminPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('products')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
-            activeTab === 'products' 
-              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black' 
+            activeTab === 'products'
+              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black'
               : 'bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-white border-slate-700'
           }`}
         >
@@ -1190,8 +1514,8 @@ export const AdminPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('videos')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
-            activeTab === 'videos' 
-              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black' 
+            activeTab === 'videos'
+              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black'
               : 'bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-white border-slate-700'
           }`}
         >
@@ -1202,8 +1526,8 @@ export const AdminPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('deals')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
-            activeTab === 'deals' 
-              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black' 
+            activeTab === 'deals'
+              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black'
               : 'bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-white border-slate-700'
           }`}
         >
@@ -1214,8 +1538,8 @@ export const AdminPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('brands')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
-            activeTab === 'brands' 
-              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black' 
+            activeTab === 'brands'
+              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black'
               : 'bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-white border-slate-700'
           }`}
         >
@@ -1226,8 +1550,8 @@ export const AdminPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('media')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
-            activeTab === 'media' 
-              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black' 
+            activeTab === 'media'
+              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black'
               : 'bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-white border-slate-700'
           }`}
         >
@@ -1238,8 +1562,8 @@ export const AdminPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('messages')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer relative border ${
-            activeTab === 'messages' 
-              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black' 
+            activeTab === 'messages'
+              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black'
               : 'bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-white border-slate-700'
           }`}
         >
@@ -1251,8 +1575,8 @@ export const AdminPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('analytics')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
-            activeTab === 'analytics' 
-              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black' 
+            activeTab === 'analytics'
+              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black'
               : 'bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-white border-slate-700'
           }`}
         >
@@ -1263,8 +1587,8 @@ export const AdminPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('settings')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
-            activeTab === 'settings' 
-              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black' 
+            activeTab === 'settings'
+              ? 'bg-purple-600 text-white border-purple-400 shadow-lg font-black'
               : 'bg-slate-900 text-slate-200 hover:bg-slate-800 hover:text-white border-slate-700'
           }`}
         >
@@ -1275,8 +1599,8 @@ export const AdminPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('agent-hub')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
-            activeTab === 'agent-hub' 
-              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg border-indigo-400 font-black' 
+            activeTab === 'agent-hub'
+              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg border-indigo-400 font-black'
               : 'bg-slate-900 text-indigo-300 border-indigo-500/40 hover:border-indigo-400 hover:text-white'
           }`}
         >
@@ -1288,8 +1612,8 @@ export const AdminPage: React.FC = () => {
         <button
           onClick={() => setActiveTab('ai-assistant')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
-            activeTab === 'ai-assistant' 
-              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg border-purple-400 font-black' 
+            activeTab === 'ai-assistant'
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg border-purple-400 font-black'
               : 'bg-slate-900 text-purple-300 border-purple-500/40 hover:border-purple-400 hover:text-white'
           }`}
         >
@@ -1298,10 +1622,24 @@ export const AdminPage: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('seo-text')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
+            activeTab === 'seo-text'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg border-emerald-400 font-black'
+              : 'bg-slate-900 text-emerald-300 border-emerald-500/40 hover:border-emerald-400 hover:text-white'
+          }`}
+          title="CU وبيانات المنتج والنصوص فقط — بدون توليد صور أو فيديو"
+        >
+          <FileText className="w-4 h-4 text-emerald-400" />
+          <span className="font-black">📝 CU والنصوص</span>
+          <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-[9px] text-emerald-200 font-black">TEXT ONLY</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('workspace')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
-            activeTab === 'workspace' 
-              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 text-white shadow-lg border-blue-400 font-black' 
+            activeTab === 'workspace'
+              ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 text-white shadow-lg border-blue-400 font-black'
               : 'bg-slate-900 text-blue-300 border-blue-500/40 hover:border-blue-400 hover:text-white'
           }`}
         >
@@ -1381,47 +1719,12 @@ export const AdminPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-700 shadow-md space-y-4 text-white">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-purple-400" />
-                <span>المنتجات الأكثر مشاهدة وقرص أداء الأفلييت</span>
-              </h3>
-              <div className="space-y-3">
-                {products.slice(0, 4).map(p => (
-                  <div key={p.id} className="flex items-center justify-between p-3 rounded-2xl bg-slate-800/80 border border-slate-700 text-xs text-white">
-                    <div className="flex items-center gap-3">
-                      <img src={p.image} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                      <div>
-                        <div className="font-bold text-white">{p.titleAr}</div>
-                        <span className="text-[10px] text-amber-300 font-bold">{p.brand}</span>
-                      </div>
-                    </div>
-                    <div className="text-left font-mono font-bold text-emerald-400">
-                      مشاهدات المنتج غير مرتبطة بقياس موثوق
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="rounded-3xl border border-emerald-500/30 bg-slate-900 p-5 text-white shadow-md">
+            <div className="mb-4">
+              <h3 className="text-base font-black text-white">النشاط الحقيقي للزوار والمنتجات</h3>
+              <p className="mt-1 text-xs text-slate-400">لا توجد أسماء أو مشاهدات تجريبية هنا؛ البيانات التالية تُقرأ من قياس الموقع الفعلي.</p>
             </div>
-
-            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-700 shadow-md space-y-4 text-white">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-amber-400" />
-                <span>أحدث رسائل واستفسارات الزوار</span>
-              </h3>
-              <div className="space-y-3">
-                {messagesList.map(msg => (
-                  <div key={msg.id} className="p-3 rounded-2xl bg-slate-800/80 border border-slate-700 text-xs space-y-1 text-white">
-                    <div className="flex items-center justify-between font-bold text-white">
-                      <span>{msg.name}</span>
-                      <span className="text-[10px] text-slate-300">{msg.date}</span>
-                    </div>
-                    <div className="text-slate-200 font-medium truncate">{msg.subject}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <AdminActivityPanel />
           </div>
         </div>
       )}
@@ -1442,10 +1745,10 @@ export const AdminPage: React.FC = () => {
                 </div>
                 <span className="text-amber-400 font-mono font-black">{videoGenerationProgress.percent}%</span>
               </div>
-              
+
               {/* Progress Bar */}
               <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-purple-500 to-amber-400 transition-all duration-300 rounded-full"
                   style={{ width: `${videoGenerationProgress.percent}%` }}
                 />
@@ -1465,8 +1768,8 @@ export const AdminPage: React.FC = () => {
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>{videoSuccessToast}</span>
               </div>
-              <button 
-                onClick={() => setVideoSuccessToast(null)} 
+              <button
+                onClick={() => setVideoSuccessToast(null)}
                 className="text-slate-400 hover:text-white text-xs p-1"
               >
                 <X className="w-3.5 h-3.5" />
@@ -1526,9 +1829,9 @@ export const AdminPage: React.FC = () => {
                     <tr key={prod.id} className={`hover:bg-slate-800/60 transition-colors ${prod.isHidden ? 'opacity-50 bg-slate-950/40' : ''}`}>
                       <td className="p-3">
                         <div className="flex items-center gap-3">
-                          <img 
-                            src={prod.image} 
-                            alt={prod.titleAr} 
+                          <img
+                            src={prod.image}
+                            alt={prod.titleAr}
                             referrerPolicy="no-referrer"
                             className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-700"
                           />
@@ -1638,14 +1941,29 @@ export const AdminPage: React.FC = () => {
 
                       <td className="p-3">
                         <div className="flex items-center gap-1.5">
-                          <a 
-                            href={prod.amazonUrl} 
-                            target="_blank" 
+                          <a
+                            href={prod.amazonUrl || undefined}
+                            target="_blank"
                             rel="noreferrer"
-                            className="p-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg hover:bg-amber-500/30 transition-colors"
-                            title="رابط أمازون مع كود الأفلييت"
+                            aria-disabled={!prod.amazonUrl}
+                            onClick={(event) => { if (!prod.amazonUrl) { event.preventDefault(); event.stopPropagation(); } }}
+                            className={`px-2 py-1.5 rounded-lg border text-[10px] font-black inline-flex items-center gap-1 transition-colors ${prod.amazonUrl ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30' : 'bg-slate-800/60 text-slate-600 border-slate-700 cursor-not-allowed opacity-60'}`}
+                            title={prod.amazonUrl ? 'فتح رابط Amazon المحفوظ والتحقق منه' : 'لا يوجد رابط Amazon لهذا المنتج'}
                           >
                             <ShoppingBag className="w-3.5 h-3.5" />
+                          <span>Amazon</span></a>
+                          {/* ADMIN_AFFILIATE_DUAL_LINKS */}
+                          <a
+                            href={prod.aliexpressUrl || undefined}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-disabled={!prod.aliexpressUrl}
+                            onClick={(event) => { if (!prod.aliexpressUrl) { event.preventDefault(); event.stopPropagation(); } }}
+                            title={prod.aliexpressUrl ? 'فتح رابط AliExpress المحفوظ والتحقق منه' : 'لا يوجد رابط AliExpress لهذا المنتج'}
+                            className={`px-2 py-1.5 rounded-lg border text-[10px] font-black inline-flex items-center gap-1 transition-colors ${prod.aliexpressUrl ? 'bg-red-500/20 text-red-300 border-red-500/40 hover:bg-red-500/30' : 'bg-slate-800/60 text-slate-600 border-slate-700 cursor-not-allowed opacity-60'}`}
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>AliExpress</span>
                           </a>
                         </div>
                       </td>
@@ -1738,7 +2056,7 @@ export const AdminPage: React.FC = () => {
 
           <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {videos.map(video => (
-              <div 
+              <div
                 key={video.id}
                 className="bg-slate-950 rounded-2xl border border-slate-700 overflow-hidden flex flex-col justify-between hover:border-amber-500/50 transition-colors group text-white"
               >
@@ -1755,7 +2073,7 @@ export const AdminPage: React.FC = () => {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   )}
-                  
+
                   <span className="absolute top-2.5 left-2.5 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase shadow-md">
                     {video.platform}
                   </span>
@@ -1785,7 +2103,7 @@ export const AdminPage: React.FC = () => {
                   <button type="button" onClick={() => openVideoModal(video)} className="px-3 py-2 rounded-xl bg-purple-700 text-white text-xs font-bold">
                     معاينة الفيديو وأدواته
                   </button>
-                  
+
                   <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-300">
                     <ReviewOpenCount videoId={video.id} />
 
@@ -1863,8 +2181,8 @@ export const AdminPage: React.FC = () => {
                 </div>
 
                 <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-300">
-                  <span>ينتهي العرض بعد: 18 ساعة</span>
-                  <button 
+                  <span>مدة العرض: حسب المصدر</span>
+                  <button
                     onClick={() => handleOpenEditModal(deal)}
                     className="text-purple-300 hover:text-purple-200 font-bold cursor-pointer"
                   >
@@ -1877,7 +2195,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 5: BRANDS & CATEGORIES */}
+      {/* TAB 5: BRANDS & categories */}
       {activeTab === 'brands' && (
         <div className="bg-slate-900 rounded-3xl border border-slate-700 p-6 space-y-6 text-white shadow-md">
           <div className="border-b border-slate-800 pb-4">
@@ -1888,14 +2206,59 @@ export const AdminPage: React.FC = () => {
             <p className="text-xs text-slate-300">تضيفين العلامات التجارية مرة واحدة لتظهر في القائمة المنسدلة عند إضافة أي منتج</p>
           </div>
 
+          <div className="space-y-4 border-b border-slate-800 pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h4 className="text-sm font-black text-white">إدارة الأقسام الظاهرة في الموقع</h4>
+                <p className="text-xs text-slate-300 mt-1">عدّلي الاسم والصورة والترتيب، أضيفي قسماً جديداً أو احذفي قسماً غير مستخدم. التغيير ينعكس على الرئيسية والقوائم والفلاتر.</p>
+              </div>
+              <button type="button" onClick={() => void handleAddManagedCategory()} disabled={categoriesSaving} className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs disabled:opacity-60">
+                <Plus className="w-4 h-4 inline-block ml-1" /> إضافة قسم
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {categories.map((category, index) => {
+                const assigned = products.filter(product => String(product.category) === category.id).length;
+                return (
+                  <div key={category.id} className="rounded-2xl border border-slate-700 bg-slate-950 p-3 space-y-3">
+                    <div className="relative h-32 overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+                      {category.image ? <img src={category.image} alt={category.nameAr} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">لا توجد صورة</div>}
+                      <span className="absolute bottom-2 right-2 rounded-full bg-slate-950/85 px-2 py-1 text-[10px] font-bold text-amber-300">{assigned} منتج</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input defaultValue={category.nameAr} onBlur={(event) => { if (event.target.value.trim() !== category.nameAr) void handleUpdateManagedCategory(category.id, { nameAr: event.target.value.trim() || category.nameAr }); }} className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-xs text-white" aria-label="اسم القسم بالعربية" />
+                      <input defaultValue={category.nameEn} onBlur={(event) => { if (event.target.value.trim() !== category.nameEn) void handleUpdateManagedCategory(category.id, { nameEn: event.target.value.trim() || category.nameEn }); }} className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-xs text-white" aria-label="اسم القسم بالإنجليزية" />
+                    </div>
+                    <input defaultValue={category.description} onBlur={(event) => { if (event.target.value !== category.description) void handleUpdateManagedCategory(category.id, { description: event.target.value }); }} placeholder="وصف مختصر للقسم" className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-xs text-white" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="py-2 rounded-lg bg-sky-950 border border-sky-800 text-sky-300 text-[11px] font-bold text-center cursor-pointer">
+                        تغيير صورة القسم
+                        <input type="file" accept="image/*" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; void handleReplaceCategoryImage(category, file); event.currentTarget.value=''; }} />
+                      </label>
+                      <button type="button" onClick={() => void handleDeleteManagedCategory(category)} className="py-2 rounded-lg bg-red-950 border border-red-800 text-red-300 text-[11px] font-bold">حذف القسم</button>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 border-t border-slate-800 pt-2">
+                      <span className="text-[10px] text-slate-400">ترتيب العرض: {index + 1}</span>
+                      <div className="flex gap-1">
+                        <button type="button" disabled={index === 0 || categoriesSaving} onClick={() => void moveManagedCategory(category.id, -1)} className="px-2 py-1 rounded bg-slate-800 text-white text-[11px] disabled:opacity-30">يمين/أعلى</button>
+                        <button type="button" disabled={index === categories.length - 1 || categoriesSaving} onClick={() => void moveManagedCategory(category.id, 1)} className="px-2 py-1 rounded bg-slate-800 text-white text-[11px] disabled:opacity-30">يسار/أسفل</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="space-y-4">
             <h4 className="text-xs font-bold text-slate-200">قائمة العلامات التجارية المسجلة حالياً:</h4>
-            
+
             <div className="flex items-center gap-2 flex-wrap">
               {Array.from(new Set(brandsList)).map((b, i) => (
                 <span key={`brand-tag-${b}-${i}`} className="px-3 py-1.5 rounded-xl bg-purple-950 border border-purple-700 text-amber-300 font-bold text-xs flex items-center gap-2">
                   <span>{b}</span>
-                  <button 
+                  <button
                     onClick={() => setBrandsList(brandsList.filter(x => x !== b))}
                     className="text-slate-300 hover:text-red-400 cursor-pointer"
                   >
@@ -1906,8 +2269,8 @@ export const AdminPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2 max-w-md pt-2">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="اسم علامة تجارية جديدة (مثال: Xiaomi)"
                 value={newBrandInput}
                 onChange={(e) => setNewBrandInput(e.target.value)}
@@ -1935,32 +2298,75 @@ export const AdminPage: React.FC = () => {
       {/* Legacy media layout retained as unreachable rollback reference. */}
       {false && activeTab === 'media' && (
         <div className="bg-slate-900 rounded-3xl border border-slate-700 p-6 space-y-6 text-white shadow-md">
-          <div className="border-b border-slate-800 pb-4">
-            <h3 className="text-lg font-black text-white font-['Tajawal'] flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-sky-400" />
-              <span>مكتبة الوسائط المركزية (Media Library)</span>
-            </h3>
-            <p className="text-xs text-slate-300">مكان موحد لحفظ الصور والشعارات والبانرات حتى لا تعيدي رفعها مرة أخرى</p>
+          <div className="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-black text-white font-['Tajawal'] flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-sky-400" />
+                <span>مكتبة الوسائط المركزية (Media Library)</span>
+              </h3>
+              <p className="text-xs text-slate-300 mt-1">ارفعي أو استبدلي أو احذفي الصور، وحددي مكان استخدامها. الصورة المرتبطة تتغير تلقائيًا في مكانها على الموقع.</p>
+            </div>
+            <label className={`px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs inline-flex items-center justify-center gap-2 cursor-pointer ${mediaBusyId === 'new' ? 'opacity-60 pointer-events-none' : ''}`}>
+              <Upload className="w-4 h-4" />
+              <span>{mediaBusyId === 'new' ? 'جاري الرفع…' : 'رفع صورة جديدة'}</span>
+              <input type="file" accept="image/*" className="hidden" onChange={(event) => { const picked = event.target.files?.[0]; void handleAddMediaImage(picked); event.currentTarget.value = ''; }} />
+            </label>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {mediaItems.map(item => (
-              <div key={item.id} className="p-3 bg-slate-950 border border-slate-700 rounded-2xl space-y-2 text-white">
-                <img src={item.url} alt={item.name} className="w-full h-36 object-cover rounded-xl bg-slate-900 border border-slate-800" />
-                <div className="text-xs font-bold text-slate-100 truncate">{item.name}</div>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(item.url);
-                    alert('تم نسخ رابط الصورة إلى الحافظة!');
-                  }}
-                  className="w-full py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer border border-slate-700"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>نسخ رابط الصورة</span>
-                </button>
-              </div>
-            ))}
-          </div>
+          {mediaItems.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-600 bg-slate-950/60 p-10 text-center text-slate-300 text-sm">
+              لا توجد صور في المكتبة حاليًا. استخدمي «رفع صورة جديدة» لإضافة أول صورة.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {mediaItems.map(item => (
+                <div key={item.id} className="p-3 bg-slate-950 border border-slate-700 rounded-2xl space-y-2 text-white">
+                  <img src={item.url} alt={item.name} loading="lazy" decoding="async" className="w-full h-36 object-cover rounded-xl bg-slate-900 border border-slate-800" />
+                  <input
+                    value={item.name}
+                    onChange={(event) => persistMediaItems(mediaItems.map(current => current.id === item.id ? { ...current, name: event.target.value } : current))}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-100"
+                    aria-label="اسم الصورة"
+                  />
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-bold text-amber-300">مكان استخدام الصورة</label>
+                    <select
+                      value={item.placement || 'none'}
+                      onChange={(event) => applyMediaPlacement(item, event.target.value as MediaLibraryItem['placement'])}
+                      className="w-full rounded-lg border border-amber-500/30 bg-slate-900 px-2 py-1.5 text-[11px] font-bold text-white focus:border-amber-400 focus:outline-none"
+                    >
+                      {MEDIA_PLACEMENT_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    </select>
+                    {item.placement && item.placement !== 'none' && <p className="text-[10px] text-emerald-300">مرتبطة الآن بالموقع وتُحدَّث تلقائيًا عند الاستبدال.</p>}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className={`py-1.5 rounded-xl bg-sky-950 hover:bg-sky-900 text-sky-300 font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer border border-sky-800 ${mediaBusyId === item.id ? 'opacity-60 pointer-events-none' : ''}`}>
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{mediaBusyId === item.id ? 'جاري…' : 'استبدال الصورة'}</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={(event) => { const picked = event.target.files?.[0]; void handleReplaceMediaImage(item, picked); event.currentTarget.value = ''; }} />
+                    </label>
+                    <button
+                      type="button"
+                      disabled={mediaBusyId === item.id}
+                      onClick={() => void handleDeleteMediaImage(item)}
+                      className="py-1.5 rounded-xl bg-red-950 hover:bg-red-900 text-red-300 font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer border border-red-800 disabled:opacity-60"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>حذف الصورة</span>
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { navigator.clipboard.writeText(item.url); alert('تم نسخ رابط الصورة إلى الحافظة!'); }}
+                    className="w-full py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-[11px] flex items-center justify-center gap-1 cursor-pointer border border-slate-700"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>نسخ رابط الصورة</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -2010,14 +2416,14 @@ export const AdminPage: React.FC = () => {
 
                   <div className="space-y-2 pt-2">
                     <label className="text-xs font-bold text-white block">كتابة رد سريع على العميل:</label>
-                    <textarea 
-                      rows={3} 
+                    <textarea
+                      rows={3}
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
-                      placeholder="أكتب ردك هنا وسيتم إرساله للعميل..." 
+                      placeholder="أكتب ردك هنا وسيتم إرساله للعميل..."
                       className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-400 font-medium focus:border-purple-400 focus:outline-none"
                     />
-                    <button 
+                    <button
                       onClick={() => {
                         alert(`تم إرسال الرد بنجاح إلى ${selectedMessage.email}`);
                         setReplyText('');
@@ -2068,8 +2474,8 @@ export const AdminPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div>
               <label className="font-bold text-white block mb-1">اسم الموقع (Site Name):</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={settingsForm.siteName}
                 onChange={(e) => setSettingsForm({ ...settingsForm, siteName: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white font-bold focus:border-purple-400 focus:outline-none"
@@ -2078,8 +2484,8 @@ export const AdminPage: React.FC = () => {
 
             <div>
               <label className="font-bold text-white block mb-1">رابط الشعار (Logo URL):</label>
-              <input 
-                type="url" 
+              <input
+                type="url"
                 value={settingsForm.siteLogo}
                 onChange={(e) => setSettingsForm({ ...settingsForm, siteLogo: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white font-bold focus:border-purple-400 focus:outline-none"
@@ -2088,7 +2494,7 @@ export const AdminPage: React.FC = () => {
 
             <div>
               <label className="font-bold text-white block mb-1">اللغة الافتراضية (Default Language):</label>
-              <select 
+              <select
                 value={settingsForm.defaultLanguage}
                 onChange={(e) => setSettingsForm({ ...settingsForm, defaultLanguage: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 font-bold text-white focus:border-purple-400 focus:outline-none"
@@ -2100,7 +2506,7 @@ export const AdminPage: React.FC = () => {
 
             <div>
               <label className="font-bold text-white block mb-1">العملة الافتراضية (Default Currency):</label>
-              <select 
+              <select
                 value={settingsForm.defaultCurrency}
                 onChange={(e) => setSettingsForm({ ...settingsForm, defaultCurrency: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 font-bold text-white focus:border-purple-400 focus:outline-none"
@@ -2117,8 +2523,8 @@ export const AdminPage: React.FC = () => {
 
             <div>
               <label className="font-bold text-pink-400 block mb-1">رابط Pinterest:</label>
-              <input 
-                type="url" 
+              <input
+                type="url"
                 value={settingsForm.pinterestUrl}
                 onChange={(e) => setSettingsForm({ ...settingsForm, pinterestUrl: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-pink-400 focus:outline-none"
@@ -2127,8 +2533,8 @@ export const AdminPage: React.FC = () => {
 
             <div>
               <label className="font-bold text-red-400 block mb-1">رابط YouTube:</label>
-              <input 
-                type="url" 
+              <input
+                type="url"
                 value={settingsForm.youtubeUrl}
                 onChange={(e) => setSettingsForm({ ...settingsForm, youtubeUrl: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-red-400 focus:outline-none"
@@ -2136,9 +2542,22 @@ export const AdminPage: React.FC = () => {
             </div>
 
             <div>
+              <label className="font-bold text-red-300 block mb-1">YouTube OAuth Client ID:</label>
+              <input
+                type="text"
+                value={settingsForm.youtubeOAuthClientId || ''}
+                onChange={(e) => setSettingsForm({ ...settingsForm, youtubeOAuthClientId: e.target.value })}
+                placeholder="xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"
+                className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-red-400 focus:outline-none"
+                dir="ltr"
+              />
+              <p className="mt-1 text-[10px] text-slate-400">يُستخدم لربط قناتك ورفع الفيديو مباشرة من Yousra Smile إلى YouTube. لا تضعي Client Secret هنا.</p>
+            </div>
+
+            <div>
               <label className="font-bold text-pink-400 block mb-1">رابط TikTok:</label>
-              <input 
-                type="url" 
+              <input
+                type="url"
                 value={settingsForm.tiktokUrl}
                 onChange={(e) => setSettingsForm({ ...settingsForm, tiktokUrl: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-pink-400 focus:outline-none"
@@ -2147,8 +2566,8 @@ export const AdminPage: React.FC = () => {
 
             <div>
               <label className="font-bold text-purple-400 block mb-1">رابط Instagram (حساب انستغرام):</label>
-              <input 
-                type="url" 
+              <input
+                type="url"
                 value={settingsForm.instagramUrl || ''}
                 onChange={(e) => setSettingsForm({ ...settingsForm, instagramUrl: e.target.value })}
                 placeholder="https://instagram.com/yousrasmile"
@@ -2158,8 +2577,8 @@ export const AdminPage: React.FC = () => {
 
             <div>
               <label className="font-bold text-yellow-400 block mb-1">رابط Snapchat (حساب سناب شات):</label>
-              <input 
-                type="url" 
+              <input
+                type="url"
                 value={settingsForm.snapchatUrl || ''}
                 onChange={(e) => setSettingsForm({ ...settingsForm, snapchatUrl: e.target.value })}
                 placeholder="https://snapchat.com/add/yousrasmile"
@@ -2168,9 +2587,31 @@ export const AdminPage: React.FC = () => {
             </div>
 
             <div>
+              <label className="font-bold text-sky-300 block mb-1">رابط X / Twitter:</label>
+              <input
+                type="url"
+                value={settingsForm.twitterUrl || ''}
+                onChange={(e) => setSettingsForm({ ...settingsForm, twitterUrl: e.target.value })}
+                placeholder="https://x.com/yousrasmile"
+                className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-sky-400 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-200 block mb-1">رابط Threads:</label>
+              <input
+                type="url"
+                value={settingsForm.threadsUrl || ''}
+                onChange={(e) => setSettingsForm({ ...settingsForm, threadsUrl: e.target.value })}
+                placeholder="https://www.threads.com/@yousrasmile1"
+                className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-slate-300 focus:outline-none"
+              />
+            </div>
+
+            <div>
               <label className="font-bold text-amber-300 block mb-1">معرف Amazon US (Amazon Tag):</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={settingsForm.amazonTag}
                 onChange={(e) => setSettingsForm({ ...settingsForm, amazonTag: e.target.value })}
                 className="w-full bg-slate-800 border border-amber-500/60 rounded-xl p-2.5 font-mono font-bold text-amber-300 focus:border-amber-400 focus:outline-none"
@@ -2179,8 +2620,8 @@ export const AdminPage: React.FC = () => {
 
             <div>
               <label className="font-bold text-orange-400 block mb-1">معرف AliExpress Affiliate:</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={settingsForm.aliexpressTag}
                 onChange={(e) => setSettingsForm({ ...settingsForm, aliexpressTag: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 font-mono text-white focus:border-orange-400 focus:outline-none"
@@ -2189,8 +2630,8 @@ export const AdminPage: React.FC = () => {
 
             <div>
               <label className="font-bold text-sky-300 block mb-1">البريد الإلكتروني للعملاء (Contact Email):</label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 value={settingsForm.contactEmail}
                 onChange={(e) => setSettingsForm({ ...settingsForm, contactEmail: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-sky-400 focus:outline-none"
@@ -2577,16 +3018,16 @@ export const AdminPage: React.FC = () => {
         onClose={() => setVideosManagerProduct(null)}
       />
 
-      <VideoImportModal 
-        isOpen={isImportVideoOpen} 
-        onClose={() => setIsImportVideoOpen(false)} 
+      <VideoImportModal
+        isOpen={isImportVideoOpen}
+        onClose={() => setIsImportVideoOpen(false)}
       />
 
       {/* Video Export Modal */}
       {exportVideo && (
-        <SocialVideoExportModal 
-          video={exportVideo} 
-          onClose={() => setExportVideo(null)} 
+        <SocialVideoExportModal
+          video={exportVideo}
+          onClose={() => setExportVideo(null)}
         />
       )}
 
@@ -2612,7 +3053,7 @@ export const AdminPage: React.FC = () => {
                   <span>{isAiGenerating ? 'جاري التوليد...' : '✨ توليد بالذكاء الاصطناعي'}</span>
                 </button>
 
-                <button 
+                <button
                   onClick={() => setIsFormOpen(false)}
                   className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
@@ -2636,7 +3077,7 @@ export const AdminPage: React.FC = () => {
                 الصق رابط المنتج هنا واضغط استخراج، ليقوم النظام بجلب الاسم، السعر بالدولار $، الوصف، والمواصفات بدون إدخال يدوي:
               </p>
               <div className="flex flex-col sm:flex-row gap-2">
-                <input 
+                <input
                   type="url"
                   placeholder="ضع رابط المنتج هنا: https://www.amazon.com/dp/... أو https://aliexpress.com/item/..."
                   value={fastLinkInput}
@@ -2671,12 +3112,12 @@ export const AdminPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="font-bold text-white block mb-1">اسم المنتج بالعربية *</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     required
                     value={formData.titleAr}
                     onChange={(e) => setFormData({ ...formData, titleAr: e.target.value })}
@@ -2686,8 +3127,8 @@ export const AdminPage: React.FC = () => {
 
                 <div>
                   <label className="font-bold text-white block mb-1">الاسم بالإنجليزية</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={formData.titleEn}
                     onChange={(e) => setFormData({ ...formData, titleEn: e.target.value })}
                     className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white placeholder-slate-400 font-medium focus:border-purple-400 focus:outline-none"
@@ -2698,7 +3139,7 @@ export const AdminPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="font-bold text-white block mb-1">القسم الرئيسي *</label>
-                  <select 
+                  <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
                     className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white font-bold focus:border-purple-400 focus:outline-none"
@@ -2711,8 +3152,8 @@ export const AdminPage: React.FC = () => {
 
                 <div>
                   <label className="font-bold text-white block mb-1">الفرع (Subcategory)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={formData.subcategory}
                     onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
                     className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white font-medium focus:border-purple-400 focus:outline-none"
@@ -2745,7 +3186,7 @@ export const AdminPage: React.FC = () => {
 
               <div>
                 <label className="font-bold text-white block mb-1">الوصف التسويقي المختصر *</label>
-                <textarea 
+                <textarea
                   rows={2}
                   required
                   value={formData.description}
@@ -2756,7 +3197,7 @@ export const AdminPage: React.FC = () => {
 
               <div>
                 <label className="font-bold text-white block mb-1">الوصف التفصيلي (Long Description)</label>
-                <textarea 
+                <textarea
                   rows={3}
                   value={formData.longDescription}
                   onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })}
@@ -2768,8 +3209,8 @@ export const AdminPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700">
                 <div>
                   <label className="font-bold text-white block mb-1">السعر الأصلي (قبل الخصم)</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     required
                     value={formData.originalPrice}
                     onChange={(e) => setFormData({ ...formData, originalPrice: Number(e.target.value) })}
@@ -2779,8 +3220,8 @@ export const AdminPage: React.FC = () => {
 
                 <div>
                   <label className="font-bold text-amber-300 block mb-1">السعر الحالي (بعد الخصم) *</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     required
                     value={formData.discountPrice}
                     onChange={(e) => setFormData({ ...formData, discountPrice: Number(e.target.value) })}
@@ -2790,7 +3231,7 @@ export const AdminPage: React.FC = () => {
 
                 <div>
                   <label className="font-bold text-white block mb-1">عملة السعر (Currency)</label>
-                  <select 
+                  <select
                     value={formData.currency}
                     onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                     className="w-full bg-slate-900 border border-slate-600 rounded-xl p-2.5 font-bold text-white focus:border-purple-400 focus:outline-none"
@@ -2810,8 +3251,8 @@ export const AdminPage: React.FC = () => {
               <div className="space-y-3">
                 <div>
                   <label className="font-bold text-amber-300 block mb-1">رابط Amazon Affiliate *</label>
-                  <input 
-                    type="url" 
+                  <input
+                    type="url"
                     required
                     value={formData.amazonUrl}
                     onChange={(e) => setFormData({ ...formData, amazonUrl: e.target.value })}
@@ -2821,8 +3262,8 @@ export const AdminPage: React.FC = () => {
 
                 <div>
                   <label className="font-bold text-orange-400 block mb-1">رابط AliExpress Affiliate</label>
-                  <input 
-                    type="url" 
+                  <input
+                    type="url"
                     value={formData.aliexpressUrl}
                     onChange={(e) => setFormData({ ...formData, aliexpressUrl: e.target.value })}
                     className="w-full bg-slate-800 border border-orange-500/60 rounded-xl p-2.5 font-mono text-xs text-white focus:border-orange-400 focus:outline-none"
@@ -2860,8 +3301,8 @@ export const AdminPage: React.FC = () => {
 
                 <div>
                   <label className="font-bold text-white block mb-1">رابط فيديو YouTube للمراجعة</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={formData.youtubeUrl}
                     onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
                     className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white focus:border-purple-400 focus:outline-none"
@@ -2872,8 +3313,8 @@ export const AdminPage: React.FC = () => {
               {/* Features comma separated */}
               <div>
                 <label className="font-bold text-white block mb-1">أبرز المميزات (مفصولة بفواصل ,)</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={formData.featuresStr}
                   onChange={(e) => setFormData({ ...formData, featuresStr: e.target.value })}
                   placeholder="مثال: شفط عالي 6000Pa, مسح بالاهتزاز, بطارية قوية"
@@ -2881,11 +3322,36 @@ export const AdminPage: React.FC = () => {
                 />
               </div>
 
+              {/* SEO & Marketing fields aligned with CU / SEO Text */}
+              <div className="space-y-4 rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4">
+                <div>
+                  <h4 className="font-black text-emerald-300">SEO والتسويق — مطابق لبيانات SEO Text</h4>
+                  <p className="mt-1 text-[10px] text-slate-400">هذه الحقول تُحفظ مع المنتج وتبقى قابلة للتعديل بعد النشر. إذا كانت فارغة يتم توليدها تلقائياً من بيانات نفس المنتج.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div><label className="font-bold text-white block mb-1">SEO Title — عربي</label><input type="text" value={formData.seoTitleAr} onChange={e => setFormData({ ...formData, seoTitleAr: e.target.value })} className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white" /></div>
+                  <div><label className="font-bold text-white block mb-1">SEO Title — English</label><input dir="ltr" type="text" value={formData.seoTitleEn} onChange={e => setFormData({ ...formData, seoTitleEn: e.target.value })} className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white" /></div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div><label className="font-bold text-white block mb-1">SEO Description — عربي</label><textarea rows={3} value={formData.seoDescriptionAr} onChange={e => setFormData({ ...formData, seoDescriptionAr: e.target.value })} className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white" /></div>
+                  <div><label className="font-bold text-white block mb-1">SEO Description — English</label><textarea dir="ltr" rows={3} value={formData.seoDescriptionEn} onChange={e => setFormData({ ...formData, seoDescriptionEn: e.target.value })} className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white" /></div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div><label className="font-bold text-sky-300 block mb-1">الكلمات المفتاحية — عربي</label><textarea rows={2} value={formData.keywordsArStr} onChange={e => setFormData({ ...formData, keywordsArStr: e.target.value })} className="w-full bg-slate-800 border border-sky-700/60 rounded-xl p-2.5 text-white" /></div>
+                  <div><label className="font-bold text-sky-300 block mb-1">Keywords — English</label><textarea dir="ltr" rows={2} value={formData.keywordsEnStr} onChange={e => setFormData({ ...formData, keywordsEnStr: e.target.value })} className="w-full bg-slate-800 border border-sky-700/60 rounded-xl p-2.5 text-white" /></div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div><label className="font-bold text-pink-300 block mb-1">الهاشتاغات — عربي</label><textarea rows={2} value={formData.hashtagsArStr} onChange={e => setFormData({ ...formData, hashtagsArStr: e.target.value })} className="w-full bg-slate-800 border border-pink-700/60 rounded-xl p-2.5 text-white" /></div>
+                  <div><label className="font-bold text-pink-300 block mb-1">Hashtags — English</label><textarea dir="ltr" rows={2} value={formData.hashtagsEnStr} onChange={e => setFormData({ ...formData, hashtagsEnStr: e.target.value })} className="w-full bg-slate-800 border border-pink-700/60 rounded-xl p-2.5 text-white" /></div>
+                </div>
+                <div><label className="font-bold text-amber-300 block mb-1">Social Caption / النص التسويقي للنشر</label><textarea rows={3} value={formData.socialCaption} onChange={e => setFormData({ ...formData, socialCaption: e.target.value })} className="w-full bg-slate-800 border border-amber-700/60 rounded-xl p-2.5 text-white" /></div>
+              </div>
+
               {/* Toggles */}
               <div className="flex items-center gap-6 pt-2 flex-wrap text-white">
                 <label className="flex items-center gap-2 cursor-pointer font-bold text-white">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={formData.isFeatured}
                     onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
                     className="w-4 h-4 accent-purple-600 cursor-pointer"
@@ -2894,8 +3360,8 @@ export const AdminPage: React.FC = () => {
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer font-bold text-white">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={formData.isTopSelling}
                     onChange={(e) => setFormData({ ...formData, isTopSelling: e.target.checked })}
                     className="w-4 h-4 accent-purple-600 cursor-pointer"
@@ -2904,8 +3370,8 @@ export const AdminPage: React.FC = () => {
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer font-bold text-red-300">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={formData.isHidden}
                     onChange={(e) => setFormData({ ...formData, isHidden: e.target.checked })}
                     className="w-4 h-4 accent-red-600 cursor-pointer"

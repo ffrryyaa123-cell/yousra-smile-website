@@ -1,16 +1,17 @@
+// PUBLIC_LANGUAGE_V2
 import React from 'react';
-import { SITE_BRAND_ASSETS } from '../config/siteBrand';
+import smartHomeBanner from '../assets/images/smart_home_banner_1785693287624.webp';
 import { useApp } from '../context/AppContext';
+import { useManagedCategories } from '../services/categoryManager';
 import { HeroBanner } from '../components/HeroBanner';
 import { ProductCard } from '../components/ProductCard';
-import { useManagedCategories } from '../services/categoryManager';
-import { 
-  Flame, 
-  Sparkles, 
-  PlaySquare, 
-  ArrowLeft, 
-  CheckCircle2, 
-  ShieldCheck, 
+import {
+  Flame,
+  Sparkles,
+  PlaySquare,
+  ArrowLeft,
+  CheckCircle2,
+  ShieldCheck,
   Award,
   TrendingUp,
   Tag,
@@ -28,28 +29,30 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.webp';
+import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.webp';
 
+import { BlogSection } from '../components/BlogSection';
 import { FlashDealsTicker } from '../components/FlashDealsTicker';
+import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
+import { SmartSavingsCalculator } from '../components/SmartSavingsCalculator';
+import { AffiliateDealScanner } from '../components/AffiliateDealScanner';
+import { InstantVideoStudio } from '../components/InstantVideoStudio';
 import { ReviewOpenCount } from '../components/ReviewOpenCount';
-
-const BlogSection = React.lazy(() => import('../components/BlogSection').then(module => ({ default: module.BlogSection })));
-const RecentlyViewedSection = React.lazy(() => import('../components/RecentlyViewedSection').then(module => ({ default: module.RecentlyViewedSection })));
-const SmartSavingsCalculator = React.lazy(() => import('../components/SmartSavingsCalculator').then(module => ({ default: module.SmartSavingsCalculator })));
-const AffiliateDealScanner = React.lazy(() => import('../components/AffiliateDealScanner').then(module => ({ default: module.AffiliateDealScanner })));
 
 export const HomePage: React.FC = () => {
   const { categories } = useManagedCategories();
-  const { 
+  const {
     visibleProducts: products,
     videos,
-    setPage, 
-    setSelectedCategory, 
+    setPage,
+    setSelectedCategory,
     openVideoModal,
     openProductDetail,
     language,
     formatPrice,
-    siteSettings,
-    t
+    t,
+    siteSettings
   } = useApp();
 
   const featuredProducts = products.filter(p => p.isFeatured || p.discountPercent >= 25).slice(0, 8);
@@ -88,7 +91,7 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="space-y-3 sm:space-y-4 pb-6 text-[#2C1802] dark:text-[#FDFCFB]">
-      
+
       {/* Flash Deals Countdown Ticker Bar */}
       <FlashDealsTicker />
 
@@ -99,14 +102,16 @@ export const HomePage: React.FC = () => {
 
         {/* Top Smart Home Visual Banner Image */}
         <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-xl overflow-hidden mb-3 border border-[#D4AF37]/60 shadow-xl group">
-          <img 
-            src={siteSettings.smartHomeBannerUrl || SITE_BRAND_ASSETS.siteLogo}
-            alt="Smart Home & Modern Appliances" 
+          <img
+            src={siteSettings.smartHomeBannerUrl || smartHomeBanner}
+            fetchPriority="high"
+            decoding="async"
+            alt="Smart Home & Modern Appliances"
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-125 contrast-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#280f42]/75 via-[#280f42]/20 to-transparent"></div>
-          
+
           <div className="absolute bottom-2.5 right-2.5 ltr:left-2.5 ltr:right-auto bg-slate-950/80 backdrop-blur-md border border-amber-400/50 px-3 py-1 rounded-lg text-amber-300 text-xs font-bold font-['Tajawal'] flex items-center gap-1.5 shadow-lg">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>{language === 'en' ? 'Smart Home & Modern Appliances Guide' : 'دليل الأجهزة المنزلية الحديثة والذكية'}</span>
@@ -114,7 +119,7 @@ export const HomePage: React.FC = () => {
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto space-y-2 text-center">
-          
+
           <div className="inline-flex items-center gap-1.5 bg-amber-500/10 text-[#D4AF37] border border-amber-500/30 px-3 py-0.5 rounded-full text-[11px] font-bold font-['Tajawal'] tracking-wider">
             <Sparkles className="w-3 h-3 text-amber-400" />
             <span>{language === 'en' ? 'THE FUTURE OF HOME TECHNOLOGY' : 'تكنولوجيا المنزل الذكي — مراجعات موثوقة'}</span>
@@ -126,9 +131,9 @@ export const HomePage: React.FC = () => {
             <div className="relative group shrink-0">
               <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 via-purple-500 to-amber-500 blur-md opacity-85 group-hover:opacity-100 transition duration-500"></div>
               <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-3 border-[#D4AF37] shadow-[0_0_25px_rgba(212,175,55,0.6)] bg-slate-950 transition-transform duration-500 hover:scale-105">
-                <img 
-                  src={siteSettings.creatorAvatarUrl || SITE_BRAND_ASSETS.creatorAvatar}
-                  alt={language === 'ar' ? 'ابتسامة يسرى Logo' : 'Yousra Smile Logo'} 
+                <img
+                  src={siteSettings.creatorAvatarUrl || siteSettings.siteLogo || logoImg}
+                  alt={language === 'ar' ? 'ابتسامة يسرى Logo' : 'Yousra Smile Logo'}
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"
                 />
@@ -140,7 +145,7 @@ export const HomePage: React.FC = () => {
 
             {/* Prominent Golden Title Text (Focused element: centered & brightened for dark background) */}
             <div className="text-center space-y-0.5">
-              <h1 
+              <h1
                 style={{ color: '#efbfed', marginTop: '4px', marginBottom: '21px' }}
                 className={`text-3xl sm:text-5xl md:text-[58px] font-black leading-tight tracking-tight text-center drop-shadow-xl ${
                   language === 'ar' ? "font-['Tajawal']" : "font-serif-editorial"
@@ -151,11 +156,11 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
 
-          <p 
+          <p
             style={{ color: '#e7d3ee' }}
             className="text-xs sm:text-sm max-w-2xl mx-auto font-medium leading-relaxed font-['Tajawal'] text-center"
           >
-            {language === 'en' 
+            {language === 'en'
               ? 'Smart devices, modern home essentials, and honest affiliate recommendations. We select the best for you to transform your daily lifestyle.'
               : 'الأجهزة الذكية والمنزل العصري بلمسة من الفخامة والصدق. ننتقي لك الأفضل لنغير نمط حياتك اليومي.'}
           </p>
@@ -163,14 +168,14 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Daily Deals Notice Line above Product Cards */}
-      <div 
+      <div
         style={{ backgroundColor: '#67106a' }}
         className="border border-purple-500/40 rounded-xl p-2 sm:p-2.5 text-center text-xs font-bold font-['Tajawal'] flex items-center justify-center gap-2 shadow-md backdrop-blur-md"
       >
         <span className="text-amber-400 text-sm">🔥</span>
         <span style={{ color: '#f4eff5' }}>
-          {language === 'en' 
-            ? 'Top deals are updated daily from Amazon & AliExpress; prices may change based on availability.' 
+          {language === 'en'
+            ? 'Top deals are updated daily from Amazon & AliExpress; prices may change based on availability.'
             : 'يتم تحديث أفضل العروض يوميًا من Amazon وAliExpress، وقد تتغير الأسعار حسب التوفر.'}
         </span>
       </div>
@@ -184,7 +189,7 @@ export const HomePage: React.FC = () => {
           <div className="font-mono-meta text-xs text-amber-400">
             // {language === 'en' ? 'EDITORIAL SELECTIONS' : 'اختيارات التحرير الفاخرة'}
           </div>
-          <button 
+          <button
             onClick={() => { setSelectedCategory('all'); setPage('products'); }}
             className="font-mono-meta text-xs text-slate-300 hover:text-amber-300 flex items-center gap-1 transition-colors"
           >
@@ -194,9 +199,9 @@ export const HomePage: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-purple-900/30 border border-purple-500/20 rounded-2xl overflow-hidden shadow-lg">
           {editorialStripProducts.map((prod, idx) => {
-            const title = language === 'en' ? (prod.titleEn || prod.titleAr) : prod.titleAr;
+            const title = language === 'en' ? (prod.titleEn || prod.brand || 'Product') : (prod.titleAr || prod.titleEn || prod.brand || 'منتج');
             return (
-              <div 
+              <div
                 key={prod.id}
                 onClick={() => openProductDetail(prod)}
                 className="group bg-[#180D2B] hover:bg-[#23123D] p-3 transition-all duration-300 cursor-pointer flex flex-col justify-between border border-purple-900/40"
@@ -206,8 +211,8 @@ export const HomePage: React.FC = () => {
                     {(prod.brand || 'YOUSRA').toUpperCase()} / [0{idx + 1}]
                   </div>
                   <div className="w-full aspect-square bg-slate-900 rounded-xl overflow-hidden mb-2 border border-purple-500/20">
-                    <img 
-                      src={prod.image} 
+                    <img
+                      src={prod.image}
                       alt={title}
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
@@ -218,7 +223,7 @@ export const HomePage: React.FC = () => {
                   </h3>
                 </div>
                 <div className="font-mono-meta text-xs text-slate-300 pt-2 border-t border-purple-500/20 flex justify-between items-center">
-                  <span>Price: {formatPrice(prod.discountPrice)}</span>
+                  <span>{language === 'ar' ? 'السعر:' : 'Price:'} {formatPrice(prod.discountPrice)}</span>
                   <span className="text-amber-400">→</span>
                 </div>
               </div>
@@ -244,7 +249,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ⚡ Instant Affiliate Deal & Link Scanner */}
-      <React.Suspense fallback={null}><AffiliateDealScanner /></React.Suspense>
+      <AffiliateDealScanner />
 
       {/* Category Grid Section */}
       <section className="space-y-2.5">
@@ -277,8 +282,8 @@ export const HomePage: React.FC = () => {
                 className="group relative bg-[#180D2B] rounded-2xl p-2 border border-purple-500/20 hover:border-amber-400/60 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col items-center text-center overflow-hidden"
               >
                 <div className="w-full h-20 rounded-xl overflow-hidden mb-1.5 bg-slate-900 relative border border-purple-500/20">
-                  <img 
-                    src={cat.image} 
+                  <img
+                    src={cat.image}
                     alt={catName}
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
@@ -293,7 +298,7 @@ export const HomePage: React.FC = () => {
                   {catName}
                 </h3>
                 <p className="text-[10px] text-slate-300 line-clamp-1">
-                  {(language === 'en' && cat.subcategoriesEn?.length ? cat.subcategoriesEn : cat.subcategories).slice(0, 2).join(' • ')}
+                  {(language === 'en' ? (cat.subcategoriesEn || []) : cat.subcategories).slice(0, 2).join(' • ')}
                 </p>
               </div>
             );
@@ -333,7 +338,7 @@ export const HomePage: React.FC = () => {
         {/* Horizontal Carousel with Arrows */}
         <div className="relative group/carousel z-10">
           {/* Scroll container */}
-          <div 
+          <div
             ref={dealsCarouselRef}
             className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-none pb-2 select-none"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -399,7 +404,7 @@ export const HomePage: React.FC = () => {
               <div className="relative h-40 bg-slate-950 overflow-hidden">
                 {!video.hideThumbnail && <img
                   src={video.thumbnailUrl || video.productImage}
-                  alt={video.title}
+                  alt={language === 'en' ? (products.find(p => p.id === video.productId)?.titleEn ? `Yousra Smile Review: ${products.find(p => p.id === video.productId)?.titleEn}` : (!/[\u0600-\u06FF]/.test(String(video.title || '')) ? video.title : 'Product Review')) : video.title}
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
                 />}
@@ -418,14 +423,18 @@ export const HomePage: React.FC = () => {
 
               <div className="p-3 space-y-1.5">
                 <span className="text-[11px] font-bold text-amber-300">
-                  {video.productTitle}
+                  {language === 'en' ? (products.find(p => p.id === video.productId)?.titleEn || products.find(p => p.id === video.productId)?.brand || (!/[\u0600-\u06FF]/.test(String(video.productTitle || '')) ? video.productTitle : 'Product')) : (products.find(p => p.id === video.productId)?.titleAr || video.productTitle || 'منتج')}
                 </span>
                 <h3 className="text-xs font-bold text-white line-clamp-2 group-hover:text-amber-400 transition-colors font-['Tajawal']">
-                  {video.title}
+                  {language === 'en'
+                    ? (products.find(p => p.id === video.productId)?.titleEn
+                      ? `Yousra Smile Review: ${products.find(p => p.id === video.productId)?.titleEn}`
+                      : (!/[\u0600-\u06FF]/.test(String(video.title || '')) ? video.title : 'Product Review'))
+                    : video.title}
                 </h3>
                 <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1.5 border-t border-slate-800">
                   <ReviewOpenCount videoId={video.id} />
-                  <span>{video.date}</span>
+                  <span>{language === 'en' && /[\u0600-\u06FF]/.test(String(video.date || '')) ? 'Latest review' : video.date}</span>
                 </div>
               </div>
             </div>
@@ -460,7 +469,7 @@ export const HomePage: React.FC = () => {
         {/* Horizontal Carousel with Arrows */}
         <div className="relative group/carousel z-10">
           {/* Scroll container */}
-          <div 
+          <div
             ref={topSellingCarouselRef}
             className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory scrollbar-none pb-2 select-none"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -503,8 +512,8 @@ export const HomePage: React.FC = () => {
             {language === 'ar' ? 'رسالتنا، رؤيتنا وقيمنا الراسخة' : 'Our Mission, Vision & Values'}
           </h2>
           <p className="text-xs text-slate-300 leading-relaxed">
-            {language === 'ar' 
-              ? 'نهدف إلى إحداث فارق حقيقي في عالم التسوق الإلكتروني من خلال توفير مراجعات ودراسات دقيقة للمنتجات قبل الشراء.' 
+            {language === 'ar'
+              ? 'نهدف إلى إحداث فارق حقيقي في عالم التسوق الإلكتروني من خلال توفير مراجعات ودراسات دقيقة للمنتجات قبل الشراء.'
               : 'Empowering smart shoppers with transparent recommendations and honest affiliate device reviews.'}
           </p>
         </div>
@@ -520,8 +529,8 @@ export const HomePage: React.FC = () => {
               <span>{language === 'ar' ? 'رسالتنا' : 'Our Mission'}</span>
             </h3>
             <p style={{ color: '#f8f4e9' }} className="text-xs leading-relaxed">
-              {language === 'ar' 
-                ? 'مساعدتك في اختيار أفضل الأجهزة والحلول المنزلية الذكية التي توفر وقتك ومالك وتلبي احتياجات منزلك وديكورك بدقة وسهولة.' 
+              {language === 'ar'
+                ? 'مساعدتك في اختيار أفضل الأجهزة والحلول المنزلية الذكية التي توفر وقتك ومالك وتلبي احتياجات منزلك وديكورك بدقة وسهولة.'
                 : 'Helping you choose the best smart home appliances that save your time and budget.'}
             </p>
           </div>
@@ -536,8 +545,8 @@ export const HomePage: React.FC = () => {
               <span>{language === 'ar' ? 'رؤيتنا' : 'Our Vision'}</span>
             </h3>
             <p style={{ color: '#f8f4e9' }} className="text-xs leading-relaxed">
-              {language === 'ar' 
-                ? 'تقديم مراجعات حقيقية وتجارب صادقة وشفافة بعيداً عن الإعلانات المضللة، لنكون مرجعك الموثوق الأول للتسوق الذكي.' 
+              {language === 'ar'
+                ? 'تقديم مراجعات حقيقية وتجارب صادقة وشفافة بعيداً عن الإعلانات المضللة، لنكون مرجعك الموثوق الأول للتسوق الذكي.'
                 : 'Delivering honest, unbiased reviews to become your #1 trusted smart shopping reference.'}
             </p>
           </div>
@@ -608,10 +617,10 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 💡 Interactive Smart Home Savings & ROI Calculator */}
-      <React.Suspense fallback={null}><SmartSavingsCalculator /></React.Suspense>
+      <SmartSavingsCalculator />
 
       {/* Buying Guides & Blog Articles Section */}
-      <React.Suspense fallback={null}><BlogSection /></React.Suspense>
+      <BlogSection />
 
       {/* Why Trust Yousra Smile Affiliate Section */}
       <section className="bg-slate-900/80 rounded-3xl p-6 sm:p-10 border border-slate-800 space-y-8">
@@ -662,7 +671,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Recently Viewed Products Section */}
-      <React.Suspense fallback={null}><RecentlyViewedSection /></React.Suspense>
+      <RecentlyViewedSection />
 
       {/* Bottom Prominent Call-to-Action (CTA) Banner Button */}
       <section className="relative overflow-hidden bg-gradient-to-r from-amber-500 via-amber-600 to-purple-800 text-slate-950 rounded-3xl p-8 sm:p-12 shadow-2xl text-center space-y-6 border-2 border-amber-300">
@@ -673,19 +682,19 @@ export const HomePage: React.FC = () => {
             <span>{language === 'ar' ? 'جاهز لاكتشاف أفضل العروض؟' : 'Ready to discover top deals?'}</span>
           </div>
 
-          <h2 
+          <h2
             style={{ color: '#2A1800', fontSize: '28px', fontWeight: 'bold' }}
             className="font-['Cairo'] leading-snug drop-shadow-sm"
           >
             {language === 'ar' ? 'تصفح جميع المنتجات الذكية والصفقات الحصرية الآن' : 'Explore All Smart Products & Exclusive Deals Now'}
           </h2>
 
-          <p 
+          <p
             style={{ color: '#2A1800', fontSize: '18px', fontWeight: 'bold' }}
             className="leading-relaxed max-w-2xl mx-auto font-['Cairo']"
           >
-            {language === 'ar' 
-              ? 'مجموعة متكاملة من أجهزة المنزل الذكي، أدوات المطبخ العصري، العناية الشخصية والديكور بأسعار استثنائية وروابط شراء موثوقة.' 
+            {language === 'ar'
+              ? 'مجموعة متكاملة من أجهزة المنزل الذكي، أدوات المطبخ العصري، العناية الشخصية والديكور بأسعار استثنائية وروابط شراء موثوقة.'
               : 'Discover curated smart home electronics, modern kitchen tools, and personal care tech with verified purchase links.'}
           </p>
 
@@ -713,4 +722,3 @@ export const HomePage: React.FC = () => {
     </div>
   );
 };
-
