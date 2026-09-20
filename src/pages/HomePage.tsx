@@ -3,8 +3,6 @@ import React from 'react';
 import smartHomeBanner from '../assets/images/smart_home_banner_1785693287624.webp';
 import { useApp } from '../context/AppContext';
 import { useManagedCategories } from '../services/categoryManager';
-import { HeroBanner } from '../components/HeroBanner';
-import { ProductCard } from '../components/ProductCard';
 import {
   Flame,
   Sparkles,
@@ -32,15 +30,25 @@ import {
 import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.webp';
 import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.webp';
 
-import { BlogSection } from '../components/BlogSection';
 import { FlashDealsTicker } from '../components/FlashDealsTicker';
-import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
-import { SmartSavingsCalculator } from '../components/SmartSavingsCalculator';
-import { AffiliateDealScanner } from '../components/AffiliateDealScanner';
 import { ReviewOpenCount } from '../components/ReviewOpenCount';
 import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/imageUrl';
 
+const HeroBanner = React.lazy(() => import('../components/HeroBanner').then(module => ({ default: module.HeroBanner })));
+const ProductCard = React.lazy(() => import('../components/ProductCard').then(module => ({ default: module.ProductCard })));
+const BlogSection = React.lazy(() => import('../components/BlogSection').then(module => ({ default: module.BlogSection })));
+const RecentlyViewedSection = React.lazy(() => import('../components/RecentlyViewedSection').then(module => ({ default: module.RecentlyViewedSection })));
+const SmartSavingsCalculator = React.lazy(() => import('../components/SmartSavingsCalculator').then(module => ({ default: module.SmartSavingsCalculator })));
+const AffiliateDealScanner = React.lazy(() => import('../components/AffiliateDealScanner').then(module => ({ default: module.AffiliateDealScanner })));
+
+const DeferredBlock: React.FC<{ children: React.ReactNode; minHeight?: string }> = ({ children, minHeight = 'min-h-24' }) => (
+  <React.Suspense fallback={<div className={minHeight} aria-hidden="true" />}>
+    {children}
+  </React.Suspense>
+);
+
 export const HomePage: React.FC = () => {
+  const [showDeferredContent, setShowDeferredContent] = React.useState(false);
   const { categories } = useManagedCategories();
   const {
     visibleProducts: products,
@@ -88,6 +96,11 @@ export const HomePage: React.FC = () => {
       container.scrollBy({ left: offset, behavior: 'smooth' });
     }
   };
+
+  React.useEffect(() => {
+    const timer = window.setTimeout(() => setShowDeferredContent(true), 2500);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   return (
     <div className="space-y-3 sm:space-y-4 pb-6 text-[#2C1802] dark:text-[#FDFCFB]">
@@ -169,6 +182,8 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {showDeferredContent ? <>
+
       {/* Daily Deals Notice Line above Product Cards */}
       <div
         style={{ backgroundColor: '#67106a' }}
@@ -183,7 +198,7 @@ export const HomePage: React.FC = () => {
       </div>
 
       {/* Hero Banner Section */}
-      <HeroBanner />
+      <DeferredBlock minHeight="min-h-72"><HeroBanner /></DeferredBlock>
 
       {/* Design Variation: Editorial Product Strip */}
       <section className="space-y-2.5">
@@ -256,7 +271,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ⚡ Instant Affiliate Deal & Link Scanner */}
-      <AffiliateDealScanner />
+      <DeferredBlock minHeight="min-h-48"><AffiliateDealScanner /></DeferredBlock>
 
       {/* Category Grid Section */}
       <section className="space-y-2.5">
@@ -357,7 +372,7 @@ export const HomePage: React.FC = () => {
           >
             {featuredProducts.map(prod => (
               <div key={prod.id} className="w-[280px] sm:w-[320px] shrink-0 snap-start">
-                <ProductCard product={prod} />
+                <DeferredBlock minHeight="min-h-96"><ProductCard product={prod} /></DeferredBlock>
               </div>
             ))}
           </div>
@@ -493,7 +508,7 @@ export const HomePage: React.FC = () => {
           >
             {topSellingProducts.map(prod => (
               <div key={prod.id} className="w-[280px] sm:w-[320px] shrink-0 snap-start">
-                <ProductCard product={prod} />
+                <DeferredBlock minHeight="min-h-96"><ProductCard product={prod} /></DeferredBlock>
               </div>
             ))}
           </div>
@@ -634,10 +649,10 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 💡 Interactive Smart Home Savings & ROI Calculator */}
-      <SmartSavingsCalculator />
+      <DeferredBlock minHeight="min-h-72"><SmartSavingsCalculator /></DeferredBlock>
 
       {/* Buying Guides & Blog Articles Section */}
-      <BlogSection />
+      <DeferredBlock minHeight="min-h-72"><BlogSection /></DeferredBlock>
 
       {/* Why Trust Yousra Smile Affiliate Section */}
       <section className="bg-slate-900/80 rounded-3xl p-6 sm:p-10 border border-slate-800 space-y-8">
@@ -688,7 +703,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Recently Viewed Products Section */}
-      <RecentlyViewedSection />
+      <DeferredBlock minHeight="min-h-48"><RecentlyViewedSection /></DeferredBlock>
 
       {/* Bottom Prominent Call-to-Action (CTA) Banner Button */}
       <section className="relative overflow-hidden bg-gradient-to-r from-amber-500 via-amber-600 to-purple-800 text-slate-950 rounded-3xl p-8 sm:p-12 shadow-2xl text-center space-y-6 border-2 border-amber-300">
@@ -735,6 +750,8 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      </> : <div className="min-h-[60vh]" aria-hidden="true" />}
 
     </div>
   );

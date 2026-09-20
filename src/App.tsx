@@ -1,10 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
-import { Footer } from './components/Footer';
 import { SEOHead } from './components/SEOHead';
-import { WhatsAppButton } from './components/WhatsAppButton';
-import { ScrollToTop } from './components/ScrollToTop';
 import { HomePage } from './pages/HomePage';
 
 const ProductsPage = lazy(() => import('./pages/ProductsPage').then(m => ({ default: m.ProductsPage })));
@@ -22,6 +19,9 @@ const CartModal = lazy(() => import('./components/CartModal').then(m => ({ defau
 const RecentPurchaseToast = lazy(() => import('./components/RecentPurchaseToast').then(m => ({ default: m.RecentPurchaseToast })));
 const PublicVisitorBadge = lazy(() => import('./components/PublicVisitorBadge').then(m => ({ default: m.PublicVisitorBadge })));
 const VideoImportModal = lazy(() => import('./components/VideoImportModal').then(m => ({ default: m.VideoImportModal })));
+const Footer = lazy(() => import('./components/Footer').then(m => ({ default: m.Footer })));
+const WhatsAppButton = lazy(() => import('./components/WhatsAppButton').then(m => ({ default: m.WhatsAppButton })));
+const ScrollToTop = lazy(() => import('./components/ScrollToTop').then(m => ({ default: m.ScrollToTop })));
 
 const LoadingFallback = () => <div className="min-h-[20vh]" aria-hidden="true" />;
 
@@ -70,7 +70,7 @@ const AppContent: React.FC = () => {
       <main className="flex-1 max-w-7xl w-full mx-auto px-2 sm:px-4 lg:px-6 pt-1 pb-3">
         <Suspense fallback={<LoadingFallback />}>{renderCurrentPage()}</Suspense>
       </main>
-      <Footer />
+      <Suspense fallback={<div className="min-h-48" aria-hidden="true" />}><Footer /></Suspense>
 
       <Suspense fallback={null}>
         {selectedProduct && <ProductDetailModal product={selectedProduct} onClose={closeProductDetail} />}
@@ -83,8 +83,7 @@ const AppContent: React.FC = () => {
         {activePage !== 'admin' && <PublicVisitorBadge />}
       </Suspense>
 
-      <WhatsAppButton />
-      <ScrollToTop />
+      <Suspense fallback={null}><WhatsAppButton /><ScrollToTop /></Suspense>
     </div>
   );
 };
