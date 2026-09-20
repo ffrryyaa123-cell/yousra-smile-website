@@ -106,7 +106,9 @@ export const HomePage: React.FC = () => {
           <img
             src={siteSettings.smartHomeBannerUrl || smartHomeBanner}
             fetchPriority="high"
-            decoding="async"
+            decoding="sync"
+            width="1376"
+            height="768"
             alt="Smart Home & Modern Appliances"
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-125 contrast-105"

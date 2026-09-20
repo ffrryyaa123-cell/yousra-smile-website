@@ -9,6 +9,8 @@ interface SocialVideoExportModalProps {
   onClose: () => void;
 }
 
+type SocialPlatform = 'youtube' | 'pinterest' | 'instagram' | 'tiktok' | 'twitter' | 'snapchat' | 'threads';
+
 const PinterestIcon: React.FC<{ className?: string }> = ({ className = 'w-5 h-5' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
     <path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.401.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.229 7.462-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12z" />
@@ -37,11 +39,16 @@ const CopyRow: React.FC<{ label: string; value: string; copied: string; setCopie
 export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ video, onClose }) => {
   const { products, language, getAffiliateUrl, siteSettings } = useApp();
   const [copied, setCopied] = useState('');
+  const [selectedPlatform, setSelectedPlatform] = useState<SocialPlatform>('youtube');
   const [youtubePublishState, setYoutubePublishState] = useState<{ status: 'idle' | 'working' | 'success' | 'error'; message: string; url?: string }>({ status: 'idle', message: '' });
   if (!video) return null;
 
   const product = products.find(item => item.id === video.productId);
-  const affiliateUrl = product ? getAffiliateUrl(product, 'amazon') : '';
+  const affiliateUrl = product?.amazonUrl
+    ? getAffiliateUrl(product, 'amazon')
+    : product?.aliexpressUrl
+      ? getAffiliateUrl(product, 'aliexpress')
+      : '';
   const videoUrl = video.videoUrl || (video.embedId ? `https://www.youtube.com/watch?v=${video.embedId}` : '');
   const thumbnail = video.hideThumbnail ? '' : (video.thumbnailUrl || video.productImage || product?.image || '');
 
@@ -58,12 +65,61 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
     const selectedFallback = language === 'en' ? fallback.filter(tag => !/[\u0600-\u06FF]/.test(String(tag))) : fallback;
     return Array.from(new Set([...productTags, ...selectedFallback, ...defaults])).filter(Boolean).slice(0, 12).join(' ');
   }, [language, product, video.hashtags]);
-
-  const caption = [title, description, hashtags, affiliateUrl ? `Shop / Affiliate link: ${affiliateUrl}` : '', videoUrl ? `Video: ${videoUrl}` : '']
-    .filter(Boolean)
-    .join('\n\n');
-
-  const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(affiliateUrl || videoUrl)}&media=${encodeURIComponent(thumbnail)}&description=${encodeURIComponent(caption)}`;
+  const keywords = useMemo(() => {
+    const localized = language === 'en' ? (product?.keywordsEn || []) : (product?.keywordsAr || []);
+    const fallback = product?.keywords || [];
+    return Array.from(new Set([...localized, ...fallback]))
+      .map(item => String(item).trim())
+      .filter(item => item && (language === 'ar' || !/[\u0600-\u06FF]/.test(item)))
+      .slice(0, 20);
+  }, [language, product]);
+  const disclosure = language === 'en'
+    ? 'Affiliate disclosure: I may earn a commission from qualifying purchases at no extra cost to you.'
+    : 'إفصاح: قد أحصل على عمولة من المشتريات المؤهلة دون أي تكلفة إضافية عليك.';
+  const shopLine = affiliateUrl
+    ? `${language === 'en' ? 'Shop / affiliate link' : 'رابط الشراء بالعمولة'}: ${affiliateUrl}`
+    : '';
+  const keywordText = keywords.join(', ');
+  const shortHashtags = hashtags.split(/\s+/).filter(Boolean).slice(0, 6).join(' ');
+  const platformPackages: Record<SocialPlatform, { title: string; caption: string; keywords: string }> = {
+    youtube: {
+      title: title.slice(0, 100),
+      caption: [description, shopLine, disclosure, keywordText ? `${language === 'en' ? 'Keywords' : 'الكلمات المفتاحية'}: ${keywordText}` : '', hashtags].filter(Boolean).join('\n\n'),
+      keywords: keywordText,
+    },
+    pinterest: {
+      title: title.slice(0, 100),
+      caption: [description, shopLine, disclosure, keywordText, shortHashtags].filter(Boolean).join('\n\n').slice(0, 500),
+      keywords: keywordText,
+    },
+    instagram: {
+      title: title.slice(0, 125),
+      caption: [title, description, language === 'en' ? 'See the product link in bio or copy the link below.' : 'رابط المنتج في البايو أو انسخي الرابط أدناه.', shopLine, disclosure, hashtags].filter(Boolean).join('\n\n').slice(0, 2200),
+      keywords: keywordText,
+    },
+    tiktok: {
+      title: title.slice(0, 100),
+      caption: [title, language === 'en' ? 'Full product details and affiliate link in bio.' : 'تفاصيل المنتج ورابط العمولة في البايو.', disclosure, shortHashtags].filter(Boolean).join('\n\n').slice(0, 2200),
+      keywords: keywordText,
+    },
+    twitter: {
+      title: title.slice(0, 80),
+      caption: [title, shopLine, disclosure, shortHashtags].filter(Boolean).join('\n').slice(0, 280),
+      keywords: keywordText,
+    },
+    threads: {
+      title: title.slice(0, 100),
+      caption: [title, description, shopLine, disclosure, shortHashtags].filter(Boolean).join('\n\n').slice(0, 500),
+      keywords: keywordText,
+    },
+    snapchat: {
+      title: title.slice(0, 80),
+      caption: [title, language === 'en' ? 'Product link in bio.' : 'رابط المنتج في البايو.', disclosure, shortHashtags].filter(Boolean).join('\n').slice(0, 250),
+      keywords: keywordText,
+    },
+  };
+  const selectedPackage = platformPackages[selectedPlatform];
+  const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(affiliateUrl || videoUrl)}&media=${encodeURIComponent(thumbnail)}&description=${encodeURIComponent(platformPackages.pinterest.caption)}`;
 
   const handleDirectYouTubePublish = async () => {
     const clientId = siteSettings.youtubeOAuthClientId?.trim() || '';
@@ -80,9 +136,9 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
       const result = await publishVideoToYouTube({
         clientId,
         videoUrl,
-        title,
-        description: [description, hashtags, affiliateUrl ? `Shop / Affiliate link: ${affiliateUrl}` : ''].filter(Boolean).join('\n\n'),
-        tags: hashtags.split(/\s+/).filter(Boolean),
+        title: platformPackages.youtube.title,
+        description: platformPackages.youtube.caption,
+        tags: Array.from(new Set([...keywords, ...hashtags.split(/\s+/).map(tag => tag.replace(/^#/, ''))])).filter(Boolean).slice(0, 30),
         privacyStatus: 'public',
         onProgress: (message) => setYoutubePublishState({ status: 'working', message }),
       });
@@ -93,7 +149,8 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
   };
 
   const openUpload = async (platform: 'tiktok' | 'youtube' | 'instagram') => {
-    await navigator.clipboard.writeText(caption);
+    setSelectedPlatform(platform);
+    await navigator.clipboard.writeText(platformPackages[platform].caption);
     setCopied('package');
     window.setTimeout(() => setCopied(''), 1500);
     const url = platform === 'tiktok'
@@ -105,11 +162,12 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
   };
 
   const openExtraChannel = async (platform: 'twitter' | 'snapchat' | 'threads') => {
-    if (navigator.clipboard) await navigator.clipboard.writeText(caption);
+    setSelectedPlatform(platform);
+    if (navigator.clipboard) await navigator.clipboard.writeText(platformPackages[platform].caption);
     setCopied('package');
     window.setTimeout(() => setCopied(''), 1500);
     const url = platform === 'twitter'
-      ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}`
+      ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(platformPackages.twitter.caption)}`
       : platform === 'threads'
         ? 'https://www.threads.com/'
         : 'https://web.snapchat.com/';
@@ -136,7 +194,7 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
         </div>
 
         <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <a href={pinterestShareUrl} target="_blank" rel="noopener noreferrer" onClick={async () => navigator.clipboard.writeText(title)} className="flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-600/15 px-3 py-3 text-xs font-black hover:bg-red-600/25"><PinterestIcon className="h-4 w-4" /> Pinterest</a>
+          <a href={pinterestShareUrl} target="_blank" rel="noopener noreferrer" onClick={async () => { setSelectedPlatform('pinterest'); await navigator.clipboard.writeText(platformPackages.pinterest.caption); }} className="flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-600/15 px-3 py-3 text-xs font-black hover:bg-red-600/25"><PinterestIcon className="h-4 w-4" /> Pinterest</a>
           <button type="button" onClick={() => void openUpload('tiktok')} className="flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-3 py-3 text-xs font-black hover:bg-cyan-500/20"><TikTokIcon className="h-4 w-4" /> TikTok</button>
           <button type="button" onClick={() => void handleDirectYouTubePublish()} disabled={youtubePublishState.status === 'working'} className="flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-600/15 px-3 py-3 text-xs font-black hover:bg-red-600/25 disabled:cursor-wait disabled:opacity-60"><Youtube className="h-4 w-4" /> {youtubePublishState.status === 'working' ? 'جاري النشر...' : 'YouTube مباشر'}</button>
           <button type="button" onClick={() => void openUpload('instagram')} className="flex items-center justify-center gap-2 rounded-xl border border-pink-500/40 bg-pink-500/10 px-3 py-3 text-xs font-black hover:bg-pink-500/20"><Instagram className="h-4 w-4" /> Instagram</button>
@@ -157,15 +215,19 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
         </div>
 
         <div className="space-y-2">
-          <CopyRow language={language} label={language === 'en' ? 'TITLE — English' : 'العنوان'} value={title} copied={copied} setCopied={setCopied} />
-          <CopyRow language={language} label={language === 'en' ? 'DESCRIPTION — English' : 'الوصف'} value={description} copied={copied} setCopied={setCopied} />
+          <div className="flex flex-wrap gap-1.5 rounded-xl border border-white/10 bg-slate-950/70 p-2">
+            {(Object.keys(platformPackages) as SocialPlatform[]).map(platform => <button key={platform} type="button" onClick={() => setSelectedPlatform(platform)} className={`rounded-lg px-2.5 py-1.5 text-[10px] font-black uppercase ${selectedPlatform === platform ? 'bg-amber-500 text-slate-950' : 'bg-white/10 text-slate-300'}`}>{platform}</button>)}
+          </div>
+          <CopyRow language={language} label={`${selectedPlatform.toUpperCase()} — ${language === 'en' ? 'TITLE' : 'العنوان'}`} value={selectedPackage.title} copied={copied} setCopied={setCopied} />
+          <CopyRow language={language} label={`${selectedPlatform.toUpperCase()} — ${language === 'en' ? 'CAPTION' : 'النص الجاهز'}`} value={selectedPackage.caption} copied={copied} setCopied={setCopied} />
+          <CopyRow language={language} label={language === 'en' ? 'KEYWORDS / TAGS' : 'الكلمات المفتاحية / Tags'} value={selectedPackage.keywords} copied={copied} setCopied={setCopied} />
           <CopyRow language={language} label="HASHTAGS" value={hashtags} copied={copied} setCopied={setCopied} />
           <CopyRow language={language} label="AFFILIATE URL" value={affiliateUrl} copied={copied} setCopied={setCopied} />
           <CopyRow language={language} label="VIDEO URL" value={videoUrl} copied={copied} setCopied={setCopied} />
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          <button type="button" onClick={async () => { await navigator.clipboard.writeText(caption); setCopied('package'); window.setTimeout(() => setCopied(''), 1500); }} className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-black text-slate-950 hover:bg-amber-400">{copied === 'package' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied === 'package' ? (language === 'en' ? 'Publishing package copied' : 'تم نسخ الحزمة') : (language === 'en' ? 'Copy complete publishing package' : 'نسخ حزمة النشر كاملة')}</button>
+          <button type="button" onClick={async () => { await navigator.clipboard.writeText(selectedPackage.caption); setCopied('package'); window.setTimeout(() => setCopied(''), 1500); }} className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-black text-slate-950 hover:bg-amber-400">{copied === 'package' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied === 'package' ? (language === 'en' ? 'Publishing package copied' : 'تم نسخ الحزمة') : (language === 'en' ? `Copy ${selectedPlatform} package` : `نسخ حزمة ${selectedPlatform}`)}</button>
           {affiliateUrl && <a href={affiliateUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-bold text-amber-300"><ShoppingBag className="h-4 w-4" />{language === 'en' ? 'Affiliate link' : 'رابط العمولة'} <ExternalLink className="h-3 w-3" /></a>}
         </div>
       </div>
