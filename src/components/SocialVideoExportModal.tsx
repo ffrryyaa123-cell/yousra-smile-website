@@ -40,6 +40,16 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
   if (!video) return null;
 
   const linkedProduct = products.find(p => p.id === video.productId);
+  const localizedProductTitle = linkedProduct
+    ? (language === 'en' ? linkedProduct.titleEn : linkedProduct.titleAr)
+    : video.productTitle;
+  const localizedVideoTitle = language === 'en'
+    ? `${localizedProductTitle || 'Product'} review and demonstration`
+    : (video.title || `مراجعة وتجربة ${localizedProductTitle || 'المنتج'}`);
+  const localizedHashtags = language === 'en'
+    ? (linkedProduct?.hashtagsEn?.length ? linkedProduct.hashtagsEn : ['#ProductReview', '#YousraSmile'])
+    : (linkedProduct?.hashtagsAr?.length ? linkedProduct.hashtagsAr : ['#مراجعة_منتج', '#يسرى_سمايل']);
+  const socialCaption = `${localizedVideoTitle}\n${localizedHashtags.join(' ')}`;
   const targetUrl = video.videoUrl || `https://www.youtube.com/watch?v=${video.embedId}`;
   const thumbnail = video.hideThumbnail ? '' : video.thumbnailUrl || video.productImage;
 
@@ -47,25 +57,25 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
   const pinterestShareUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(
     linkedProduct ? getAffiliateUrl(linkedProduct, 'amazon') : targetUrl
   )}&media=${encodeURIComponent(thumbnail)}&description=${encodeURIComponent(
-    `${video.title} - ${video.productTitle} | مراجعة شاملة وتجربة منتج`
+    socialCaption
   )}`;
 
   // TikTok Share Studio URL
   const tiktokShareUrl = `https://www.tiktok.com/upload?caption=${encodeURIComponent(
-    `🔥 ${video.title} | ${video.productTitle} #تسوق_مع_يسرى #مراجعات #تيك_توك`
+    socialCaption
   )}`;
 
   // YouTube Export / Shorts link
   const youtubeShareUrl = video.platform === 'youtube' 
     ? `https://www.youtube.com/watch?v=${video.embedId}`
-    : `https://www.youtube.com/results?search_query=${encodeURIComponent(video.title)}`;
+    : `https://www.youtube.com/results?search_query=${encodeURIComponent(localizedVideoTitle)}`;
 
   // Embed Snippet
   const embedSnippet = `<iframe width="560" height="315" src="${
     video.platform === 'youtube'
       ? `https://www.youtube.com/embed/${video.embedId}`
       : video.videoUrl
-  }" title="${video.title}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+  }" title="${localizedVideoTitle}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(targetUrl);
@@ -121,7 +131,7 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
           <div className="flex items-center gap-4 bg-slate-950 p-3.5 rounded-2xl border border-white/10">
             <img 
               src={thumbnail} 
-              alt={video.title} 
+              alt={localizedVideoTitle}
               referrerPolicy="no-referrer"
               className="w-24 h-16 object-cover rounded-xl border border-amber-500/30 shrink-0"
             />
@@ -130,7 +140,7 @@ export const SocialVideoExportModal: React.FC<SocialVideoExportModalProps> = ({ 
                 {video.platform} • {video.duration}
               </span>
               <h4 className="text-xs font-bold text-white line-clamp-2 leading-snug">
-                {video.title}
+                {localizedVideoTitle}
               </h4>
             </div>
           </div>

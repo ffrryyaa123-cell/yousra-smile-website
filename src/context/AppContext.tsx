@@ -5,6 +5,8 @@ import { SAMPLE_BLOG_POSTS } from '../data/blogPosts';
 import { translations, Language } from '../utils/i18n';
 import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../utils/currency';
 import { catalogDatabase } from '../services/supabaseCatalog';
+import { LEGACY_WRONG_SITE_LOGOS, SITE_BRAND_ASSETS } from '../config/siteBrand';
+import { loadMediaLibraryState, mediaPlacementSettings, MediaLibraryState } from '../services/mediaLibrary';
 import { loadReviewCounts, recordReviewOpen } from '../services/reviewEngagement';
 import { recordSiteActivity } from '../services/siteActivity';
 
@@ -70,7 +72,7 @@ interface AppContextType {
   isSubscribedToAlert: (productId: string) => boolean;
   openThumbnailEditor: (video: VideoReview) => void;
   closeThumbnailEditor: () => void;
-  updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => void;
+  updateVideoThumbnail: (videoId: string, newThumbnailUrl: string) => Promise<void>;
   removeVideoThumbnail: (videoId: string) => Promise<void>;
   replaceReviewMedia: (videoId: string, productId: string, media: Pick<VideoReview, 'videoUrl' | 'platform' | 'duration'> & { storagePath?: string }) => Promise<void>;
   addVideo: (videoData: Omit<VideoReview, 'id' | 'views' | 'date'> & { id?: string; views?: string; date?: string }) => Promise<boolean>;
@@ -134,7 +136,9 @@ const LOCAL_STORAGE_SETTINGS_KEY = 'yousrasmile_settings_v4';
 
 const DEFAULT_SITE_SETTINGS: SiteSettings = {
   siteName: 'ابتسامة يسرى (Yousra Smile)',
-  siteLogo: 'https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=200&q=80',
+  siteLogo: SITE_BRAND_ASSETS.siteLogo,
+  creatorAvatarUrl: SITE_BRAND_ASSETS.creatorAvatar,
+  heroBannerUrl: SITE_BRAND_ASSETS.heroBanner,
   defaultLanguage: 'ar',
   defaultCurrency: 'USD',
   instagramUrl: 'https://instagram.com/yousrasmile',
@@ -337,7 +341,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_SETTINGS_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Partial<SiteSettings>;
+        return {
+          ...DEFAULT_SITE_SETTINGS,
+          ...parsed,
+          siteLogo: !parsed.siteLogo || LEGACY_WRONG_SITE_LOGOS.has(parsed.siteLogo) ? SITE_BRAND_ASSETS.siteLogo : parsed.siteLogo,
+          creatorAvatarUrl: parsed.creatorAvatarUrl || SITE_BRAND_ASSETS.creatorAvatar,
+          heroBannerUrl: parsed.heroBannerUrl || SITE_BRAND_ASSETS.heroBanner,
+        };
+      }
     } catch (e) {
       console.error('Error loading settings:', e);
     }
@@ -354,6 +367,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return updated;
     });
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const apply = (state: MediaLibraryState) => {
+      if (!active) return;
+      setSiteSettings(previous => ({ ...previous, ...mediaPlacementSettings(state) }));
+    };
+    void loadMediaLibraryState().then(apply).catch(error => console.warn('Media placement settings unavailable; using safe defaults.', error));
+    const listener = (event: Event) => apply((event as CustomEvent<MediaLibraryState>).detail);
+    window.addEventListener('yousra-media-library-updated', listener);
+    return () => { active = false; window.removeEventListener('yousra-media-library-updated', listener); };
   }, []);
 
   const getAffiliateUrl = useCallback((product: Product, platform: 'amazon' | 'aliexpress'): string => {
@@ -419,6 +444,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {}
     return 'ar';
   });
+
+  useEffect(() => {
+    if (!products.length) return;
+    setVideos(previous => {
+      let changed = false;
+      const next = previous.map(video => {
+        const product = video.productId ? products.find(item => item.id === video.productId) : undefined;
+        if (!product) return video;
+        const productTitle = video.productTitle || (language === 'en' ? product.titleEn : product.titleAr) || product.titleEn || product.titleAr;
+        const productImage = video.productImage || product.image || product.images?.[0] || '';
+        const thumbnailUrl = video.hideThumbnail ? '' : (video.thumbnailUrl || productImage);
+        if (productTitle === video.productTitle && productImage === video.productImage && thumbnailUrl === video.thumbnailUrl) return video;
+        changed = true;
+        return { ...video, productTitle, productImage, thumbnailUrl };
+      });
+      return changed ? next : previous;
+    });
+  }, [products, language]);
 
   // Currency state
   const [currency, setCurrencyState] = useState<CurrencyCode>(() => {
@@ -815,13 +858,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openThumbnailEditor = (video: VideoReview) => setEditingThumbnailVideo(video);
   const closeThumbnailEditor = () => setEditingThumbnailVideo(null);
 
-  const updateVideoThumbnail = (videoId: string, newThumbnailUrl: string) => {
-    setVideos(prev => prev.map(v => {
-      if (v.id !== videoId) return v;
-      const updated = { ...v, thumbnailUrl: newThumbnailUrl, hideThumbnail: false };
-      void catalogDatabase.saveVideo(updated).catch(console.error);
-      return updated;
-    }));
+  const updateVideoThumbnail = async (videoId: string, newThumbnailUrl: string) => {
+    const updated = await catalogDatabase.patchVideo(videoId, { thumbnailUrl: newThumbnailUrl, hideThumbnail: false });
+    setVideos(prev => prev.map(v => v.id === videoId ? updated : v));
   };
 
   const removeVideoThumbnail = async (videoId: string) => {
@@ -902,7 +941,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const newItems = importedList.filter(product => !existingIds.has(product.id));
       return [...newItems, ...updatedExisting];
     });
-    importedList.forEach(product => void catalogDatabase.saveProduct(product).catch(console.error));
+    importedList.forEach(product => void catalogDatabase.patchProduct(product.id, product as unknown as Record<string, unknown>).catch(async () => {
+      await catalogDatabase.saveProduct(product);
+    }));
   };
 
   const addReview = (productId: string, userName: string, rating: number, comment: string) => {
@@ -940,15 +981,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateProduct = (updatedProduct: Product) => {
     setProducts(prev => prev.map(p => p.id === updatedProduct.id ? updatedProduct : p));
-    void catalogDatabase.saveProduct(updatedProduct).catch(console.error);
+    void catalogDatabase.patchProduct(updatedProduct.id, updatedProduct as unknown as Record<string, unknown>).catch(console.error);
   };
 
   const patchProduct = (productId: string, patch: Partial<Product>) => {
+    const safePatch = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined)) as Partial<Product>;
     // Optimistic local update so the open screen reflects the change
     // immediately — merged onto whatever local copy exists, same as the
     // database merge below.
-    setProducts(prev => prev.map(p => p.id === productId ? { ...p, ...patch } : p));
-    void catalogDatabase.patchProduct(productId, patch as Record<string, unknown>).catch(console.error);
+    setProducts(prev => prev.map(p => p.id === productId ? { ...p, ...safePatch } : p));
+    void catalogDatabase.patchProduct(productId, safePatch as Record<string, unknown>).catch(console.error);
   };
 
   const deleteProduct = (id: string) => {

@@ -17,7 +17,9 @@ export interface ManagedCategory {
   nameEn: string;
   icon: string;
   description: string;
+  descriptionEn?: string;
   subcategories: string[];
+  subcategoriesEn?: string[];
   image: string;
   imageStoragePath?: string;
 }
@@ -28,7 +30,7 @@ let loadingPromise: Promise<ManagedCategory[]> | null = null;
 
 const normalize = (value: unknown): ManagedCategory[] => {
   if (!Array.isArray(value)) return defaults;
-  return value
+  const normalized = value
     .filter(item => item && typeof item === 'object')
     .map((item: any) => ({
       id: String(item.id || `category-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`),
@@ -36,10 +38,14 @@ const normalize = (value: unknown): ManagedCategory[] => {
       nameEn: String(item.nameEn || item.nameAr || 'New Category'),
       icon: String(item.icon || '📦'),
       description: String(item.description || ''),
+      descriptionEn: item.descriptionEn ? String(item.descriptionEn) : undefined,
       subcategories: Array.isArray(item.subcategories) ? item.subcategories.map(String) : [],
+      subcategoriesEn: Array.isArray(item.subcategoriesEn) ? item.subcategoriesEn.map(String) : [],
       image: String(item.image || ''),
       imageStoragePath: item.imageStoragePath ? String(item.imageStoragePath) : undefined,
     }));
+  const ids = new Set(normalized.map(item => item.id));
+  return [...normalized, ...defaults.filter(item => !ids.has(item.id))];
 };
 
 const emit = (items: ManagedCategory[]) => {
@@ -183,9 +189,11 @@ export async function saveManagedCategories(items: ManagedCategory[]): Promise<M
     upsert: true,
   });
   if (error) throw new Error(`تعذر حفظ الأقسام: ${error.message}`);
-
-  emit(normalized);
-  return normalized;
+  const confirmed = await loadManagedCategories(true);
+  const canonical = (items: ManagedCategory[]) => JSON.stringify(items.map(item => ({ ...item, subcategories: [...item.subcategories] })));
+  if (canonical(confirmed) !== canonical(normalized)) throw new Error('لم يؤكد Supabase نسخة الأقسام الجديدة. بقيت القائمة السابقة فعالة.');
+  emit(confirmed);
+  return confirmed;
 }
 
 export function useManagedCategories() {

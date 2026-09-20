@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../services/adminAccount';
+import { catalogDatabase } from '../services/supabaseCatalog';
 
 type CouponData = {
   label: string;
@@ -84,6 +85,17 @@ const invokeErrorMessage = async (error: any, fallback: string): Promise<string>
 const isAmazonHost = (host: string) => /(^|\.)amazon\./i.test(host) || ['amzn.to', 'amzn.eu', 'a.co'].includes(host);
 const isAliHost = (host: string) => /aliexpress/i.test(host);
 
+const inferProductCategory = (value: string) => {
+  const text = value.toLowerCase();
+  if (/garden|outdoor|patio|watering|camping/.test(text)) return 'garden-outdoor';
+  if (/kitchen|air fryer|pressure cooker|blender|coffee|cookware|oven/.test(text)) return 'smart-kitchen';
+  if (/vacuum|floor|clean|mop|robot|smart home|security|camera|doorbell/.test(text)) return 'smart-home';
+  if (/furniture|decor|sofa|chair|table|bed|lamp|rug|shelf/.test(text)) return 'furniture-decor';
+  if (/fitness|health|exercise|massage|scale|wellness/.test(text)) return 'health-fitness';
+  if (/beauty|makeup|perfume|fashion|hair|skin care/.test(text)) return 'women-corner';
+  return 'smart-gadgets';
+};
+
 const copyText = async (value: string) => {
   await navigator.clipboard.writeText(value);
 };
@@ -119,8 +131,8 @@ const TextCard: React.FC<{ title: string; value?: string; dir?: 'rtl' | 'ltr' }>
   </div>
 );
 
-export const SeoTextHub: React.FC = () => {
-  const { siteSettings } = useApp();
+export const SeoTextHub: React.FC<{ onOpenProducts?: () => void }> = ({ onOpenProducts }) => {
+  const { siteSettings, products, addProduct, patchProduct } = useApp();
   const [productUrl, setProductUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -129,6 +141,17 @@ export const SeoTextHub: React.FC = () => {
   const [bilingual, setBilingual] = useState<BilingualCopy | null>(null);
   const [affiliateUrl, setAffiliateUrl] = useState('');
   const [copiedAll, setCopiedAll] = useState(false);
+  const [identityVerified, setIdentityVerified] = useState(false);
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+
+  const existingProduct = useMemo(() => {
+    if (!source) return null;
+    const identifier = source.asin || source.itemId;
+    if (!identifier) return null;
+    return products.find(product => [product.sourceProductUrl, product.amazonUrl, product.aliexpressUrl]
+      .filter(Boolean).some(url => String(url).includes(identifier))) || null;
+  }, [products, source]);
 
   const discountPercent = useMemo(() => {
     if (!source?.price || !source?.listPrice || source.listPrice <= source.price) return 0;
@@ -163,6 +186,8 @@ export const SeoTextHub: React.FC = () => {
     setSource(null);
     setBilingual(null);
     setAffiliateUrl('');
+    setIdentityVerified(false);
+    setSaveMessage('');
 
     if (!/^https:\/\//i.test(raw)) {
       setError('الصقي رابط المنتج الكامل الذي يبدأ بـ https://');
@@ -183,8 +208,15 @@ export const SeoTextHub: React.FC = () => {
       }
 
       const extracted = extractResult.data as ExtractedProduct;
+      const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('product-verify', {
+        body: { url: raw, extracted, amazonTag: siteSettings.amazonTag || '', aliexpressTag: siteSettings.aliexpressTag || '' }
+      });
+      if (verifyError || !verifyResult?.ok || !verifyResult?.data?.identityVerified) {
+        throw new Error(await invokeErrorMessage(verifyError, verifyResult?.error || 'لم يتم تأكيد تطابق المنتج مع الرابط.'));
+      }
       setSource(extracted);
-      setAffiliateUrl(buildAffiliateUrl(raw, extracted));
+      setIdentityVerified(true);
+      setAffiliateUrl(verifyResult.data.affiliateUrl || buildAffiliateUrl(raw, extracted));
 
       // Text-only request. This intentionally does NOT call any image/video generator.
       const { data: textResult, error: textError } = await supabase.functions.invoke('product-text-copy', {
@@ -250,6 +282,61 @@ export const SeoTextHub: React.FC = () => {
       warnings: source.warnings
     };
   }, [source, bilingual, affiliateUrl, discountPercent]);
+
+  const handleSaveToProducts = async () => {
+    if (!source || !bilingual || !identityVerified) {
+      setSaveMessage('لا يمكن الحفظ قبل اكتمال التحقق والنص العربي والإنجليزي.');
+      return;
+    }
+    if (!bilingual.titleAr || !bilingual.titleEn || !bilingual.descriptionAr || !bilingual.descriptionEn) {
+      setSaveMessage('بيانات اللغتين ناقصة؛ لم يتم حفظ منتج جزئي.');
+      return;
+    }
+    setSavingProduct(true);
+    setSaveMessage('');
+    try {
+      const price = typeof source.price === 'number' ? source.price : 0;
+      const listPrice = typeof source.listPrice === 'number' && source.listPrice >= price ? source.listPrice : price;
+      const category = inferProductCategory([source.title, source.brand, ...(source.breadcrumbs || [])].join(' '));
+      const sourceImages = (source.images || []).filter(Boolean);
+      const patch = {
+        titleAr: bilingual.titleAr, titleEn: bilingual.titleEn,
+        description: bilingual.descriptionAr, descriptionEn: bilingual.descriptionEn,
+        longDescription: bilingual.longDescriptionAr || bilingual.descriptionAr,
+        longDescriptionEn: bilingual.longDescriptionEn || bilingual.descriptionEn,
+        category, subcategory: source.breadcrumbs?.at(-1) || source.brand || '',
+        subcategoryEn: source.breadcrumbs?.at(-1) || source.brand || '', brand: source.brand || '',
+        amazonUrl: source.platform === 'amazon' ? (affiliateUrl || source.finalUrl) : '',
+        aliexpressUrl: source.platform === 'aliexpress' ? (affiliateUrl || source.finalUrl) : undefined,
+        sourceProductUrl: source.sourceUrl, originalPrice: listPrice, discountPrice: price, discountPercent,
+        currency: source.currency || 'USD', rating: source.rating || 0, reviewCount: source.reviewCount || 0,
+        features: bilingual.featuresAr || [], featuresEn: bilingual.featuresEn?.length ? bilingual.featuresEn : source.features || [],
+        specs: bilingual.specsAr || {}, specsEn: Object.keys(bilingual.specsEn || {}).length ? bilingual.specsEn : source.specs || {},
+        seoTitleAr: bilingual.seoTitleAr || '', seoTitleEn: bilingual.seoTitleEn || '',
+        seoDescriptionAr: bilingual.seoDescriptionAr || '', seoDescriptionEn: bilingual.seoDescriptionEn || '',
+        keywordsAr: bilingual.keywordsAr || [], keywordsEn: bilingual.keywordsEn || [],
+        hashtagsAr: bilingual.hashtagsAr || [], hashtagsEn: bilingual.hashtagsEn || [],
+        keywords: Array.from(new Set([...(bilingual.keywordsAr || []), ...(bilingual.keywordsEn || [])])),
+        coupon: source.coupon ? { ...source.coupon, expiresOn: '', isPublic: true } : undefined,
+        isActive: true,
+      };
+      if (existingProduct) {
+        const safePatch = { ...patch, ...((existingProduct.images?.length || existingProduct.image) ? {} : { image: sourceImages[0] || '', images: sourceImages }) };
+        await catalogDatabase.patchProduct(existingProduct.id, safePatch as Record<string, unknown>);
+        patchProduct(existingProduct.id, safePatch as any);
+        setSaveMessage('✓ تم تحديث كل حقول النص وSEO في Supabase بدون لمس الصور أو الفيديوهات الحالية.');
+      } else {
+        const created = addProduct({ ...patch, image: sourceImages[0] || '', images: sourceImages, youtubeUrl: '', tiktokUrl: '', pinterestUrl: '', isFeatured: false, isTopSelling: false, isHidden: false } as any);
+        await catalogDatabase.saveProduct(created);
+        setSaveMessage('✓ تم إنشاء المنتج بكل حقول العربي والإنجليزي وSEO في Supabase.');
+      }
+      window.setTimeout(() => onOpenProducts?.(), 700);
+    } catch (error) {
+      setSaveMessage(`تعذر تأكيد الحفظ في Supabase: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setSavingProduct(false);
+    }
+  };
 
   const downloadJson = () => {
     if (!allData) return;
@@ -372,6 +459,10 @@ export const SeoTextHub: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => void handleSaveToProducts()} disabled={savingProduct || !identityVerified} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white hover:bg-emerald-500 disabled:opacity-50">
+              {savingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}
+              {savingProduct ? 'جاري تثبيت كل البيانات…' : existingProduct ? 'تحديث المنتج بكل حقول SEO' : 'حفظ المنتج بكل حقول SEO'}
+            </button>
             <button
               type="button"
               onClick={async () => {
@@ -405,6 +496,7 @@ export const SeoTextHub: React.FC = () => {
               </a>
             )}
           </div>
+          {saveMessage && <div className="rounded-xl border border-amber-500/40 bg-amber-950/30 p-3 text-sm font-bold text-amber-100">{saveMessage}</div>}
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             <TextCard title="اسم المنتج — English" value={bilingual?.titleEn || source.title} dir="ltr" />

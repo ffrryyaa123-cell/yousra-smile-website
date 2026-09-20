@@ -113,13 +113,18 @@ export const ThumbnailEditorModal: React.FC<ThumbnailEditorModalProps> = ({ vide
     setCustomInputUrl('');
   };
 
-  const handleSave = () => {
-    updateVideoThumbnail(video.id, currentUrl);
-    setIsSaved(true);
-    setTimeout(() => {
-      setIsSaved(false);
-      onClose();
-    }, 1200);
+  const handleSave = async () => {
+    setUploadError('');
+    try {
+      await updateVideoThumbnail(video.id, currentUrl);
+      setIsSaved(true);
+      window.setTimeout(() => {
+        setIsSaved(false);
+        onClose();
+      }, 900);
+    } catch (error: any) {
+      setUploadError(error?.message || 'تعذر حفظ الصورة المصغرة. لم يتم تغيير المراجعة.');
+    }
   };
 
   return (

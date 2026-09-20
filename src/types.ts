@@ -8,7 +8,8 @@ export type CategoryId =
   | 'furniture-decor'
   | 'smart-gadgets'
   | 'women-corner'
-  | 'health-fitness';
+  | 'health-fitness'
+  | 'garden-outdoor';
 
 export interface UserReview {
   id: string;
@@ -173,6 +174,9 @@ export interface CartItem {
 export interface SiteSettings {
   siteName: string;
   siteLogo: string;
+  heroBannerUrl?: string;
+  smartHomeBannerUrl?: string;
+  creatorAvatarUrl?: string;
   defaultLanguage: 'ar' | 'en';
   defaultCurrency: CurrencyCode;
   instagramUrl?: string;

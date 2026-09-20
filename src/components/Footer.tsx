@@ -1,10 +1,11 @@
 import React from 'react';
 import { Youtube, Video, Instagram, Sparkles, Heart, ShieldCheck, Mail, ArrowLeft, Settings, Ghost } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { CATEGORIES } from '../data/categories';
-import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
+import { useManagedCategories } from '../services/categoryManager';
+import { SITE_BRAND_ASSETS } from '../config/siteBrand';
 
 export const Footer: React.FC = () => {
+  const { categories } = useManagedCategories();
   const { setPage, setSelectedCategory, language, t, siteSettings } = useApp();
   const [emailInput, setEmailInput] = React.useState('');
   const [subscribed, setSubscribed] = React.useState(false);
@@ -26,7 +27,7 @@ export const Footer: React.FC = () => {
           {/* Brand Info & Story */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <img src={siteSettings.siteLogo || logoImg} alt="Yousra Smile" className="w-12 h-12 rounded-xl object-cover border-2 border-purple-500/40" referrerPolicy="no-referrer" />
+              <img src={siteSettings.siteLogo || SITE_BRAND_ASSETS.siteLogo} alt="Yousra Smile" className="w-12 h-12 rounded-xl object-cover border-2 border-purple-500/40" referrerPolicy="no-referrer" />
               <div>
                 <span className="text-xl font-extrabold text-white font-['Tajawal'] tracking-wide">
                   {t.siteTitle}
@@ -92,7 +93,7 @@ export const Footer: React.FC = () => {
           <div className="space-y-4">
             <h3 className="text-sm font-bold text-white uppercase tracking-wider font-['Tajawal']">{t.categories}</h3>
             <ul className="space-y-2.5 text-sm">
-              {CATEGORIES.map(cat => (
+              {categories.map(cat => (
                 <li key={cat.id}>
                   <button
                     onClick={() => { setSelectedCategory(cat.id); setPage('products'); }}

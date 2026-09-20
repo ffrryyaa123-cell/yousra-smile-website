@@ -96,6 +96,29 @@ if (!products.length) {
   throw new Error('[generate-static-seo] Public product catalog is empty; refusing to publish an empty sitemap.');
 }
 
+const { data: videoRows, error: videoError } = await supabase
+  .from('videos')
+  .select('id,product_id,data,updated_at')
+  .order('updated_at', { ascending: false });
+if (videoError) throw new Error(`[generate-static-seo] Could not read public videos from Supabase: ${videoError.message}`);
+
+const videosByProduct = new Map();
+for (const row of videoRows || []) {
+  const video = { ...(row.data || {}), id: row.id, productId: row.product_id || row.data?.productId, _updatedAt: row.updated_at || nowIso };
+  if (!video.productId || !/^https?:\/\//i.test(String(video.videoUrl || ''))) continue;
+  const list = videosByProduct.get(video.productId) || [];
+  list.push(video);
+  videosByProduct.set(video.productId, list);
+}
+
+const isoDuration = value => {
+  const parts = String(value || '').split(':').map(Number);
+  if (parts.some(part => !Number.isFinite(part))) return undefined;
+  const seconds = parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : parts.length === 2 ? parts[0] * 60 + parts[1] : parts[0];
+  if (!seconds) return undefined;
+  return `PT${Math.floor(seconds / 3600) ? `${Math.floor(seconds / 3600)}H` : ''}${Math.floor((seconds % 3600) / 60) ? `${Math.floor((seconds % 3600) / 60)}M` : ''}${seconds % 60 ? `${seconds % 60}S` : ''}`;
+};
+
 const pageDefinitions = [
   ['/', 'Yousra Smile | يسرى سمايل - Smart Home, Kitchen & Lifestyle Picks', 'Curated smart-home, kitchen, cleaning, lifestyle and personal-care product reviews, deals and buying links.'],
   ['/products', 'Smart Products Catalog & Reviews | Yousra Smile', 'Browse Yousra Smile product reviews, specifications, current retailer pricing and buying links.'],
@@ -136,6 +159,16 @@ for (const product of products) {
   const price = Number(product.discountPrice || product.originalPrice || 0);
   const currency = String(product.currency || 'USD');
   const affiliateUrl = String(product.amazonUrl || product.aliexpressUrl || product.sourceProductUrl || '').trim();
+  const productVideos = (videosByProduct.get(product.id) || []).map((video, index) => ({
+    '@type': 'VideoObject',
+    name: compact(video.titleEn || video.title || `${titleEn} video review ${index + 1}`, 110),
+    description: compact(video.descriptionEn || video.description || description, 200),
+    thumbnailUrl: [String(video.thumbnailUrl || video.productImage || image).trim()].filter(Boolean),
+    uploadDate: video.date && !Number.isNaN(Date.parse(video.date)) ? new Date(video.date).toISOString() : new Date(video._updatedAt || product._updatedAt || nowIso).toISOString(),
+    contentUrl: String(video.videoUrl),
+    ...(isoDuration(video.duration) ? { duration: isoDuration(video.duration) } : {}),
+    mainEntityOfPage: canonical,
+  })).filter(video => video.thumbnailUrl.length);
 
   const schema = {
     '@context': 'https://schema.org',
@@ -146,6 +179,7 @@ for (const product of products) {
     ...(image ? { image: [image, ...(Array.isArray(product.images) ? product.images.filter(Boolean).slice(0, 7) : [])] } : {}),
     ...(product.brand ? { brand: { '@type': 'Brand', name: product.brand } } : {}),
     sku: product.id,
+    ...(productVideos.length ? { video: productVideos } : {}),
     ...(Number(product.rating) > 0 && Number(product.reviewCount) > 0 ? {
       aggregateRating: {
         '@type': 'AggregateRating',
@@ -168,7 +202,7 @@ for (const product of products) {
 
   const features = (product.featuresEn?.length ? product.featuresEn : product.features || []).filter(Boolean).slice(0, 8);
   const specs = Object.entries(product.specsEn && Object.keys(product.specsEn).length ? product.specsEn : product.specs || {}).slice(0, 12);
-  const fallbackArticle = `<article style="max-width:960px;margin:0 auto;padding:32px 20px;color:#f8fafc;background:#0d0714;font-family:Arial,sans-serif;line-height:1.7"><nav><a href="/products" style="color:#facc15">Yousra Smile Products</a></nav><h1>${escapeHtml(titleEn)}</h1>${titleAr ? `<h2 dir="rtl">${escapeHtml(titleAr)}</h2>` : ''}${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(titleEn)}" width="720" height="720" style="max-width:100%;height:auto;border-radius:18px" />` : ''}<p>${escapeHtml(description)}</p>${price > 0 ? `<p><strong>Current listed price:</strong> ${escapeHtml(currency)} ${escapeHtml(price.toFixed(2))}</p>` : ''}${features.length ? `<h2>Key features</h2><ul>${features.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}${specs.length ? `<h2>Specifications</h2><dl>${specs.map(([key, value]) => `<dt><strong>${escapeHtml(key)}</strong></dt><dd>${escapeHtml(value)}</dd>`).join('')}</dl>` : ''}<p><small>Affiliate disclosure: Yousra Smile may earn a commission from qualifying purchases through retailer links, at no additional cost to you.</small></p></article>`;
+  const fallbackArticle = `<article style="max-width:960px;margin:0 auto;padding:32px 20px;color:#f8fafc;background:#0d0714;font-family:Arial,sans-serif;line-height:1.7"><nav><a href="/products" style="color:#facc15">Yousra Smile Products</a></nav><h1>${escapeHtml(titleEn)}</h1>${titleAr ? `<h2 dir="rtl">${escapeHtml(titleAr)}</h2>` : ''}${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(titleEn)}" width="720" height="720" style="max-width:100%;height:auto;border-radius:18px" />` : ''}<p>${escapeHtml(description)}</p>${productVideos.map(video => `<section><h2>${escapeHtml(video.name)}</h2><video controls preload="metadata" poster="${escapeHtml(video.thumbnailUrl[0])}" style="max-width:100%"><source src="${escapeHtml(video.contentUrl)}" /></video></section>`).join('')}${price > 0 ? `<p><strong>Current listed price:</strong> ${escapeHtml(currency)} ${escapeHtml(price.toFixed(2))}</p>` : ''}${features.length ? `<h2>Key features</h2><ul>${features.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}${specs.length ? `<h2>Specifications</h2><dl>${specs.map(([key, value]) => `<dt><strong>${escapeHtml(key)}</strong></dt><dd>${escapeHtml(value)}</dd>`).join('')}</dl>` : ''}<p><small>Affiliate disclosure: Yousra Smile may earn a commission from qualifying purchases through retailer links, at no additional cost to you.</small></p></article>`;
 
   let html = baseTemplate;
   html = setTitle(html, pageTitle);
@@ -197,7 +231,7 @@ const sitemapEntries = [
   ...products.map(product => ({ loc: absoluteProductUrl(product), lastmod: product._updatedAt || nowIso }))
 ];
 
-const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapEntries.map(entry => `  <url>\n    <loc>${escapeHtml(entry.loc)}</loc>\n    <lastmod>${escapeHtml(new Date(entry.lastmod).toISOString())}</lastmod>\n  </url>`).join('\n')}\n</urlset>\n`;
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n${sitemapEntries.map(entry => { const product = products.find(item => absoluteProductUrl(item) === entry.loc); const productVideos = product ? (videosByProduct.get(product.id) || []) : []; return `  <url>\n    <loc>${escapeHtml(entry.loc)}</loc>\n    <lastmod>${escapeHtml(new Date(entry.lastmod).toISOString())}</lastmod>${productVideos.map(video => { const thumbnail = video.thumbnailUrl || video.productImage || product?.image; return thumbnail && video.videoUrl ? `\n    <video:video><video:thumbnail_loc>${escapeHtml(thumbnail)}</video:thumbnail_loc><video:title>${escapeHtml(compact(video.titleEn || video.title || product?.titleEn || product?.titleAr || 'Product video', 100))}</video:title><video:description>${escapeHtml(compact(video.descriptionEn || video.description || product?.descriptionEn || 'Product video review', 200))}</video:description><video:content_loc>${escapeHtml(video.videoUrl)}</video:content_loc></video:video>` : ''; }).join('')}\n  </url>`; }).join('\n')}\n</urlset>\n`;
 fs.writeFileSync(path.join(DIST, 'sitemap.xml'), sitemap, 'utf8');
 fs.writeFileSync(path.join(DIST, 'robots.txt'), 'User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: https://yousrasmile.com/sitemap.xml\n', 'utf8');
 

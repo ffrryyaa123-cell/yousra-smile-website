@@ -112,5 +112,16 @@ export const CATEGORIES: Category[] = [
     subcategoriesEn: [
       'Smart Water Bottles', 'Massage Devices', 'Relaxation Devices', 'Home Fitness Equipment', 'Smart Scales', 'Activity Trackers'
     ]
+  },
+  {
+    id: 'garden-outdoor',
+    nameAr: 'الحديقة والهواء الطلق',
+    nameEn: 'Garden & Outdoor',
+    icon: 'Trees',
+    description: 'أدوات الحديقة والري الذكي والأثاث الخارجي ومستلزمات الجلسات والأنشطة في الهواء الطلق',
+    descriptionEn: 'Smart watering, garden tools, outdoor furniture, patio essentials, and practical outdoor-living products.',
+    image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=800&q=80',
+    subcategories: ['الري الذكي', 'أدوات الحديقة', 'أثاث خارجي', 'إضاءة خارجية', 'الشواء', 'التخييم والرحلات'],
+    subcategoriesEn: ['Smart Watering', 'Garden Tools', 'Outdoor Furniture', 'Outdoor Lighting', 'Grilling', 'Camping & Travel']
   }
 ];

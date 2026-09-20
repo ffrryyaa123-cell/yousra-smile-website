@@ -1,9 +1,9 @@
 import React from 'react';
-import smartHomeBanner from '../assets/images/smart_home_banner_1785693287624.jpg';
+import { SITE_BRAND_ASSETS } from '../config/siteBrand';
 import { useApp } from '../context/AppContext';
 import { HeroBanner } from '../components/HeroBanner';
 import { ProductCard } from '../components/ProductCard';
-import { CATEGORIES } from '../data/categories';
+import { useManagedCategories } from '../services/categoryManager';
 import { 
   Flame, 
   Sparkles, 
@@ -28,18 +28,17 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
-import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.jpg';
 
-import { BlogSection } from '../components/BlogSection';
 import { FlashDealsTicker } from '../components/FlashDealsTicker';
-import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
-import { SmartSavingsCalculator } from '../components/SmartSavingsCalculator';
-import { AffiliateDealScanner } from '../components/AffiliateDealScanner';
-import { InstantVideoStudio } from '../components/InstantVideoStudio';
 import { ReviewOpenCount } from '../components/ReviewOpenCount';
 
+const BlogSection = React.lazy(() => import('../components/BlogSection').then(module => ({ default: module.BlogSection })));
+const RecentlyViewedSection = React.lazy(() => import('../components/RecentlyViewedSection').then(module => ({ default: module.RecentlyViewedSection })));
+const SmartSavingsCalculator = React.lazy(() => import('../components/SmartSavingsCalculator').then(module => ({ default: module.SmartSavingsCalculator })));
+const AffiliateDealScanner = React.lazy(() => import('../components/AffiliateDealScanner').then(module => ({ default: module.AffiliateDealScanner })));
+
 export const HomePage: React.FC = () => {
+  const { categories } = useManagedCategories();
   const { 
     visibleProducts: products,
     videos,
@@ -49,6 +48,7 @@ export const HomePage: React.FC = () => {
     openProductDetail,
     language,
     formatPrice,
+    siteSettings,
     t
   } = useApp();
 
@@ -100,7 +100,7 @@ export const HomePage: React.FC = () => {
         {/* Top Smart Home Visual Banner Image */}
         <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-xl overflow-hidden mb-3 border border-[#D4AF37]/60 shadow-xl group">
           <img 
-            src={smartHomeBanner} 
+            src={siteSettings.smartHomeBannerUrl || SITE_BRAND_ASSETS.siteLogo}
             alt="Smart Home & Modern Appliances" 
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-125 contrast-105"
@@ -127,7 +127,7 @@ export const HomePage: React.FC = () => {
               <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 via-purple-500 to-amber-500 blur-md opacity-85 group-hover:opacity-100 transition duration-500"></div>
               <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full overflow-hidden border-3 border-[#D4AF37] shadow-[0_0_25px_rgba(212,175,55,0.6)] bg-slate-950 transition-transform duration-500 hover:scale-105">
                 <img 
-                  src={logoImg} 
+                  src={siteSettings.creatorAvatarUrl || SITE_BRAND_ASSETS.creatorAvatar}
                   alt={language === 'ar' ? 'ابتسامة يسرى Logo' : 'Yousra Smile Logo'} 
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"
@@ -244,7 +244,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ⚡ Instant Affiliate Deal & Link Scanner */}
-      <AffiliateDealScanner />
+      <React.Suspense fallback={null}><AffiliateDealScanner /></React.Suspense>
 
       {/* Category Grid Section */}
       <section className="space-y-2.5">
@@ -261,13 +261,13 @@ export const HomePage: React.FC = () => {
             onClick={() => { setSelectedCategory('all'); setPage('products'); }}
             className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
           >
-            {t.allCategories} ({CATEGORIES.length})
+            {t.allCategories} ({categories.length})
             <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-0 ltr:rotate-180" />
           </button>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-          {CATEGORIES.map(cat => {
+          {categories.map(cat => {
             const count = products.filter(p => p.category === cat.id).length;
             const catName = language === 'en' ? cat.nameEn : cat.nameAr;
             return (
@@ -293,7 +293,7 @@ export const HomePage: React.FC = () => {
                   {catName}
                 </h3>
                 <p className="text-[10px] text-slate-300 line-clamp-1">
-                  {cat.subcategories.slice(0, 2).join(' • ')}
+                  {(language === 'en' && cat.subcategoriesEn?.length ? cat.subcategoriesEn : cat.subcategories).slice(0, 2).join(' • ')}
                 </p>
               </div>
             );
@@ -608,10 +608,10 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 💡 Interactive Smart Home Savings & ROI Calculator */}
-      <SmartSavingsCalculator />
+      <React.Suspense fallback={null}><SmartSavingsCalculator /></React.Suspense>
 
       {/* Buying Guides & Blog Articles Section */}
-      <BlogSection />
+      <React.Suspense fallback={null}><BlogSection /></React.Suspense>
 
       {/* Why Trust Yousra Smile Affiliate Section */}
       <section className="bg-slate-900/80 rounded-3xl p-6 sm:p-10 border border-slate-800 space-y-8">
@@ -662,7 +662,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* Recently Viewed Products Section */}
-      <RecentlyViewedSection />
+      <React.Suspense fallback={null}><RecentlyViewedSection /></React.Suspense>
 
       {/* Bottom Prominent Call-to-Action (CTA) Banner Button */}
       <section className="relative overflow-hidden bg-gradient-to-r from-amber-500 via-amber-600 to-purple-800 text-slate-950 rounded-3xl p-8 sm:p-12 shadow-2xl text-center space-y-6 border-2 border-amber-300">

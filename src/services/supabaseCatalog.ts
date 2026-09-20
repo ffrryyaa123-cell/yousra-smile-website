@@ -2,6 +2,9 @@ import { supabase } from './adminAccount';
 import { deleteProductVideo, uploadLocalVideo } from './videoAssets';
 import { Product, VideoReview } from '../types';
 
+const definedPatch = (patch: Record<string, unknown>): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(patch).filter(([key, value]) => key !== 'id' && value !== undefined));
+
 /**
  * Live catalog storage on Supabase/PostgreSQL.
  *
@@ -125,30 +128,41 @@ const queueVideoSave = (video: VideoReview) => {
 };
 
 const directSaveProduct = async (product: Product) => {
-  const { data, error } = await supabase
-    .from('products')
-    .upsert({ id: product.id, data: product, updated_at: new Date().toISOString() })
-    .select('id')
-    .single();
-  if (error || !data) throw error || new Error('لم تؤكد قاعدة البيانات حفظ المنتج.');
+  const { data: existing, error: readError } = await supabase.from('products').select('id').eq('id', product.id).maybeSingle();
+  if (readError) throw readError;
+  if (existing?.id) {
+    await directPatchProduct(product.id, definedPatch(product as unknown as Record<string, unknown>));
+    return;
+  }
+  const { data, error } = await supabase.from('products')
+    .insert({ id: product.id, data: product, updated_at: new Date().toISOString() })
+    .select('id').single();
+  if (error || !data) throw error || new Error('لم تؤكد قاعدة البيانات إنشاء المنتج.');
 };
 
 const directPatchProduct = async (productId: string, patch: Record<string, unknown>): Promise<Product> => {
+  const safePatch = definedPatch(patch);
   const { data, error } = await supabase.rpc('patch_catalog_product', {
     p_id: productId,
-    p_patch: { ...patch, id: productId }
+    p_patch: { ...safePatch, id: productId }
   });
   if (error || !data || typeof data !== 'object') throw error || new Error('لم تؤكد قاعدة البيانات حفظ تعديل المنتج.');
   return { ...(data as Product), id: productId };
 };
 
 const directSaveVideo = async (video: VideoReview) => {
-  const { data, error } = await supabase
-    .from('videos')
-    .upsert({ id: video.id, product_id: video.productId, data: video, updated_at: new Date().toISOString() })
-    .select('id')
-    .single();
-  if (error || !data) throw error || new Error('لم تؤكد قاعدة البيانات حفظ الفيديو.');
+  const { data: row, error: readError } = await supabase.from('videos').select('data,updated_at').eq('id', video.id).maybeSingle();
+  if (readError) throw readError;
+  if (!row) {
+    const { data, error } = await supabase.from('videos').insert({ id: video.id, product_id: video.productId, data: video, updated_at: new Date().toISOString() }).select('id').single();
+    if (error || !data) throw error || new Error('لم تؤكد قاعدة البيانات إنشاء الفيديو.');
+    return;
+  }
+  const merged = { ...(row.data as object), ...definedPatch(video as unknown as Record<string, unknown>), id: video.id };
+  let request = supabase.from('videos').update({ product_id: video.productId, data: merged, updated_at: new Date().toISOString() }).eq('id', video.id);
+  request = row.updated_at ? request.eq('updated_at', row.updated_at) : request.is('updated_at', null);
+  const { data, error } = await request.select('id').single();
+  if (error || !data) throw error || new Error('تغيّرت المراجعة أثناء الحفظ. حدّثي الصفحة وأعيدي المحاولة.');
 };
 
 const scheduleOutboxFlush = (delay = 2500) => {
@@ -290,6 +304,27 @@ export const catalogDatabase = {
       scheduleOutboxFlush();
       console.warn('Video save queued for automatic retry.', error);
     }
+  },
+
+  async patchVideo(videoId: string, patch: Partial<VideoReview>) {
+    const { data: row, error } = await supabase.from('videos').select('data,updated_at').eq('id', videoId).single();
+    if (error || !row?.data) throw error || new Error('المراجعة لم تعد موجودة.');
+    const merged = { ...(row.data as object), ...definedPatch(patch as Record<string, unknown>), id: videoId };
+    let request = supabase.from('videos').update({ data: merged, updated_at: new Date().toISOString() }).eq('id', videoId);
+    request = row.updated_at ? request.eq('updated_at', row.updated_at) : request.is('updated_at', null);
+    const { data: saved, error: saveError } = await request.select('data').single();
+    if (saveError || !saved) throw saveError || new Error('تغيّرت المراجعة أثناء الحفظ. حدّثي الصفحة وأعيدي المحاولة.');
+    return { ...(saved.data as VideoReview), id: videoId };
+  },
+
+  async listStoredProductVideos(productId: string) {
+    const { data, error } = await supabase.storage.from('product-videos').list(productId, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+    if (error) throw error;
+    return (data || []).filter(item => item.id && /\.(mp4|webm|mov)$/i.test(item.name)).map(item => ({
+      name: item.name,
+      createdAt: item.created_at || item.updated_at || '',
+      url: supabase.storage.from('product-videos').getPublicUrl(`${productId}/${item.name}`).data.publicUrl,
+    }));
   },
 
   async deleteProduct(productId: string) {

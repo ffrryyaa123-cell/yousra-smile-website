@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Trash2, PlaySquare, Film, AlertCircle, Plus, CheckSquare, Square } from 'lucide-react';
+import { X, Trash2, PlaySquare, Film, AlertCircle, Plus, CheckSquare, Square, RefreshCw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Product } from '../types';
+import { catalogDatabase } from '../services/supabaseCatalog';
 
 interface ProductVideosManagerProps {
   product: Product | null;
@@ -19,15 +20,42 @@ interface ProductVideosManagerProps {
  * other field on the product, is left untouched.
  */
 export const ProductVideosManager: React.FC<ProductVideosManagerProps> = ({ product, onClose }) => {
-  const { videos, deleteVideo, openImportVideoModal } = useApp();
+  const { videos, deleteVideo, openImportVideoModal, addVideo } = useApp();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState<string>('');
+  const [syncing, setSyncing] = useState(false);
 
   if (!product) return null;
 
   const linked = videos.filter(v => v.productId === product.id);
+  const expectedReviewCount = linked.reduce((count, video) => {
+    const match = String(video.title || '').match(/\((?:\d+)\/(\d+)\)/);
+    return Math.max(count, match ? Number(match[1]) : 0);
+  }, 0);
+
+  const handleSyncStoredVideos = async () => {
+    if (expectedReviewCount <= linked.length) return;
+    setSyncing(true);
+    setError('');
+    try {
+      const stored = await catalogDatabase.listStoredProductVideos(product.id);
+      const latestBatch = stored.slice(0, expectedReviewCount).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      const savedUrls = new Set(linked.map(video => video.videoUrl));
+      const missing = latestBatch.filter(item => !savedUrls.has(item.url));
+      if (latestBatch.length < expectedReviewCount || missing.length !== expectedReviewCount - linked.length) throw new Error('أحدث دفعة فيديوهات لا تطابق العدد المتوقع بأمان. لم ننشئ بطاقات تخمينية.');
+      for (const item of missing) {
+        const index = latestBatch.findIndex(candidate => candidate.url === item.url) + 1;
+        const ok = await addVideo({ id: `recovered-${product.id}-${item.name.replace(/[^a-z0-9]+/gi, '-').slice(-48)}`, productId: product.id, productTitle: product.titleAr || product.titleEn, productImage: product.image || '', thumbnailUrl: product.image || '', platform: 'local', embedId: item.name, videoUrl: item.url, title: `فيديو استعراض وتجربة لـ ${product.titleAr || product.titleEn} (${index}/${expectedReviewCount})`, duration: '00:00' });
+        if (!ok) throw new Error('تعذر تأكيد حفظ إحدى المراجعات، فتوقفت المطابقة.');
+      }
+    } catch (syncError: any) {
+      setError(syncError?.message || 'تعذرت مطابقة المراجعات مع ملفات الفيديو.');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const toggleSelected = (videoId: string) => {
     setSelected(prev => prev.includes(videoId) ? prev.filter(id => id !== videoId) : [...prev, videoId]);
@@ -98,6 +126,13 @@ export const ProductVideosManager: React.FC<ProductVideosManagerProps> = ({ prod
           >
             <X className="w-4 h-4" />
           </button>
+
+          {expectedReviewCount > linked.length && (
+            <button type="button" disabled={syncing} onClick={() => void handleSyncStoredVideos()} className="px-3 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold text-[11px] flex items-center gap-1.5">
+              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'جاري المطابقة…' : `استعادة المراجعات الناقصة (${expectedReviewCount - linked.length})`}
+            </button>
+          )}
         </div>
 
         <div className="flex items-center justify-between gap-2 flex-wrap">

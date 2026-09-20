@@ -14,14 +14,13 @@ import {
   Sparkles,
   Instagram
 } from 'lucide-react';
-import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
 
 interface StaticPageProps {
   type: 'about' | 'contact' | 'privacy' | 'terms' | 'cookies' | 'disclosure';
 }
 
 export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
-  const { activeStaticTab, setPage } = useApp();
+  const { activeStaticTab, setPage, siteSettings } = useApp();
   const currentTab = type || activeStaticTab;
 
   // Contact form state
@@ -103,7 +102,7 @@ export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
         {currentTab === 'about' && (
           <div className="space-y-6">
             <div className="flex items-center gap-4 border-b border-slate-100 dark:border-slate-800 pb-6">
-              <img src={logoImg} alt="Yousra Smile" className="w-16 h-16 rounded-2xl object-cover border-2 border-purple-500/40" />
+              <img src={siteSettings.creatorAvatarUrl} alt="Yousra Smile" className="w-16 h-16 rounded-2xl object-cover border-2 border-purple-500/40" />
               <div>
                 <h1 className="text-2xl font-black font-['Tajawal'] text-slate-900 dark:text-white">
                   {STATIC_CONTENT.about.title}

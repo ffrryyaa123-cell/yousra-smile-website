@@ -28,11 +28,12 @@ import {
   FileText
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { CATEGORIES } from '../data/categories';
+import { useManagedCategories } from '../services/categoryManager';
 import { CURRENCIES, CurrencyCode } from '../utils/currency';
-import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.jpg';
+import { SITE_BRAND_ASSETS } from '../config/siteBrand';
 
 export const Header: React.FC = () => {
+  const { categories } = useManagedCategories();
   const { 
     activePage, 
     setPage, 
@@ -218,7 +219,7 @@ export const Header: React.FC = () => {
           >
             <div className="relative">
               <img 
-                src={siteSettings.siteLogo || logoImg} 
+                src={siteSettings.siteLogo || SITE_BRAND_ASSETS.siteLogo}
                 alt="Yousra Smile Logo" 
                 className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 border-amber-400/80 shadow-[0_0_12px_rgba(212,175,55,0.4)] group-hover:scale-105 transition-transform object-cover" 
                 referrerPolicy="no-referrer"
@@ -444,7 +445,7 @@ export const Header: React.FC = () => {
                           {language === 'ar' ? 'أقسام المنتجات' : 'Product Categories'}
                         </span>
                         <span className="text-[10px] bg-purple-950 text-amber-300 px-2 py-0.5 rounded-full border border-purple-800">
-                          {CATEGORIES.length} {language === 'ar' ? 'أقسام' : 'Categories'}
+                          {categories.length} {language === 'ar' ? 'أقسام' : 'Categories'}
                         </span>
                       </div>
 
@@ -465,7 +466,7 @@ export const Header: React.FC = () => {
                       </button>
                       <hr className="my-1.5 border-purple-500/20" />
                       
-                      {CATEGORIES.map(cat => (
+                      {categories.map(cat => (
                         <button
                           key={cat.id}
                           type="button"
@@ -573,7 +574,7 @@ export const Header: React.FC = () => {
             {/* Modal Dropdown Header */}
             <div className="bg-[#190F2E] p-4 border-b border-purple-500/30 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <img src={siteSettings.siteLogo || logoImg} alt="Yousra Smile" className="w-10 h-10 rounded-xl border border-amber-400/50 shadow" referrerPolicy="no-referrer" />
+                <img src={siteSettings.siteLogo || SITE_BRAND_ASSETS.siteLogo} alt="Yousra Smile" className="w-10 h-10 rounded-xl border border-amber-400/50 shadow" referrerPolicy="no-referrer" />
                 <div>
                   <span className="font-extrabold text-white text-base block font-['Cairo']">{t.siteTitle}</span>
                   <span className="text-[11px] text-amber-300 font-['Tajawal']">{language === 'ar' ? 'التصفح المنسدل والتسهيلات' : 'Dropdown Navigation & Services'}</span>
@@ -696,7 +697,7 @@ export const Header: React.FC = () => {
                   {language === 'ar' ? 'تصفح الأقسام الرئيسية:' : 'Main Categories:'}
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {CATEGORIES.map(cat => (
+                  {categories.map(cat => (
                     <button
                       key={cat.id}
                       onClick={() => { handleCategorySelect(cat.id); setMobileMenuOpen(false); }}

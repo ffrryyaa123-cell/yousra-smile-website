@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { CATEGORIES } from '../data/categories';
+import { useManagedCategories } from '../services/categoryManager';
 import { Product, VideoReview } from '../types';
 import { 
   Settings, 
@@ -55,6 +55,7 @@ import { videoGenerator, RenderedVideoAsset, VideoGenerationProgress } from '../
 import { VideoImportModal } from '../components/VideoImportModal';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 import { AgentAutomationHub } from '../components/AgentAutomationHub';
+import { SeoTextHub } from '../components/SeoTextHub';
 import { GeminiApiKeyManager } from '../components/GeminiApiKeyManager';
 import { GoogleWorkspaceHub } from '../components/GoogleWorkspaceHub';
 import { AdminUsersPanel } from '../components/AdminUsersPanel';
@@ -66,6 +67,8 @@ import { auth, ownerGoogleSignIn, consumeOwnerRedirectResult, describeAuthError,
 import { adminAccount, AdminProfile, supabase } from '../services/adminAccount';
 import { ReviewOpenCount } from '../components/ReviewOpenCount';
 import { AdminActivityPanel } from '../components/AdminActivityPanel';
+import { MediaLibraryManager } from '../components/MediaLibraryManager';
+import { CategoriesManager } from '../components/CategoriesManager';
 import { ActivityReport, loadActivityReport } from '../services/siteActivity';
 
 // Accounts allowed to open the dashboard. Kept as a list so a second owner mailbox
@@ -79,6 +82,7 @@ const isOwnerEmail = (email?: string | null): boolean =>
   Boolean(email && OWNER_EMAILS.includes(email.toLowerCase()));
 
 export const AdminPage: React.FC = () => {
+  const { categories } = useManagedCategories();
   const { 
     products, 
     videos,
@@ -126,7 +130,7 @@ export const AdminPage: React.FC = () => {
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const [loginEmail, setLoginEmail] = useState<string>('');
   const [loginPassword, setLoginPassword] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'messages' | 'analytics' | 'settings' | 'ai-assistant' | 'agent-hub' | 'workspace' | 'users'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'videos' | 'deals' | 'brands' | 'media' | 'categories' | 'messages' | 'analytics' | 'settings' | 'ai-assistant' | 'seo-text' | 'agent-hub' | 'workspace' | 'users'>('overview');
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
@@ -1307,6 +1311,22 @@ export const AdminPage: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('categories')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${activeTab === 'categories' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-900 text-emerald-300 border-emerald-500/40'}`}
+        >
+          <FolderTree className="w-4 h-4" />
+          <span>إدارة الأقسام</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('seo-text')}
+          className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${activeTab === 'seo-text' ? 'bg-emerald-600 text-white border-emerald-400' : 'bg-slate-900 text-emerald-300 border-emerald-500/40'}`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>استيراد المنتج والنصوص الكاملة</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('users')}
           className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 shrink-0 transition-all cursor-pointer border ${
             activeTab === 'users'
@@ -1514,6 +1534,13 @@ export const AdminPage: React.FC = () => {
                           />
                           <div>
                             <h4 className="font-bold text-white line-clamp-1 max-w-xs">{prod.titleAr}</h4>
+                            <p dir="ltr" className="text-[10px] text-slate-300 line-clamp-1 max-w-xs text-left">{prod.titleEn || 'English title missing'}</p>
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${prod.seoTitleAr && prod.seoTitleEn && prod.seoDescriptionAr && prod.seoDescriptionEn ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'}`}>SEO {prod.seoTitleAr && prod.seoTitleEn && prod.seoDescriptionAr && prod.seoDescriptionEn ? 'مكتمل' : 'ناقص'}</span>
+                              <span className="rounded bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-bold text-sky-300">AR كلمات: {prod.keywordsAr?.length || 0}</span>
+                              <span className="rounded bg-purple-500/20 px-1.5 py-0.5 text-[9px] font-bold text-purple-300">EN Keywords: {prod.keywordsEn?.length || 0}</span>
+                              <span className="rounded bg-pink-500/20 px-1.5 py-0.5 text-[9px] font-bold text-pink-300">Hashtags: {(prod.hashtagsAr?.length || 0) + (prod.hashtagsEn?.length || 0)}</span>
+                            </div>
                             <span className="text-[10px] text-slate-300 font-mono">ID: {prod.id}</span>
                           </div>
                         </div>
@@ -1902,8 +1929,11 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 6: MEDIA LIBRARY */}
-      {activeTab === 'media' && (
+      {activeTab === 'media' && <MediaLibraryManager />}
+      {activeTab === 'categories' && <CategoriesManager />}
+
+      {/* Legacy media layout retained as unreachable rollback reference. */}
+      {false && activeTab === 'media' && (
         <div className="bg-slate-900 rounded-3xl border border-slate-700 p-6 space-y-6 text-white shadow-md">
           <div className="border-b border-slate-800 pb-4">
             <h3 className="text-lg font-black text-white font-['Tajawal'] flex items-center gap-2">
@@ -2512,6 +2542,10 @@ export const AdminPage: React.FC = () => {
         <AgentAutomationHub />
       )}
 
+      {activeTab === 'seo-text' && (
+        <SeoTextHub onOpenProducts={() => setActiveTab('products')} />
+      )}
+
       {/* TAB 11: GOOGLE WORKSPACE HUB */}
       {activeTab === 'workspace' && (
         <GoogleWorkspaceHub />
@@ -2669,7 +2703,7 @@ export const AdminPage: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
                     className="w-full bg-slate-800 border border-slate-600 rounded-xl p-2.5 text-white font-bold focus:border-purple-400 focus:outline-none"
                   >
-                    {CATEGORIES.map(c => (
+                    {categories.map(c => (
                       <option key={c.id} value={c.id}>{c.nameAr}</option>
                     ))}
                   </select>

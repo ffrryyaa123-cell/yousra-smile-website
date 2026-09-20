@@ -17,6 +17,9 @@
   body, #root {
     overflow-x: hidden;
     max-width: 100vw;
+    width: 100%;
+    min-width: 0;
+    overscroll-behavior-x: none;
     background-color: #0D0714;
     color: #F4EFF5;
   }
@@ -25,6 +28,14 @@
     background-color: #0D0714;
     color: #F4EFF5;
   }
+}
+
+img, video, canvas, svg {
+  max-width: 100%;
+}
+
+main, section, article, header, footer, nav, div {
+  min-width: 0;
 }
 
 /* Custom smooth scrollbar */
