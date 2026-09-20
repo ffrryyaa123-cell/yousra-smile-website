@@ -5,7 +5,7 @@ import { SAMPLE_BLOG_POSTS } from '../data/blogPosts';
 import { translations, Language } from '../utils/i18n';
 import { CurrencyCode, CURRENCIES, CurrencyConfig, formatPriceValue } from '../utils/currency';
 import { catalogDatabase } from '../services/supabaseCatalog';
-import { LEGACY_WRONG_SITE_LOGOS, SITE_BRAND_ASSETS } from '../config/siteBrand';
+import { LEGACY_WRONG_SITE_LOGOS, optimizedBrandAssetUrl, SITE_BRAND_ASSETS } from '../config/siteBrand';
 import { loadMediaLibraryState, mediaPlacementSettings, MediaLibraryState } from '../services/mediaLibrary';
 import { loadReviewCounts, recordReviewOpen } from '../services/reviewEngagement';
 import { recordSiteActivity } from '../services/siteActivity';
@@ -346,9 +346,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return {
           ...DEFAULT_SITE_SETTINGS,
           ...parsed,
-          siteLogo: !parsed.siteLogo || LEGACY_WRONG_SITE_LOGOS.has(parsed.siteLogo) ? SITE_BRAND_ASSETS.siteLogo : parsed.siteLogo,
-          creatorAvatarUrl: parsed.creatorAvatarUrl || SITE_BRAND_ASSETS.creatorAvatar,
-          heroBannerUrl: parsed.heroBannerUrl || SITE_BRAND_ASSETS.heroBanner,
+          siteLogo: !parsed.siteLogo || LEGACY_WRONG_SITE_LOGOS.has(parsed.siteLogo) ? SITE_BRAND_ASSETS.siteLogo : optimizedBrandAssetUrl(parsed.siteLogo, SITE_BRAND_ASSETS.siteLogo),
+          creatorAvatarUrl: optimizedBrandAssetUrl(parsed.creatorAvatarUrl, SITE_BRAND_ASSETS.creatorAvatar),
+          heroBannerUrl: optimizedBrandAssetUrl(parsed.heroBannerUrl, SITE_BRAND_ASSETS.heroBanner),
         };
       }
     } catch (e) {

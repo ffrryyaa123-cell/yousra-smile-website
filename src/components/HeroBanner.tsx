@@ -18,7 +18,7 @@ export const HeroBanner: React.FC = () => {
   return (
     <div className="relative w-full overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 text-white rounded-3xl my-4 sm:my-6 border border-purple-800/60 shadow-2xl">
       <div className="absolute inset-0 z-0 opacity-25 mix-blend-overlay">
-        <img src={siteSettings.heroBannerUrl || bannerImg} alt="" aria-hidden="true" loading="lazy" decoding="async" fetchPriority="low" className="w-full h-full object-cover scale-105" />
+        <img src={siteSettings.heroBannerUrl || bannerImg} alt="" aria-hidden="true" loading="lazy" decoding="async" fetchPriority="low" width="1200" height="800" className="w-full h-full object-cover scale-105" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-10 py-12 sm:py-16 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">

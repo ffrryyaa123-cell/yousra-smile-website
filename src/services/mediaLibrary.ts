@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './adminAccount';
-import { SITE_BRAND_ASSETS } from '../config/siteBrand';
+import { optimizedBrandAssetUrl, SITE_BRAND_ASSETS, STORAGE_BRAND_ASSETS } from '../config/siteBrand';
 
 const BUCKET = 'product-videos';
 const FOLDER = 'media-library';
@@ -25,9 +25,9 @@ export interface MediaLibraryState { items: MediaLibraryItem[]; updatedAt: strin
 
 const defaults: MediaLibraryState = {
   items: [
-    { id: 'brand-smart-home', name: 'شعار Smart Home', url: SITE_BRAND_ASSETS.siteLogo, type: 'logo', placement: 'siteLogo' },
-    { id: 'brand-yousra-avatar', name: 'أفاتار يسرى YS LUXE', url: SITE_BRAND_ASSETS.creatorAvatar, type: 'logo', placement: 'creatorAvatar' },
-    { id: 'brand-main-hero', name: 'بانر المنزل الذكي الرئيسي', url: SITE_BRAND_ASSETS.heroBanner, type: 'banner', placement: 'heroBanner' },
+    { id: 'brand-smart-home', name: 'شعار Smart Home', url: STORAGE_BRAND_ASSETS.siteLogo, type: 'logo', placement: 'siteLogo' },
+    { id: 'brand-yousra-avatar', name: 'أفاتار يسرى YS LUXE', url: STORAGE_BRAND_ASSETS.creatorAvatar, type: 'logo', placement: 'creatorAvatar' },
+    { id: 'brand-main-hero', name: 'بانر المنزل الذكي الرئيسي', url: STORAGE_BRAND_ASSETS.heroBanner, type: 'banner', placement: 'heroBanner' },
   ],
   updatedAt: new Date(0).toISOString(),
 };
@@ -90,7 +90,12 @@ export async function saveMediaLibraryState(items: MediaLibraryItem[]): Promise<
 
 export function mediaPlacementSettings(state: MediaLibraryState) {
   const byPlacement = (placement: MediaPlacement) => state.items.find(item => item.placement === placement)?.url;
-  return { siteLogo: byPlacement('siteLogo') || SITE_BRAND_ASSETS.siteLogo, creatorAvatarUrl: byPlacement('creatorAvatar') || SITE_BRAND_ASSETS.creatorAvatar, heroBannerUrl: byPlacement('heroBanner') || SITE_BRAND_ASSETS.heroBanner, smartHomeBannerUrl: byPlacement('smartHomeBanner') };
+  return {
+    siteLogo: optimizedBrandAssetUrl(byPlacement('siteLogo'), SITE_BRAND_ASSETS.siteLogo),
+    creatorAvatarUrl: optimizedBrandAssetUrl(byPlacement('creatorAvatar'), SITE_BRAND_ASSETS.creatorAvatar),
+    heroBannerUrl: optimizedBrandAssetUrl(byPlacement('heroBanner'), SITE_BRAND_ASSETS.heroBanner),
+    smartHomeBannerUrl: byPlacement('smartHomeBanner'),
+  };
 }
 
 export function useMediaLibrary() {
@@ -107,15 +112,39 @@ const safeFileName = (name: string) => {
   return `${base}.${ext}`;
 };
 
+const optimizeImageForWeb = async (file: File): Promise<File> => {
+  if (file.type === 'image/svg+xml' || file.size <= 350 * 1024) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxEdge = 1600;
+    const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) { bitmap.close(); return file; }
+    context.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', 0.82));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, '')}.webp`, { type: 'image/webp', lastModified: file.lastModified });
+  } catch {
+    return file;
+  }
+};
+
 export async function uploadMediaLibraryImage(file: File): Promise<{ url: string; storagePath: string }> {
   if (!file || file.size === 0) throw new Error('ملف الصورة فارغ.');
   if (!file.type.startsWith('image/')) throw new Error('اختاري ملف صورة فقط.');
   if (file.size > 15 * 1024 * 1024) throw new Error('حجم الصورة أكبر من 15MB. اختاري صورة أصغر.');
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData.session?.access_token) throw new Error('انتهت جلسة الدخول. سجّلي الدخول إلى لوحة التحكم ثم أعيدي المحاولة.');
+  const optimizedFile = await optimizeImageForWeb(file);
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const storagePath = `${FOLDER}/${stamp}-${safeFileName(file.name)}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(storagePath, file, { contentType: file.type || 'image/jpeg', cacheControl: '31536000', upsert: false });
+  const storagePath = `${FOLDER}/${stamp}-${safeFileName(optimizedFile.name)}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(storagePath, optimizedFile, { contentType: optimizedFile.type || 'image/jpeg', cacheControl: '31536000', upsert: false });
   if (error) throw new Error(`تعذر رفع الصورة: ${error.message}`);
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
   return { url: data.publicUrl, storagePath };

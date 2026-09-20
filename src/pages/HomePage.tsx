@@ -214,6 +214,9 @@ export const HomePage: React.FC = () => {
                     <img
                       src={prod.image}
                       alt={title}
+                      loading="lazy"
+                      decoding="async"
+                      fetchPriority="low"
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                     />
@@ -285,6 +288,9 @@ export const HomePage: React.FC = () => {
                   <img
                     src={cat.image}
                     alt={catName}
+                    loading="lazy"
+                    decoding="async"
+                    fetchPriority="low"
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
