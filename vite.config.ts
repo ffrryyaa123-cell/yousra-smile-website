@@ -8,6 +8,7 @@ export default defineConfig(() => {
     plugins: [react(), tailwindcss()],
     build: {
       target: 'es2020',
+      assetsInlineLimit: 0,
       cssCodeSplit: true,
       sourcemap: false,
       rollupOptions: {

@@ -3,8 +3,8 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { useManagedCategories } from '../services/categoryManager';
 import { PlaySquare, CheckCircle2, Search, ArrowLeft, Flame } from 'lucide-react';
-import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.webp';
-import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.webp';
+import bannerImg from '../assets/images/yousra_smile_banner_mobile.jpg';
+import logoImg from '../assets/images/yousra_smile_avatar_mobile.jpg';
 import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/imageUrl';
 
 export const HeroBanner: React.FC = () => {

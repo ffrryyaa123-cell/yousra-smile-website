@@ -15,7 +15,7 @@ import {
   Sparkles,
   Instagram
 } from 'lucide-react';
-import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.webp';
+import logoImg from '../assets/images/yousra_smile_avatar_mobile.jpg';
 
 interface StaticPageProps {
   type: 'about' | 'contact' | 'privacy' | 'terms' | 'cookies' | 'disclosure';

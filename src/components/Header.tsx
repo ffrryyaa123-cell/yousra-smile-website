@@ -30,7 +30,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { useManagedCategories } from '../services/categoryManager';
 import { CURRENCIES, CurrencyCode } from '../utils/currency';
-import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.webp';
+import logoImg from '../assets/images/yousra_smile_avatar_mobile.jpg';
 
 export const Header: React.FC = () => {
   const { categories } = useManagedCategories();

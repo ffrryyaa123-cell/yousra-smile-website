@@ -2,7 +2,7 @@ import React from 'react';
 import { Youtube, Video, Instagram, Sparkles, Heart, ShieldCheck, Mail, ArrowLeft, Settings, Ghost } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useManagedCategories } from '../services/categoryManager';
-import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.webp';
+import logoImg from '../assets/images/yousra_smile_avatar_mobile.jpg';
 
 export const Footer: React.FC = () => {
   const { categories } = useManagedCategories();

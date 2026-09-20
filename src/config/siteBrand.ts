@@ -1,6 +1,6 @@
-import smartHomeLogo from '../assets/images/smart_home_logo_optimized.jpg';
-import creatorAvatar from '../assets/images/yousra_smile_avatar_1785601313942.webp';
-import heroBanner from '../assets/images/yousra_smile_banner_1785601300772.webp';
+import smartHomeLogo from '../assets/images/smart_home_logo_mobile.jpg';
+import creatorAvatar from '../assets/images/yousra_smile_avatar_mobile.jpg';
+import heroBanner from '../assets/images/yousra_smile_banner_mobile.jpg';
 
 export const STORAGE_BRAND_ASSETS = {
   siteLogo: 'https://iicvasloytbjotbgbvjt.supabase.co/storage/v1/object/public/product-videos/media-library/2026-09-15T00-05-00-719Z-image.png',

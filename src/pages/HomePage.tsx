@@ -1,6 +1,6 @@
 // PUBLIC_LANGUAGE_V2
 import React from 'react';
-import smartHomeBanner from '../assets/images/smart_home_banner_1785693287624.webp';
+import smartHomeBanner from '../assets/images/smart_home_banner_mobile.jpg';
 import { useApp } from '../context/AppContext';
 import { useManagedCategories } from '../services/categoryManager';
 import {
@@ -27,19 +27,20 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import logoImg from '../assets/images/yousra_smile_avatar_1785601313942.webp';
-import bannerImg from '../assets/images/yousra_smile_banner_1785601300772.webp';
+import logoImg from '../assets/images/yousra_smile_avatar_mobile.jpg';
+import bannerImg from '../assets/images/yousra_smile_banner_mobile.jpg';
 
 import { FlashDealsTicker } from '../components/FlashDealsTicker';
 import { ReviewOpenCount } from '../components/ReviewOpenCount';
 import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/imageUrl';
+import { lazyWithReload } from '../utils/lazyWithReload';
 
-const HeroBanner = React.lazy(() => import('../components/HeroBanner').then(module => ({ default: module.HeroBanner })));
-const ProductCard = React.lazy(() => import('../components/ProductCard').then(module => ({ default: module.ProductCard })));
-const BlogSection = React.lazy(() => import('../components/BlogSection').then(module => ({ default: module.BlogSection })));
-const RecentlyViewedSection = React.lazy(() => import('../components/RecentlyViewedSection').then(module => ({ default: module.RecentlyViewedSection })));
-const SmartSavingsCalculator = React.lazy(() => import('../components/SmartSavingsCalculator').then(module => ({ default: module.SmartSavingsCalculator })));
-const AffiliateDealScanner = React.lazy(() => import('../components/AffiliateDealScanner').then(module => ({ default: module.AffiliateDealScanner })));
+const HeroBanner = lazyWithReload(() => import('../components/HeroBanner').then(module => ({ default: module.HeroBanner })));
+const ProductCard = lazyWithReload(() => import('../components/ProductCard').then(module => ({ default: module.ProductCard })));
+const BlogSection = lazyWithReload(() => import('../components/BlogSection').then(module => ({ default: module.BlogSection })));
+const RecentlyViewedSection = lazyWithReload(() => import('../components/RecentlyViewedSection').then(module => ({ default: module.RecentlyViewedSection })));
+const SmartSavingsCalculator = lazyWithReload(() => import('../components/SmartSavingsCalculator').then(module => ({ default: module.SmartSavingsCalculator })));
+const AffiliateDealScanner = lazyWithReload(() => import('../components/AffiliateDealScanner').then(module => ({ default: module.AffiliateDealScanner })));
 
 const DeferredBlock: React.FC<{ children: React.ReactNode; minHeight?: string }> = ({ children, minHeight = 'min-h-24' }) => (
   <React.Suspense fallback={<div className={minHeight} aria-hidden="true" />}>
