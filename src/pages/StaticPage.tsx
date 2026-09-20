@@ -22,7 +22,7 @@ interface StaticPageProps {
 }
 
 export const StaticPage: React.FC<StaticPageProps> = ({ type }) => {
-  const { activeStaticTab, setPage, language } = useApp();
+  const { activeStaticTab, setPage, language, siteSettings } = useApp();
   const currentTab = type || activeStaticTab;
 
   // Contact form state

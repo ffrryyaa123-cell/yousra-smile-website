@@ -582,61 +582,6 @@ export const SeoTextHub: React.FC<{ onOpenProducts?: () => void }> = ({ onOpenPr
     }
   };
 
-  const handleSaveToProducts = async () => {
-    if (!source || !bilingual || !identityVerified) {
-      setSaveMessage('لا يمكن الحفظ قبل اكتمال التحقق والنص العربي والإنجليزي.');
-      return;
-    }
-    if (!bilingual.titleAr || !bilingual.titleEn || !bilingual.descriptionAr || !bilingual.descriptionEn) {
-      setSaveMessage('بيانات اللغتين ناقصة؛ لم يتم حفظ منتج جزئي.');
-      return;
-    }
-    setSavingProduct(true);
-    setSaveMessage('');
-    try {
-      const price = typeof source.price === 'number' ? source.price : 0;
-      const listPrice = typeof source.listPrice === 'number' && source.listPrice >= price ? source.listPrice : price;
-      const category = inferProductCategory([source.title, source.brand, ...(source.breadcrumbs || [])].join(' '));
-      const sourceImages = (source.images || []).filter(Boolean);
-      const patch = {
-        titleAr: bilingual.titleAr, titleEn: bilingual.titleEn,
-        description: bilingual.descriptionAr, descriptionEn: bilingual.descriptionEn,
-        longDescription: bilingual.longDescriptionAr || bilingual.descriptionAr,
-        longDescriptionEn: bilingual.longDescriptionEn || bilingual.descriptionEn,
-        category, subcategory: source.breadcrumbs?.at(-1) || source.brand || '',
-        subcategoryEn: source.breadcrumbs?.at(-1) || source.brand || '', brand: source.brand || '',
-        amazonUrl: source.platform === 'amazon' ? (affiliateUrl || source.finalUrl) : '',
-        aliexpressUrl: source.platform === 'aliexpress' ? (affiliateUrl || source.finalUrl) : undefined,
-        sourceProductUrl: source.sourceUrl, originalPrice: listPrice, discountPrice: price, discountPercent,
-        currency: source.currency || 'USD', rating: source.rating || 0, reviewCount: source.reviewCount || 0,
-        features: bilingual.featuresAr || [], featuresEn: bilingual.featuresEn?.length ? bilingual.featuresEn : source.features || [],
-        specs: bilingual.specsAr || {}, specsEn: Object.keys(bilingual.specsEn || {}).length ? bilingual.specsEn : source.specs || {},
-        seoTitleAr: bilingual.seoTitleAr || '', seoTitleEn: bilingual.seoTitleEn || '',
-        seoDescriptionAr: bilingual.seoDescriptionAr || '', seoDescriptionEn: bilingual.seoDescriptionEn || '',
-        keywordsAr: bilingual.keywordsAr || [], keywordsEn: bilingual.keywordsEn || [],
-        hashtagsAr: bilingual.hashtagsAr || [], hashtagsEn: bilingual.hashtagsEn || [],
-        keywords: Array.from(new Set([...(bilingual.keywordsAr || []), ...(bilingual.keywordsEn || [])])),
-        coupon: source.coupon ? { ...source.coupon, expiresOn: '', isPublic: true } : undefined,
-        isActive: true,
-      };
-      if (existingProduct) {
-        const safePatch = { ...patch, ...((existingProduct.images?.length || existingProduct.image) ? {} : { image: sourceImages[0] || '', images: sourceImages }) };
-        await catalogDatabase.patchProduct(existingProduct.id, safePatch as Record<string, unknown>);
-        patchProduct(existingProduct.id, safePatch as any);
-        setSaveMessage('✓ تم تحديث كل حقول النص وSEO في Supabase بدون لمس الصور أو الفيديوهات الحالية.');
-      } else {
-        const created = addProduct({ ...patch, image: sourceImages[0] || '', images: sourceImages, youtubeUrl: '', tiktokUrl: '', pinterestUrl: '', isFeatured: false, isTopSelling: false, isHidden: false } as any);
-        await catalogDatabase.saveProduct(created);
-        setSaveMessage('✓ تم إنشاء المنتج بكل حقول العربي والإنجليزي وSEO في Supabase.');
-      }
-      window.setTimeout(() => onOpenProducts?.(), 700);
-    } catch (error) {
-      setSaveMessage(`تعذر تأكيد الحفظ في Supabase: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setSavingProduct(false);
-    }
-  };
-
   const downloadJson = () => {
     if (!allData) return;
     const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json;charset=utf-8' });
@@ -768,10 +713,6 @@ export const SeoTextHub: React.FC<{ onOpenProducts?: () => void }> = ({ onOpenPr
           )}
 
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => void handleSaveToProducts()} disabled={savingProduct || !identityVerified} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white hover:bg-emerald-500 disabled:opacity-50">
-              {savingProduct ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingBag className="h-4 w-4" />}
-              {savingProduct ? 'جاري تثبيت كل البيانات…' : existingProduct ? 'تحديث المنتج بكل حقول SEO' : 'حفظ المنتج بكل حقول SEO'}
-            </button>
             <button
               type="button"
               onClick={() => void handleSaveToProducts()}

@@ -96,6 +96,29 @@ if (!products.length) {
   throw new Error('[generate-static-seo] Public product catalog is empty; refusing to publish an empty sitemap.');
 }
 
+const { data: videoRows, error: videoError } = await supabase
+  .from('videos')
+  .select('id,product_id,data,updated_at')
+  .order('updated_at', { ascending: false });
+if (videoError) throw new Error(`[generate-static-seo] Could not read public videos from Supabase: ${videoError.message}`);
+
+const videosByProduct = new Map();
+for (const row of videoRows || []) {
+  const video = { ...(row.data || {}), id: row.id, productId: row.product_id || row.data?.productId, _updatedAt: row.updated_at || nowIso };
+  if (!video.productId || !/^https?:\/\//i.test(String(video.videoUrl || ''))) continue;
+  const list = videosByProduct.get(video.productId) || [];
+  list.push(video);
+  videosByProduct.set(video.productId, list);
+}
+
+const isoDuration = value => {
+  const parts = String(value || '').split(':').map(Number);
+  if (parts.some(part => !Number.isFinite(part))) return undefined;
+  const seconds = parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : parts.length === 2 ? parts[0] * 60 + parts[1] : parts[0];
+  if (!seconds) return undefined;
+  return `PT${Math.floor(seconds / 3600) ? `${Math.floor(seconds / 3600)}H` : ''}${Math.floor((seconds % 3600) / 60) ? `${Math.floor((seconds % 3600) / 60)}M` : ''}${seconds % 60 ? `${seconds % 60}S` : ''}`;
+};
+
 const hasMeaningfulTitle = product => {
   const title = String(product.titleEn || product.titleAr || '').trim();
   if (!title) return false;
