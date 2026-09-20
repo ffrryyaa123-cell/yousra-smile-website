@@ -18,6 +18,7 @@ import {
   Check,
   Share2
 } from 'lucide-react';
+import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/imageUrl';
 
 interface ProductCardProps {
   product: Product;
@@ -107,7 +108,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
         {/* Product Image */}
         <div className="relative w-full sm:w-52 h-44 rounded-xl overflow-hidden bg-slate-900 shrink-0 border border-purple-500/20">
           <img
-            src={product.image}
+            src={optimizedImageUrl(product.image, 720)}
+            srcSet={optimizedImageSrcSet(product.image)}
+            sizes="(max-width: 640px) calc(100vw - 32px), 208px"
             loading="lazy"
             decoding="async"
             fetchPriority="low"
@@ -209,7 +212,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, layout = 'gri
       {/* Top Image Container */}
       <div className="relative w-full h-40 sm:h-44 bg-slate-900 overflow-hidden border-b border-purple-500/20">
         <img
-          src={product.image}
+          src={optimizedImageUrl(product.image, 720)}
+          srcSet={optimizedImageSrcSet(product.image)}
+          sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 1024px) 50vw, 33vw"
             loading="lazy"
             decoding="async"
             fetchPriority="low"

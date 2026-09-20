@@ -4,6 +4,7 @@ import { PlaySquare, Youtube, Video, Sparkles, ExternalLink, ShoppingBag, Share2
 import { VideoReview } from '../types';
 import { SocialVideoExportModal } from '../components/SocialVideoExportModal';
 import { ReviewOpenCount } from '../components/ReviewOpenCount';
+import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/imageUrl';
 
 export const VideosPage: React.FC = () => {
   const { videos, visibleProducts: products, openVideoModal, removeVideoThumbnail, deleteVideo, logAffiliateClick, formatPrice, getAffiliateUrl, openImportVideoModal, language } = useApp();
@@ -194,7 +195,9 @@ export const VideosPage: React.FC = () => {
                   </div>
                 ) : (
                   <img
-                    src={video.thumbnailUrl || video.productImage}
+                    src={optimizedImageUrl(video.thumbnailUrl || video.productImage, 720)}
+                    srcSet={optimizedImageSrcSet(video.thumbnailUrl || video.productImage)}
+                    sizes="(max-width: 768px) calc(100vw - 32px), 33vw"
                     loading="lazy"
                     decoding="async"
                     fetchPriority="low"

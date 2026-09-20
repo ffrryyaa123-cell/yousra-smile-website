@@ -39,6 +39,7 @@ import { SmartSavingsCalculator } from '../components/SmartSavingsCalculator';
 import { AffiliateDealScanner } from '../components/AffiliateDealScanner';
 import { InstantVideoStudio } from '../components/InstantVideoStudio';
 import { ReviewOpenCount } from '../components/ReviewOpenCount';
+import { optimizedImageSrcSet, optimizedImageUrl } from '../utils/imageUrl';
 
 export const HomePage: React.FC = () => {
   const { categories } = useManagedCategories();
@@ -212,7 +213,9 @@ export const HomePage: React.FC = () => {
                   </div>
                   <div className="w-full aspect-square bg-slate-900 rounded-xl overflow-hidden mb-2 border border-purple-500/20">
                     <img
-                      src={prod.image}
+                      src={optimizedImageUrl(prod.image, 720)}
+                      srcSet={optimizedImageSrcSet(prod.image)}
+                      sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 1024px) 50vw, 25vw"
                       alt={title}
                       loading="lazy"
                       decoding="async"
@@ -286,7 +289,9 @@ export const HomePage: React.FC = () => {
               >
                 <div className="w-full h-20 rounded-xl overflow-hidden mb-1.5 bg-slate-900 relative border border-purple-500/20">
                   <img
-                    src={cat.image}
+                    src={optimizedImageUrl(cat.image, 480)}
+                    srcSet={optimizedImageSrcSet(cat.image)}
+                    sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 16vw"
                     alt={catName}
                     loading="lazy"
                     decoding="async"
@@ -409,7 +414,12 @@ export const HomePage: React.FC = () => {
             >
               <div className="relative h-40 bg-slate-950 overflow-hidden">
                 {!video.hideThumbnail && <img
-                  src={video.thumbnailUrl || video.productImage}
+                  src={optimizedImageUrl(video.thumbnailUrl || video.productImage, 720)}
+                  srcSet={optimizedImageSrcSet(video.thumbnailUrl || video.productImage)}
+                  sizes="(max-width: 768px) calc(100vw - 32px), 33vw"
+                  loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
                   alt={language === 'en' ? (products.find(p => p.id === video.productId)?.titleEn ? `Yousra Smile Review: ${products.find(p => p.id === video.productId)?.titleEn}` : (!/[\u0600-\u06FF]/.test(String(video.title || '')) ? video.title : 'Product Review')) : video.title}
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
