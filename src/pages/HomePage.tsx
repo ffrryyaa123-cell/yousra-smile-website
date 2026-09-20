@@ -426,7 +426,11 @@ export const HomePage: React.FC = () => {
                   {language === 'en' ? (products.find(p => p.id === video.productId)?.titleEn || products.find(p => p.id === video.productId)?.brand || (!/[\u0600-\u06FF]/.test(String(video.productTitle || '')) ? video.productTitle : 'Product')) : (products.find(p => p.id === video.productId)?.titleAr || video.productTitle || 'منتج')}
                 </span>
                 <h3 className="text-xs font-bold text-white line-clamp-2 group-hover:text-amber-400 transition-colors font-['Tajawal']">
-                  {video.title}
+                  {language === 'en'
+                    ? (products.find(p => p.id === video.productId)?.titleEn
+                      ? `Yousra Smile Review: ${products.find(p => p.id === video.productId)?.titleEn}`
+                      : (!/[\u0600-\u06FF]/.test(String(video.title || '')) ? video.title : 'Product Review'))
+                    : video.title}
                 </h3>
                 <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1.5 border-t border-slate-800">
                   <ReviewOpenCount videoId={video.id} />

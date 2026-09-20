@@ -1114,15 +1114,15 @@ export const AdminPage: React.FC = () => {
           <div className="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 flex items-center justify-center mx-auto">
             <Lock className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-black font-['Tajawal'] text-slate-900 dark:text-white">دخول لوحة تحكم يسرى سمايل</h2>
+          <h2 className="text-xl font-black font-['Tajawal'] text-slate-900 dark:text-white">{language === 'en' ? 'Sign in to Yousra Smile Admin' : 'دخول لوحة تحكم يسرى سمايل'}</h2>
           <p className="text-xs text-slate-500">
-            لوحة التحكم خاصة بالمالك والحسابات التي يمنحها صلاحية فقط.
+            {language === 'en' ? 'The admin panel is restricted to the owner and explicitly authorized accounts.' : 'لوحة التحكم خاصة بالمالك والحسابات التي يمنحها صلاحية فقط.'}
           </p>
         </div>
 
         <form onSubmit={handleAdminSignIn} className="space-y-3">
           <div className="text-right">
-            <label className="block text-[11px] font-bold text-slate-500 mb-1">البريد الإلكتروني</label>
+            <label className="block text-[11px] font-bold text-slate-500 mb-1">{language === 'en' ? 'Email address' : 'البريد الإلكتروني'}</label>
             <input
               type="email"
               dir="ltr"
@@ -1136,7 +1136,7 @@ export const AdminPage: React.FC = () => {
           </div>
 
           <div className="text-right">
-            <label className="block text-[11px] font-bold text-slate-500 mb-1">كلمة المرور</label>
+            <label className="block text-[11px] font-bold text-slate-500 mb-1">{language === 'en' ? 'Password' : 'كلمة المرور'}</label>
             <input
               type="password"
               dir="ltr"
@@ -1156,13 +1156,13 @@ export const AdminPage: React.FC = () => {
             disabled={isSigningIn}
             className="w-full bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl shadow-md transition-colors"
           >
-            {isSigningIn ? 'جاري التحقق...' : 'دخول'}
+            {isSigningIn ? (language === 'en' ? 'Checking…' : 'جاري التحقق...') : (language === 'en' ? 'Sign in' : 'دخول')}
           </button>
         </form>
 
         <div className="flex items-center gap-3">
           <span className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
-          <span className="text-[10px] text-slate-400">أو</span>
+          <span className="text-[10px] text-slate-400">{language === 'en' ? 'or' : 'أو'}</span>
           <span className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
         </div>
 
@@ -1172,7 +1172,7 @@ export const AdminPage: React.FC = () => {
           onClick={handleOwnerSignIn}
           className="w-full border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60 text-slate-700 dark:text-slate-200 font-bold py-3 rounded-xl transition-colors text-sm"
         >
-          الدخول بحساب Google
+          {language === 'en' ? 'Sign in with Google' : 'الدخول بحساب Google'}
         </button>
       </div>
     );

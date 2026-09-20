@@ -841,7 +841,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       title={language === 'ar' ? 'مشاركة عبر واتساب' : 'Share via WhatsApp'}
                     >
                       <WhatsAppIcon className="w-4 h-4 text-emerald-500" />
-                      <span className="hidden sm:inline">واتساب</span>
+                      <span className="hidden sm:inline">{language === 'en' ? 'WhatsApp' : 'واتساب'}</span>
                     </button>
 
                     <button
@@ -871,7 +871,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                       title="نسخ رابط المنتج"
                     >
                       {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-purple-500" />}
-                      <span className="hidden sm:inline">{copiedLink ? 'تم النسخ' : 'نسخ الرابط'}</span>
+                      <span className="hidden sm:inline">{copiedLink ? (language === 'en' ? 'Copied' : 'تم النسخ') : (language === 'en' ? 'Copy link' : 'نسخ الرابط')}</span>
                     </button>
                   </div>
                 </div>
@@ -895,10 +895,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
                   <div className="flex items-center gap-1">
                     <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                    <span>الشراء يتم بأمان مباشر عبر منصة المتجر الرسمي المعني.</span>
+                    <span>{language === 'en' ? 'Purchases are completed securely on the selected retailer website.' : 'الشراء يتم بأمان مباشر عبر منصة المتجر الرسمي المعني.'}</span>
                   </div>
                   <span className="text-[10px] text-purple-600 dark:text-purple-400 font-bold">
-                    محدث لليوم ⚡
+                    {language === 'en' ? 'Updated today ⚡' : 'محدث لليوم ⚡'}
                   </span>
                 </div>
               </div>

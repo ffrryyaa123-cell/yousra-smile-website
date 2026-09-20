@@ -117,7 +117,10 @@ export const ProductsPage: React.FC = () => {
     });
   }, [products, filters]);
 
-  const categoryTitle = categories.find(c => c.id === filters.category)?.nameAr || 'جميع المنتجات';
+  const selectedCategoryMeta = categories.find(c => c.id === filters.category);
+  const categoryTitle = language === 'en'
+    ? (selectedCategoryMeta?.nameEn || 'All Products')
+    : (selectedCategoryMeta?.nameAr || 'جميع المنتجات');
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = useMemo(() => {
@@ -329,4 +332,3 @@ export const ProductsPage: React.FC = () => {
     </div>
   );
 };
-

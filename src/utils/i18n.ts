@@ -146,7 +146,7 @@ export const translations = {
     quickNav: 'Quick Links:',
     darkMode: 'Dark Mode',
     lightMode: 'Light Mode',
-    switchLanguage: 'العربية',
+    switchLanguage: 'Arabic',
     currentLanguageLabel: 'English',
 
     // Hero & Features
